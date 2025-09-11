@@ -1,13 +1,20 @@
-from flask import Flask, render_template, flash, redirect, url_for
+from flask import Flask, render_template, flash, redirect, url_for, request, jsonify
 
 # custom imports
 from users import Users
 from businesses import Businesses
 from products import Products
 from wallet import Wallet
+import os
+from dotenv import load_dotenv
+
+load_dotenv() 
 
 # Create the Flask app
 app = Flask(__name__)
+
+
+app.secret_key = os.getenv('APP_SECRET_KEY') 
 
 # tools
 users_manager = Users()
@@ -42,24 +49,81 @@ def wallet():
     # card variables
     withdraw_requests = wallet_manager.load_pending_withdrawals()
 
+
+
     return render_template('wallet.html',
                            total_pending_withdraws = total_pending_withdraws,
                            toal_inhouse_money = toal_inhouse_money,
                            withdraw_requests = withdraw_requests  
                            )
 
-@app.route('/approve_withdrawal/<withdrawal_id>')
-def approve_withdrawal(withdrawal_id):
-    """Approve a withdrawal request by its ID"""
-    success = wallet_manager.approve_withdrawal(withdrawal_id)
+@app.route('/approve_withdrawal_with_proof', methods=['POST'])
+def approve_withdrawal_with_proof():
+    """Approve a withdrawal request with proof of payout file upload"""
+    
+    try:
+        # Get form data
+        withdrawal_id = request.form.get('withdrawal_id')
+        business_id = request.form.get('business_id')
+        amount = float(request.form.get('amount', 0))
+        notes = request.form.get('notes', '')  # Optional notes
+        
+        # Get uploaded file
+        if 'proof_file' not in request.files:
+            return jsonify({"success": False, "message": "No file uploaded"})
+        
+        file_object = request.files['proof_file']
+        if file_object.filename == '':
+            return jsonify({"success": False, "message": "No file selected"})
+        
+        # Step 1: Upload file to Supabase bucket and get URL
+        proof_url = wallet_manager.upload_payout_proof(file_object, withdrawal_id)
+        if not proof_url:
+            return jsonify({"success": False, "message": "Failed to upload proof file"})
+        
+        # Step 2: Update the proof_of_payment field in withdrawals table
+        proof_update_success = wallet_manager.update_proof_of_payment(withdrawal_id, proof_url)
+        if not proof_update_success:
+            return jsonify({"success": False, "message": "Failed to update proof of payment in database"})
+        
+        # Step 3: Approve the withdrawal (same as before)
+        approval_success = wallet_manager.aprove_withdrawal(withdrawal_id)
+        if not approval_success:
+            return jsonify({"success": False, "message": "Failed to approve withdrawal"})
+        
+        # Step 4: Reduce the business wallet balance (same as before)
+        wallet_balance_result = wallet_manager.reduce_wallet_balance(
+            business_id=business_id,
+            withdraw_amount=amount
+        )
+        if not wallet_balance_result:
+            return jsonify({"success": False, "message": "Failed to reduce wallet balance"})
+        
+        # Success - return JSON response for JavaScript
+        return jsonify({
+            "success": True, 
+            "message": f"Successfully approved withdrawal {withdrawal_id} with proof of payout"
+        })
+        
+    except Exception as e:
+        print(f"Exception in approve_withdrawal_with_proof: {e}")
+        return jsonify({"success": False, "message": "An error occurred while processing the withdrawal"})
+
+
+@app.route('/reject_withdrawal', methods=['POST'])
+def reject_withdrawal():
+    """Reject a withdrawal request by its ID"""
+    withdrawal_id = request.form.get('withdrawal_id')
+
+    success = wallet_manager.reject_withdrawal(withdrawal_id)
 
     if success:
-        flash(f"Successfully approved withdrawal {withdrawal_id}.", "success")
+        flash(f"Successfully rejected withdrawal {withdrawal_id}.", "success")
     else:
-        flash(f"Failed to approve withdrawal {withdrawal_id}.", "danger")
+        flash(f"Failed to reject withdrawal {withdrawal_id}.", "danger")
 
-    # redirect back to wallet page (so page reloads properly)
     return redirect(url_for('wallet'))
+
 
 
 
