@@ -1,0 +1,699 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdrawal Management - inXource</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .withdrawal-container {
+            padding: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .page-header {
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-left h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0f0f0f;
+            margin-bottom: 0.3rem;
+        }
+
+        .header-left p {
+            color: #666;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #e60000;
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .filters-section {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(230, 0, 0, 0.05);
+        }
+
+        .filters-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .filter-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .filter-input, .filter-select {
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .filter-input:focus, .filter-select:focus {
+            outline: none;
+            border-color: #e60000;
+            box-shadow: 0 0 0 3px rgba(230, 0, 0, 0.1);
+        }
+
+        .filter-btn {
+            padding: 0.6rem 1.2rem;
+            background: linear-gradient(135deg, #e60000, #b30000);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(230, 0, 0, 0.3);
+        }
+
+        .withdrawal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .withdrawal-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(230, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .withdrawal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #e60000, #b30000);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .withdrawal-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .withdrawal-card:hover::before {
+            opacity: 1;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .status-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-pending {
+            background: rgba(251, 191, 36, 0.15);
+            color: #d97706;
+        }
+
+        .status-approved {
+            background: rgba(16, 185, 129, 0.15);
+            color: #059669;
+        }
+
+        .status-rejected {
+            background: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+        }
+
+        .card-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .info-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .info-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 0.9rem;
+            color: #111;
+            font-weight: 500;
+        }
+
+        .amount-highlight {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #e60000;
+        }
+
+        .wallet-comparison {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.3rem;
+        }
+
+        .wallet-amount {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .comparison-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        .sufficient {
+            background: #10b981;
+            color: white;
+        }
+
+        .insufficient {
+            background: #ef4444;
+            color: white;
+        }
+
+        .message-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .message-label {
+            font-size: 0.75rem;
+            color: #666;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .message-content {
+            font-size: 0.85rem;
+            color: #333;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-approve {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .btn-approve:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-reject {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .btn-reject:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-details {
+            background: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .btn-details:hover {
+            background: rgba(59, 130, 246, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+
+        .empty-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-text {
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .withdrawal-container {
+                padding: 1rem;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-stats {
+                align-self: stretch;
+                justify-content: space-around;
+            }
+
+            .filters-row {
+                grid-template-columns: 1fr;
+            }
+
+            .card-content {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .action-buttons {
+                justify-content: center;
+            }
+        }
+
+        /* Loading animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .withdrawal-card {
+            animation: fadeInUp 0.6s ease forwards;
+            opacity: 0;
+        }
+
+        .withdrawal-card:nth-child(1) { animation-delay: 0.1s; }
+        .withdrawal-card:nth-child(2) { animation-delay: 0.2s; }
+        .withdrawal-card:nth-child(3) { animation-delay: 0.3s; }
+        .withdrawal-card:nth-child(4) { animation-delay: 0.4s; }
+        .withdrawal-card:nth-child(5) { animation-delay: 0.5s; }
+    </style>
+</head>
+<body>
+    <div class="withdrawal-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-left">
+                <h1>Withdrawal Management</h1>
+                <p>Review and manage business withdrawal requests</p>
+            </div>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <div class="stat-value">{{total_pending_withdraws or 0}}</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <!--
+                <div class="stat-item">
+                    <div class="stat-value">156</div>
+                    <div class="stat-label">Approved</div>
+                </div>
+                -->
+                <div class="stat-item">
+                    <div class="stat-value">ZMK {{ toal_inhouse_money }}</div>
+                    <div class="stat-label">Total</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="filters-section">
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label class="filter-label">Status</label>
+                    <select class="filter-select">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Business Name</label>
+                    <input type="text" class="filter-input" placeholder="Search businesses...">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Date Range</label>
+                    <select class="filter-select">
+                        <option value="">All Time</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Amount Range</label>
+                    <select class="filter-select">
+                        <option value="">All Amounts</option>
+                        <option value="0-100">$0 - $100</option>
+                        <option value="100-500">$100 - $500</option>
+                        <option value="500+">$500+</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <button class="filter-btn">
+                        <i class="fas fa-filter"></i>
+                        Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdrawal Requests List -->
+        <div class="withdrawal-list">
+            {% for request in withdraw_requests %}
+            <div class="withdrawal-card">
+                <div class="card-header">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.1rem; color: #111;">{{ request.business_name }}</h3>
+                        <p style="margin: 0.2rem 0 0 0; font-size: 0.8rem; color: #666;">
+                            Request #{{ request.withdrawal_id or '###' }}
+                        </p>
+                    </div>
+                    <span class="status-badge 
+                        {% if request.status == 'pending' %}status-pending
+                        {% elif request.status == 'approved' %}status-approved
+                        {% elif request.status == 'rejected' %}status-rejected
+                        {% endif %}">
+                        {{ request.withdrawal_status | capitalize }}
+                    </span>
+                </div>
+                
+                <div class="card-content">
+                    <div class="info-section">
+                        <div class="info-group">
+                            <span class="info-label">Business Owner</span>
+                            <span class="info-value">{{ request.user_name }}</span>
+                        </div>
+                        <div class="info-group">
+                            <span class="info-label">Phone Number</span>
+                            <span class="info-value">{{ request.phone }}</span>
+                        </div>
+                        <div class="info-group">
+                            <span class="info-label">Request Date</span>
+                            <span class="info-value">{{ request.requested_at }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <div class="info-group">
+                            <span class="info-label">Withdrawal Amount</span>
+                            <span class="info-value amount-highlight">ZMK{{ request.amount }}</span>
+                            <div class="wallet-comparison">
+                                <span class="wallet-amount">Wallet: ZMK{{ request.wallet_balance }}</span>
+                                <div class="comparison-icon 
+                                    {% if request.wallet_balance >= request.amount %}sufficient
+                                    {% else %}insufficient
+                                    {% endif %}">
+                                    {% if request.wallet_balance >= request.amount %}
+                                        <i class="fas fa-check"></i>
+                                    {% else %}
+                                        <i class="fas fa-exclamation"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="info-group">
+                            <span class="info-label">Payment Method</span>
+                            <span class="info-value">{{ request.method }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="message-section">
+                    <div class="message-label">Withdrawal Message</div>
+                    <div class="message-content">
+                        "{{ request.message | default('No message provided.') }}"
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <a href="{{ url_for('approve_withdrawal', withdrawal_id=request.withdrawal_id) }}">
+                        <button class="btn btn-approve"
+                            {% if request.status != 'pending' or request.wallet_balance < request.amount %}
+                                disabled style="opacity: 0.5; cursor: not-allowed;"
+                            {% endif %}>
+                            <i class="fas fa-check"></i>
+                            Approve
+                        </button>
+                    </a>
+                    <a href="#">
+                        <button class="btn btn-reject" 
+                            {% if request.status != 'pending' %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}>
+                        <i class="fas fa-times"></i>
+                        Reject
+                    </button>
+                    </a> 
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Filter functionality
+            const filterBtn = document.querySelector('.filter-btn');
+            const filterInputs = document.querySelectorAll('.filter-input, .filter-select');
+
+            filterBtn.addEventListener('click', function() {
+                // Visual feedback
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Filtering...';
+                
+                setTimeout(() => {
+                    this.innerHTML = '<i class="fas fa-filter"></i> Apply Filters';
+                    // Here you would typically send the filter data to the backend
+                }, 1000);
+            });
+
+            // FIXED: Approve button handlers - listen to links instead of buttons
+            const approveLinks = document.querySelectorAll('a[href*="approve_withdrawal"]');
+            
+            approveLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const btn = this.querySelector('.btn-approve');
+                    
+                    // Check if button is disabled
+                    if (btn && btn.disabled) {
+                        e.preventDefault();
+                        return;
+                    }
+                    
+                    if (!confirm('Are you sure you want to approve this withdrawal request?')) {
+                        e.preventDefault(); // Only prevent if user cancels
+                    }
+                    // If user confirms, let the link navigate naturally to your Flask route
+                });
+            });
+
+            // FIXED: Reject button handlers - listen to links instead of buttons
+            const rejectLinks = document.querySelectorAll('a[href*="reject_withdrawal"]');
+            
+            rejectLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault(); // Always prevent to get reason first
+                    
+                    const btn = this.querySelector('.btn-reject');
+                    
+                    // Check if button is disabled
+                    if (btn && btn.disabled) {
+                        return;
+                    }
+                    
+                    const reason = prompt('Please provide a reason for rejection:');
+                    if (reason && reason.trim()) {
+                        // Navigate with reason as parameter
+                        const url = new URL(this.href, window.location.origin);
+                        url.searchParams.append('reason', encodeURIComponent(reason));
+                        window.location.href = url.toString();
+                    }
+                });
+            });
+
+            // Details button handlers (if you have any)
+            const detailButtons = document.querySelectorAll('.btn-details');
+            detailButtons.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // Visual feedback
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                    
+                    // Here you would open a detailed view modal or navigate to details page
+                    console.log('Details clicked for withdrawal');
+                });
+            });
+
+            // Card hover effects
+            const cards = document.querySelectorAll('.withdrawal-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-3px)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = '';
+                });
+            });
+
+            // Real-time search functionality
+            const searchInput = document.querySelector('input[placeholder="Search businesses..."]');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const cards = document.querySelectorAll('.withdrawal-card');
+                    
+                    cards.forEach(card => {
+                        const businessName = card.querySelector('h3').textContent.toLowerCase();
+                        const ownerName = card.querySelector('.info-value').textContent.toLowerCase();
+                        
+                        if (businessName.includes(searchTerm) || ownerName.includes(searchTerm)) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+
+{% endblock %}

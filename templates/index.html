@@ -1,0 +1,755 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Overview - inXource</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 25%, #2d2d2d 75%, #3a3a3a 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .dashboard-container {
+            padding: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .page-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: black;
+            margin-bottom: 0.3rem;
+        }
+
+        .page-subtitle {
+            color: #bbb;
+            font-size: 0.9rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 1.2rem;
+            box-shadow: 
+                0 6px 20px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(230, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #e60000, #b30000);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 12px 25px rgba(0, 0, 0, 0.1),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-card.primary::before {
+            background: linear-gradient(90deg, #e60000, #b30000);
+        }
+
+        .stat-card.success::before {
+            background: linear-gradient(90deg, #10b981, #059669);
+        }
+
+        .stat-card.warning::before {
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+        }
+
+        .stat-card.info::before {
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+        }
+
+        .stat-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: white;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+            transition: all 0.3s ease;
+        }
+
+        .stat-icon.primary { background: linear-gradient(135deg, #e60000, #b30000); }
+        .stat-icon.success { background: linear-gradient(135deg, #10b981, #059669); }
+        .stat-icon.warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .stat-icon.info { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .trend-up { color: #10b981; }
+        .trend-down { color: #ef4444; }
+        .trend-neutral { color: #6b7280; }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 0.3rem;
+            line-height: 1;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 1.2rem;
+            box-shadow: 
+                0 6px 20px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(230, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #111;
+        }
+
+        .chart-period {
+            display: flex;
+            gap: 0.3rem;
+        }
+
+        .period-btn {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.05);
+            color: #666;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .period-btn.active,
+        .period-btn:hover {
+            background: linear-gradient(135deg, #e60000, #b30000);
+            color: white;
+        }
+
+        .chart-placeholder {
+            height: 200px;
+            background: linear-gradient(135deg, rgba(230, 0, 0, 0.05), rgba(179, 0, 0, 0.02));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 0.85rem;
+            border: 2px dashed rgba(230, 0, 0, 0.1);
+            gap: 0.5rem;
+        }
+
+        .recent-activities {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 1.2rem;
+            box-shadow: 
+                0 6px 20px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(230, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .recent-activities:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .activities-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .activities-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #111;
+        }
+
+        .view-all-btn {
+            background: none;
+            border: none;
+            color: #e60000;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.4rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .view-all-btn:hover {
+            background: rgba(230, 0, 0, 0.1);
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-item:hover {
+            background: rgba(0, 0, 0, 0.02);
+            margin: 0 -0.8rem;
+            padding: 0.8rem;
+            border-radius: 6px;
+        }
+
+        .activity-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            color: white;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            color: #111;
+            font-size: 0.8rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .activity-desc {
+            color: #666;
+            font-size: 0.75rem;
+        }
+
+        .activity-time {
+            color: #888;
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 0.8rem;
+            margin-top: 1.5rem;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(230, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            text-decoration: none;
+            color: #111;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            background: linear-gradient(135deg, rgba(230, 0, 0, 0.05), rgba(179, 0, 0, 0.02));
+            border-color: rgba(230, 0, 0, 0.2);
+            text-decoration: none;
+            color: #111;
+        }
+
+        .action-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #e60000, #b30000);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 0.8rem;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 0.8rem;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .chart-placeholder {
+                height: 180px;
+            }
+
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Loading animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes countUp {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .stat-card {
+            animation: fadeInUp 0.6s ease forwards;
+            opacity: 0;
+        }
+
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .stat-card:nth-child(4) { animation-delay: 0.4s; }
+        .stat-card:nth-child(5) { animation-delay: 0.5s; }
+        .stat-card:nth-child(6) { animation-delay: 0.6s; }
+
+        .chart-card, .recent-activities {
+            animation: fadeInUp 0.8s ease 0.3s forwards;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title" style="color: #0f0f0f;">Dashboard Overview</h1>
+            <p class="page-subtitle" style="color: #0f0f0f;">Monitor your inXource platform performance and key metrics</p>
+        </div>
+
+        <!-- Statistics Grid -->
+        <div class="stats-grid">
+            <div class="stat-card primary">
+                <div class="stat-header">
+                    <div class="stat-icon primary">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <div class="stat-value">{{ total_users }}</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <div class="stat-icon success">
+                        <i class="fas fa-building"></i>
+                    </div>
+                </div>
+                <div class="stat-value">{{ total_businesses }}</div>
+                <div class="stat-label">Active Businesses</div>
+            </div>
+
+            <div class="stat-card warning">
+                <div class="stat-header">
+                    <div class="stat-icon warning">
+                        <i class="fas fa-box"></i>
+                    </div>
+                </div>
+                <div class="stat-value">{{ total_products }}</div>
+                <div class="stat-label">Total Products</div>
+            </div>
+
+            <div class="stat-card info">
+                <div class="stat-header">
+                    <div class="stat-icon info">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                </div>
+                <div class="stat-value">XXX XXX</div>
+                <div class="stat-label">Total Revenue</div>
+            </div>
+
+            <div class="stat-card primary">
+                <div class="stat-header">
+                    <div class="stat-icon primary">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div class="stat-trend trend-neutral">
+                        <i class="fas fa-clock"></i>
+                        <span>Pending</span>
+                    </div>
+                </div>
+                <div class="stat-value">{{ total_pending_withdraws }}</div>
+                <div class="stat-label">Withdrawal Requests</div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <div class="stat-icon success">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <!--
+                    <div class="stat-trend trend-up">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+18%</span>
+                    </div>
+                    -->
+                </div>
+                <div class="stat-value">XX XXX</div>
+                <div class="stat-label">Monthly Sales</div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Revenue Analytics</h3>
+                    <div class="chart-period">
+                        <button class="period-btn active">7D</button>
+                        <button class="period-btn">1M</button>
+                        <button class="period-btn">3M</button>
+                        <button class="period-btn">1Y</button>
+                    </div>
+                </div>
+                <div class="chart-placeholder">
+                    <i class="fas fa-chart-area" style="font-size: 1.2rem; margin-right: 0.5rem; color: #e60000;"></i>
+                    Revenue chart will be rendered here by Python backend
+                </div>
+            </div>
+
+            <div class="recent-activities">
+                <div class="activities-header">
+                    <h3 class="activities-title">Recent Activities</h3>
+                    <button class="view-all-btn">View All</button>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="activity-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">New User Registration</div>
+                        <div class="activity-desc">John Doe created an account</div>
+                    </div>
+                    <div class="activity-time">2 min ago</div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-icon" style="background: linear-gradient(135deg, #e60000, #b30000);">
+                        <i class="fas fa-credit-card"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">Withdrawal Request</div>
+                        <div class="activity-desc">$1,250 withdrawal pending</div>
+                    </div>
+                    <div class="activity-time">15 min ago</div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">New Business</div>
+                        <div class="activity-desc">Tech Solutions LLC registered</div>
+                    </div>
+                    <div class="activity-time">1 hour ago</div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">Product Added</div>
+                        <div class="activity-desc">Premium Software Package</div>
+                    </div>
+                    <div class="activity-time">3 hours ago</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <a href="#" class="action-btn">
+                <div class="action-icon">
+                    <i class="fas fa-users-cog"></i>
+                </div>
+                <span>Manage Users</span>
+            </a>
+            
+            <a href="#" class="action-btn">
+                <div class="action-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <span>View Businesses</span>
+            </a>
+            
+            <a href="#" class="action-btn">
+                <div class="action-icon">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <span>Process Withdrawals</span>
+            </a>
+            
+            <a href="#" class="action-btn">
+                <div class="action-icon">
+                    <i class="fas fa-analytics"></i>
+                </div>
+                <span>View Analytics</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // === FRONTEND VISUAL INTERACTIONS ONLY ===
+        // All data and business logic handled by Python Flask backend
+
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Period selector for charts (visual feedback only)
+            const periodBtns = document.querySelectorAll('.period-btn');
+            periodBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Visual feedback only - Python backend handles actual chart data
+                    periodBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Add loading animation to chart
+                    const chartPlaceholder = this.closest('.chart-card').querySelector('.chart-placeholder');
+                    chartPlaceholder.style.opacity = '0.5';
+                    chartPlaceholder.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 1.2rem; margin-right: 0.5rem; color: #e60000;"></i> Loading chart data...';
+                    
+                    setTimeout(() => {
+                        chartPlaceholder.style.opacity = '1';
+                        chartPlaceholder.innerHTML = '<i class="fas fa-chart-area" style="font-size: 1.2rem; margin-right: 0.5rem; color: #e60000;"></i> Revenue chart will be rendered here by Python backend';
+                    }, 500);
+                });
+            });
+
+            // Stat card hover effects
+            const statCards = document.querySelectorAll('.stat-card');
+            statCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px) scale(1.01)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = '';
+                });
+            });
+
+            // Number counting animation (visual enhancement)
+            function animateNumbers() {
+                const statValues = document.querySelectorAll('.stat-value');
+                
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.style.animation = 'countUp 0.6s ease forwards';
+                        }
+                    });
+                });
+
+                statValues.forEach(stat => observer.observe(stat));
+            }
+
+            animateNumbers();
+
+            // View all activities button
+            const viewAllBtn = document.querySelector('.view-all-btn');
+            if (viewAllBtn) {
+                viewAllBtn.addEventListener('click', function() {
+                    // Visual feedback only - Python backend handles navigation
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            }
+
+            // Activity item interactions
+            const activityItems = document.querySelectorAll('.activity-item');
+            activityItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // Visual feedback only - Python backend handles activity details
+                    this.style.backgroundColor = 'rgba(230, 0, 0, 0.05)';
+                    setTimeout(() => {
+                        this.style.backgroundColor = '';
+                    }, 200);
+                });
+            });
+
+            // Quick action button effects
+            const actionBtns = document.querySelectorAll('.action-btn');
+            actionBtns.forEach(btn => {
+                btn.addEventListener('mouseenter', function() {
+                    const icon = this.querySelector('.action-icon');
+                    icon.style.transform = 'scale(1.1) rotate(5deg)';
+                });
+                
+                btn.addEventListener('mouseleave', function() {
+                    const icon = this.querySelector('.action-icon');
+                    icon.style.transform = '';
+                });
+            });
+
+            // Chart placeholder click handler
+            document.querySelectorAll('.chart-placeholder').forEach(chart => {
+                chart.addEventListener('click', function() {
+                    // Visual feedback only - Python backend would handle chart interactions
+                    this.style.transform = 'scale(0.98)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            });
+        });
+
+        // Utility function for formatting numbers (visual helper)
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+    </script>
+</body>
+
+{% endblock %}
