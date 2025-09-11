@@ -21,8 +21,8 @@ class Businesses:
     """Manages the businesses data in the inXource platform"""
 
     def __init__(self):
-        self.supabase_url: str = os.getenv('SUPABASE_URL')
-        self.supabase_service_role_key: str = os.getenv('SERVICE_ROLE_KEY')
+        self.supabase_url = os.getenv('SUPABASE_URL')
+        self.supabase_service_role_key = os.getenv('SERVICE_ROLE_KEY')
 
         if not self.supabase_url or not self.supabase_service_role_key:
             raise ValueError("Supabase URL or service role key is not set in environment variables.")
@@ -46,6 +46,7 @@ class Businesses:
                 return {}
 
             business = business_response.data[0]  # first matching business
+            business_details['business_id'] = business.get('id')
             business_details['business_name'] = business.get('business_name')
             business_details['indsutry'] = business.get('industry')
             business_details['wallet_balance'] = business.get('wallet_balance')
