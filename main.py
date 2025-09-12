@@ -76,22 +76,22 @@ def approve_withdrawal_with_proof():
         if file_object.filename == '':
             return jsonify({"success": False, "message": "No file selected"})
         
-        # Step 1: Upload file to Supabase bucket and get URL
+        # Upload file to Supabase bucket and get URL
         proof_url = wallet_manager.upload_payout_proof(file_object, withdrawal_id)
         if not proof_url:
             return jsonify({"success": False, "message": "Failed to upload proof file"})
         
-        # Step 2: Update the proof_of_payment field in withdrawals table
+        # Update the proof_of_payment field in withdrawals table
         proof_update_success = wallet_manager.update_proof_of_payment(withdrawal_id, proof_url)
         if not proof_update_success:
             return jsonify({"success": False, "message": "Failed to update proof of payment in database"})
         
-        # Step 3: Approve the withdrawal (same as before)
+        # SApprove the withdrawal (same as before)
         approval_success = wallet_manager.aprove_withdrawal(withdrawal_id)
         if not approval_success:
             return jsonify({"success": False, "message": "Failed to approve withdrawal"})
         
-        # Step 4: Reduce the business wallet balance (same as before)
+        # Reduce the business wallet balance (same as before)
         wallet_balance_result = wallet_manager.reduce_wallet_balance(
             business_id=business_id,
             withdraw_amount=amount
@@ -125,6 +125,26 @@ def reject_withdrawal():
     return redirect(url_for('wallet'))
 
 
+@app.route("/users")
+def users():
+    """loads the users management page"""
+
+    # variables
+    total_users = users_manager.total_users()
+    total_user_growth_rate = users_manager.total_user_growth_rate()
+    total_new_registrations = users_manager.total_new_registrations()
+    new_registrations_rate = users_manager.new_registrations_rate()  # Removed the comma
+    total_active_users = users_manager.total_active_users()
+    active_users_growh_rate = users_manager.active_users_growh_rate()
+    
+    return render_template('users.html', 
+                           total_users = total_users,
+                            total_user_growth_rate = total_user_growth_rate,
+                            total_new_registrations = total_new_registrations,
+                            new_registrations_rate = new_registrations_rate,
+                            total_active_users = total_active_users,
+                            active_users_growh_rate = active_users_growh_rate
+                           )
 
 
 # Run the app
