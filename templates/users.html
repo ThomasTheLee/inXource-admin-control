@@ -133,16 +133,55 @@
             background: #b91c1c;
         }
 
-        .user-result {
+        .search-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        /* Loading and Error States */
+        .loading-message {
             display: none;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .error-message {
+            display: none;
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc2626;
+        }
+
+        .no-results {
+            display: none;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #f59e0b;
+        }
+
+        /* Search Results */
+        .search-results {
+            display: none;
+        }
+
+        .search-results.show {
+            display: block;
+        }
+
+        .user-result {
             border: 1px solid #e5e7eb;
             border-radius: 6px;
             padding: 20px;
             background: #f9fafb;
-        }
-
-        .user-result.show {
-            display: block;
+            margin-bottom: 16px;
         }
 
         .user-info {
@@ -276,6 +315,7 @@
             height: 100%;
             background: #dc2626;
             transition: width 0.3s ease;
+            /* width is set inline via style attribute in HTML */
         }
 
         .region-number {
@@ -326,60 +366,37 @@
                 <div class="stat-number">{{total_new_registrations}}</div>
                 <div class="stat-change negative">{{ new_registrations_rate }}% from last month</div>
             </div>
-            <!--
-            <div class="stat-card">
-                <h3>Verified Users</h3>
-                <div class="stat-number">11,205</div>
-                <div class="stat-change">+15.8% from last month</div>
-            </div>
-            -->
         </div>
 
         <!-- User Search -->
         <div class="search-section">
             <div class="search-header">
                 <h2>Search Users</h2>
-                <p>Find specific users by name, email, or phone number</p>
+                <p>Find specific users by name, email, phone, or ID</p>
             </div>
             <div class="search-controls">
-                <input type="text" class="search-input" id="userSearch" placeholder="Enter user name, email, or phone number...">
-                <button class="search-btn" onclick="searchUser()">Search User</button>
+                <input type="text" class="search-input" id="userSearch" placeholder="Enter user name, email, phone, or ID...">
+                <button class="search-btn" id="searchBtn" onclick="searchUser()">Search User</button>
             </div>
-            <div class="user-result" id="userResult">
-                <div class="user-info">
-                    <div class="user-field">
-                        <label>Full Name</label>
-                        <span id="userName">John Doe</span>
-                    </div>
-                    <div class="user-field">
-                        <label>Email</label>
-                        <span id="userEmail">john.doe@email.com</span>
-                    </div>
-                    <div class="user-field">
-                        <label>Phone</label>
-                        <span id="userPhone">+260 977 123456</span>
-                    </div>
-                    <div class="user-field">
-                        <label>Status</label>
-                        <span id="userStatus"><span class="status-badge status-active">Active</span></span>
-                    </div>
-                    <div class="user-field">
-                        <label>Registration Date</label>
-                        <span id="userRegDate">2024-03-15</span>
-                    </div>
-                    <div class="user-field">
-                        <label>Region</label>
-                        <span id="userRegion">Lusaka</span>
-                    </div>
-                    <div class="user-field">
-                        <label>Account Balance</label>
-                        <span id="userBalance">ZMK 2,450.00</span>
-                    </div>
-                    <div class="user-field">
-                        <label>Total Transactions</label>
-                        <span id="userTransactions">47</span>
-                    </div>
-                </div>
+            
+            <!-- Loading Message -->
+            <div class="loading-message" id="loadingMessage">
+                Searching users...
+            </div>
+            
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage">
+                An error occurred while searching. Please try again.
+            </div>
+            
+            <!-- No Results Message -->
+            <div class="no-results" id="noResultsMessage">
+                No users found matching your search query.
+            </div>
+            
+            <!-- Search Results -->
+            <div class="search-results" id="searchResults">
+                <!-- Results will be populated by JavaScript -->
             </div>
         </div>
 
@@ -427,83 +444,167 @@
             </div>
         </div>
 
-        <!-- Regional Distribution -->
+       <!-- Regional Distribution -->
         <div class="region-stats">
             <div class="chart-header">
                 <h3>Users by Region</h3>
                 <p>Geographic distribution of user base</p>
             </div>
             <ul class="region-list">
+                {% for region in users_per_location %}
                 <li class="region-item">
-                    <span class="region-name">Lusaka</span>
+                    <span class="region-name">{{ region.name | capitalize }}</span>
                     <div class="region-count">
                         <div class="region-bar">
-                            <div class="region-fill" style="width: 85%"></div>
+                            <div class="region-fill" style="width: {{ region.width | default(0, true) | int }}%;"></div>
                         </div>
-                        <span class="region-number">4,892</span>
+                        <span class="region-number">{{ region.count }}</span>
                     </div>
                 </li>
-                <li class="region-item">
-                    <span class="region-name">Copperbelt</span>
-                    <div class="region-count">
-                        <div class="region-bar">
-                            <div class="region-fill" style="width: 65%"></div>
-                        </div>
-                        <span class="region-number">3,245</span>
-                    </div>
-                </li>
-                <li class="region-item">
-                    <span class="region-name">Southern</span>
-                    <div class="region-count">
-                        <div class="region-bar">
-                            <div class="region-fill" style="width: 45%"></div>
-                        </div>
-                        <span class="region-number">2,156</span>
-                    </div>
-                </li>
-                <li class="region-item">
-                    <span class="region-name">Eastern</span>
-                    <div class="region-count">
-                        <div class="region-bar">
-                            <div class="region-fill" style="width: 35%"></div>
-                        </div>
-                        <span class="region-number">1,678</span>
-                    </div>
-                </li>
-                <li class="region-item">
-                    <span class="region-name">Western</span>
-                    <div class="region-count">
-                        <div class="region-bar">
-                            <div class="region-fill" style="width: 25%"></div>
-                        </div>
-                        <span class="region-number">876</span>
-                    </div>
-                </li>
+                {% endfor %}
             </ul>
         </div>
     </div>
 
     <script>
-        function searchUser() {
-            const searchInput = document.getElementById('userSearch');
-            const userResult = document.getElementById('userResult');
+        function formatDate(dateString) {
+            if (!dateString) return 'Not provided';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-GB', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        }
+
+        function formatAddress(address) {
+            return address || 'Not provided';
+        }
+
+        function formatPhone(phone) {
+            return phone || 'Not provided';
+        }
+
+        function createUserCard(user) {
+            const businessCount = user.businesses ? user.businesses.length : 0;
             
-            if (searchInput.value.trim()) {
-                // Show the result card with sample data
-                // In your Flask app, you'll make an AJAX call here
-                userResult.classList.add('show');
-                
-                // You can update the displayed user data here
-                // This is just sample data - replace with actual search results
-                document.getElementById('userName').textContent = 'John Doe';
-                document.getElementById('userEmail').textContent = searchInput.value.includes('@') ? searchInput.value : 'john.doe@email.com';
-                document.getElementById('userPhone').textContent = '+260 977 123456';
-                document.getElementById('userRegDate').textContent = '2024-03-15';
-                document.getElementById('userRegion').textContent = 'Lusaka';
-                document.getElementById('userBalance').textContent = 'ZMK 2,450.00';
-                document.getElementById('userTransactions').textContent = '47';
-            } else {
-                userResult.classList.remove('show');
+            return `
+                <div class="user-result">
+                    <div class="user-info">
+                        <div class="user-field">
+                            <label>User ID</label>
+                            <span>${user.id || 'N/A'}</span>
+                        </div>
+                        <div class="user-field">
+                            <label>Full Name</label>
+                            <span>${user.name || 'Not provided'}</span>
+                        </div>
+                        <div class="user-field">
+                            <label>Email</label>
+                            <span>${user.email || 'Not provided'}</span>
+                        </div>
+                        <div class="user-field">
+                            <label>Phone</label>
+                            <span>${formatPhone(user.phone)}</span>
+                        </div>
+                        <div class="user-field">
+                            <label>Location</label>
+                            <span>${formatAddress(user.location)}</span>
+                        </div>
+                        <div class="user-field">
+                            <label>Registration Date</label>
+                            <span>${formatDate(user.created_at)}</span>
+                        </div>
+                        <div class="user-field">
+                            <label>Number of Businesses</label>
+                            <span>${businessCount}</span>
+                        </div>
+                        <div class="user-field">
+                            <label>Role</label>
+                            <span>${user.role || 'Not specified'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function hideAllMessages() {
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('noResultsMessage').style.display = 'none';
+            document.getElementById('searchResults').classList.remove('show');
+        }
+
+        function showLoading() {
+            hideAllMessages();
+            document.getElementById('loadingMessage').style.display = 'block';
+        }
+
+        function showError() {
+            hideAllMessages();
+            document.getElementById('errorMessage').style.display = 'block';
+        }
+
+        function showNoResults() {
+            hideAllMessages();
+            document.getElementById('noResultsMessage').style.display = 'block';
+        }
+
+        function showResults(users) {
+            hideAllMessages();
+            const resultsContainer = document.getElementById('searchResults');
+            
+            let html = '';
+            users.forEach(user => {
+                html += createUserCard(user);
+            });
+            
+            resultsContainer.innerHTML = html;
+            resultsContainer.classList.add('show');
+        }
+
+        async function searchUser() {
+            const searchInput = document.getElementById('userSearch');
+            const searchBtn = document.getElementById('searchBtn');
+            const query = searchInput.value.trim();
+            
+            if (!query) {
+                alert('Please enter a search query.');
+                return;
+            }
+
+            // Show loading state
+            showLoading();
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Searching...';
+
+            try {
+                const formData = new FormData();
+                formData.append('query', query);
+
+                const response = await fetch('/search_users', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (data.users && data.users.length > 0) {
+                        showResults(data.users);
+                    } else {
+                        showNoResults();
+                    }
+                } else {
+                    showError();
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                showError();
+            } finally {
+                // Reset button state
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Search User';
             }
         }
 

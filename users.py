@@ -248,10 +248,120 @@ class Users:
         except Exception as e:
             print(f"Error calculating active users growth rate: {e}")
             return 0.0
+        
+
+
+    def retrieve_users_information(self, query):
+        """Most compatible version"""
+        try:
+            all_results = []
+            seen_ids = set()
+            
+            # Try exact UUID match first
+            if len(query) == 36 and query.count('-') == 4:  # Basic UUID format check
+                try:
+                    response = self.client.table("users").select("*").eq("id", query).execute()
+                    if response.data:
+                        return response.data
+                except:
+                    pass
+            
+            # Search text fields
+            for column in ["name", "email", "phone", "location", "role"]:
+                try:
+                    response = (
+                        self.client.table("users")
+                        .select("*")
+                        .ilike(column, f"%{query}%")
+                        .execute()
+                    )
+                    
+                    if response.data:
+                        for user in response.data:
+                            if user.get('id') not in seen_ids:
+                                all_results.append(user)
+                                seen_ids.add(user.get('id'))
+                                # add the businesses info
+                                user['businesses'] = self.users_businesses(user.get('id'))
+                except:
+                    continue
+            
+            return all_results
+        
+
+        except Exception as e:
+            print(f"Error retrieving users information: {e}")
+            return []
+        
+    def users_businesses(self, user_id):
+        """retirves information about the users businesses as a dictioanry"""
+        try:
+            # Step 1: Get business IDs owned by the user
+            response = (
+                self.client.table("business_owners")
+                .select("business_id")
+                .eq("user_id", user_id)
+                .execute()
+            )
+
+            if not response.data:
+                return []
+
+            business_ids = [b['business_id'] for b in response.data if b.get('business_id')]
+            if not business_ids:
+                return []
+
+            # Step 2: Get business details
+            business_response = (
+                self.client.table("businesses")
+                .select("*")
+                .in_("id", business_ids)
+                .execute()
+            )
+
+            if business_response.data:
+                return business_response.data
+            return []
+        
+        except Exception as e:
+            print(f"Error retrieving user's businesses: {e}")
+            return []
+        
+    def users_per_location(self):
+        """Returns a breakdown of users by location, with count and width % for chart bars"""
+        try:
+            response = self.client.table("users").select("location").execute()
+            if not response.data:
+                return []
+
+            # Count users per location
+            location_counts = {}
+            for user in response.data:
+                location = user.get('location', 'Unknown')
+                location_counts[location] = location_counts.get(location, 0) + 1
+
+            # Find the max count to normalize bar widths
+            max_count = max(location_counts.values()) if location_counts else 1
+
+            # Build a clean list with precomputed widths
+            regions = [
+                {
+                    "name": location,
+                    "count": count,
+                    "width": int((count / max_count) * 100)  # always an integer like 25, 50, 100
+                }
+                for location, count in location_counts.items()
+            ]
+
+            return regions
+
+        except Exception as e:
+            print(f"Error calculating users per location: {e}")
+            return []
 
 
 
-
-# Test 
 test = Users()
-print(type(test.new_registrations_rate()))
+print(test.users_per_location())
+
+

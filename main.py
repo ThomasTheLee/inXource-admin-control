@@ -136,6 +136,7 @@ def users():
     new_registrations_rate = users_manager.new_registrations_rate()  # Removed the comma
     total_active_users = users_manager.total_active_users()
     active_users_growh_rate = users_manager.active_users_growh_rate()
+    users_per_location = users_manager.users_per_location()
     
     return render_template('users.html', 
                            total_users = total_users,
@@ -143,8 +144,47 @@ def users():
                             total_new_registrations = total_new_registrations,
                             new_registrations_rate = new_registrations_rate,
                             total_active_users = total_active_users,
-                            active_users_growh_rate = active_users_growh_rate
-                           )
+                            active_users_growh_rate = active_users_growh_rate,
+                            users_per_location = users_per_location
+                           ) 
+
+
+@app.route('/search_users', methods=['POST'])
+def search_users():
+    """Search users based on a query"""
+    query = request.form.get('query', '').strip()
+    
+    if not query:
+        return jsonify({
+            'success': False,
+            'message': 'Please enter a search query.',
+            'users': []
+        }), 400
+    
+    try:
+        # Retrieve users matching the query
+        users = users_manager.retrieve_users_information(query)
+        
+        if not users:
+            return jsonify({
+                'success': True,
+                'message': 'No users found matching the query.',
+                'users': []
+            }), 200
+        
+        return jsonify({
+            'success': True,
+            'message': f'Found {len(users)} user(s) matching the query.',
+            'users': users
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in search_users route: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'An error occurred while searching for users.',
+            'users': []
+        }), 500
 
 
 # Run the app
