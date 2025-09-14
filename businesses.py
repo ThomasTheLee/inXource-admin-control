@@ -2,6 +2,8 @@
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
+from datetime import datetime, timedelta
+
 
 load_dotenv()  # loads the .env file
 
@@ -101,21 +103,119 @@ class Businesses:
             return 0
         
 
-# Test
+    def total_businesses_growth_rate(self):
+        """Returns the growth rate of businesses on the platform."""
+        try:
+            # Fetch all businesses once
+            response = self.client.table("businesses").select("*").execute()
+            businesses = response.data or []
+
+            # Current total
+            current_total = len(businesses)
+
+            # Cutoff date
+            one_month_ago = datetime.now() - timedelta(days=30)
+
+            # Count businesses that existed 30 days ago
+            businesses_30_days_ago = 0
+            for biz in businesses:
+                created_at = biz.get("created_at")
+                if created_at:
+                    try:
+                        created_dt = datetime.fromisoformat(created_at)
+                        if created_dt <= one_month_ago:
+                            businesses_30_days_ago += 1
+                    except ValueError:
+                        continue
+
+            # Avoid division by zero
+            if businesses_30_days_ago == 0:
+                return 0.0
+
+            # Growth rate formula
+            growth_rate = ((current_total - businesses_30_days_ago) / businesses_30_days_ago) * 100
+            return round(growth_rate, 2)
+
+        except Exception as e:
+            print(f"Error calculating business growth rate: {e}")
+            return 0.0
+        
+    def new_businesses_registrations(self, days=30):
+        """Returns the number of new businesses registered in the last 'days' days."""
+        try:
+            cutoff_date = datetime.now() - timedelta(days=days)
+            response = self.client.table("businesses").select("*").execute()
+            if response.data:
+                new_businesses = [
+                    biz for biz in response.data
+                    if biz.get("created_at") and datetime.fromisoformat(biz["created_at"]) >= cutoff_date
+                ]
+                return len(new_businesses)
+            return 0
+        except Exception as e:
+            print(f"Error fetching new businesses: {e}")
+            return 0
+
+
+    def new_businesses_registrations_rate(self, days=30):
+        """Returns the growth rate of new business registrations over the last 'days' days."""
+        try:
+            # Current period
+            current_period_count = self.new_businesses_registrations(days)
+
+            # Previous period
+            previous_period_count = self.new_businesses_registrations(days * 2) - current_period_count
+
+            # Avoid division by zero
+            if previous_period_count == 0:
+                return 0.0
+
+            # Growth rate formula
+            growth_rate = ((current_period_count - previous_period_count) / previous_period_count) * 100
+            return round(growth_rate, 2)
+
+        except Exception as e:
+            print(f"Error calculating new business registrations growth rate: {e}")
+            return 0.0
+        
+    def total_active_businesses(self, days=30):
+        """returns the total active businesses based on the number on the withdraws i the last 30 days"""
+        try:
+            cutoff_date = datetime.now() - timedelta(days=days)
+            response = self.client.table("withdrawals").select("business_id, requested_at").execute()
+            if response.data:
+                active_business_ids = {
+                    wd["business_id"] for wd in response.data
+                    if wd.get("requested_at") and datetime.fromisoformat(wd["requested_at"]) >= cutoff_date
+                }
+                return len(active_business_ids)
+            return 0
+        except Exception as e:
+            print(f"Error fetching active businesses: {e}")
+            return 0
+        
+    
+    def total_active_businesses_growth_rate(self, days=30):
+        """Returns the growth rate of active businesses over the last 'days' days."""
+        try:
+            # Current period
+            current_period_count = self.total_active_businesses(days)
+
+            # Previous period
+            previous_period_count = self.total_active_businesses(days * 2) - current_period_count
+
+            # Avoid division by zero
+            if previous_period_count == 0:
+                return 0.0
+
+            # Growth rate formula
+            growth_rate = ((current_period_count - previous_period_count) / previous_period_count) * 100
+            return round(growth_rate, 2)
+
+        except Exception as e:
+            print(f"Error calculating active business growth rate: {e}")
+            return 0.0
+
+# test
 test = Businesses()
-print(test.get_business_deatils('510133cb-0531-419a-9735-6733a280f591'))
-
-
-"""
-
-{'business_name': 'Anime Merch',
-'indsutry': 'Fashion & Apparel',
-'wallet_balance': 0.0,
-'phone': '',
-'is_active': True,
-'is_deleted': False,
-'user_id': '16e695d3-1f99-4820-8cd6-42ad655de308',
-'user_name': 'Joshua',
-'user_email': 'jsibanda407@gmail.com'}
-
-"""
+print(test.total_active_businesses_growth_rate())

@@ -213,6 +213,27 @@ def search_users():
         }), 500
 
 
+@app.route("/businesses")
+def businesses():
+    """loads the businesses management page"""
+
+    total_businesses = business_manager.total_businesses()
+    business_growth_rate = business_manager.total_businesses_growth_rate()
+    new_businesses = business_manager.new_businesses_registrations()
+    new_businesses_rate = business_manager.new_businesses_registrations_rate()
+    total_active_businesses = business_manager.total_active_businesses()
+    total_active_businesses_growth_rate = business_manager.total_active_businesses_growth_rate()
+
+    return render_template('bussinesses.html',
+                           total_businesses = total_businesses,
+                            business_growth_rate = business_growth_rate,
+                            new_businesses = new_businesses,
+                            new_businesses_rate = new_businesses_rate,
+                            total_active_businesses = total_active_businesses,
+                            total_active_businesses_growth_rate = total_active_businesses_growth_rate
+                           )
+
+
 # Run the app
 if __name__ == "__main__":
     app.run(debug=True)
