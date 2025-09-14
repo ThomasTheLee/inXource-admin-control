@@ -3,6 +3,11 @@ from dotenv import load_dotenv
 import os
 from datetime import datetime, timedelta
 
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 load_dotenv()  # loads the .env file
 
 def singleton(cls):
@@ -360,8 +365,91 @@ class Users:
             return []
 
 
+    def monthly_user_trend(self):
+        """
+        Returns a DataFrame showing the number of users registered in each
+        of the last 12 months. Columns: 'month', 'user_count'.
+        """
+        try:
+            # et all users
+            response = self.client.table("users").select("*").execute()
+            all_users = response.data
 
-test = Users()
-print(test.users_per_location())
+            #  Convert to DataFrame
+            df = pd.DataFrame(all_users)
+
+            if df.empty or 'created_at' not in df.columns:
+                # Return empty DataFrame if no data
+                return pd.DataFrame(columns=['month', 'user_count'])
+
+            #  Ensure created_at is datetime
+            df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
+            df = df.dropna(subset=['created_at'])
+
+            #  Filter last 12 months
+            one_year_ago = pd.Timestamp.now() - pd.DateOffset(months=12)
+            df_last_12 = df[df['created_at'] >= one_year_ago]
+
+            #  Extract month and group
+            df_last_12['month'] = df_last_12['created_at'].dt.to_period('M')
+            monthly_counts = df_last_12.groupby('month').size().reset_index(name='user_count')
+
+            #  Sort by month
+            monthly_counts = monthly_counts.sort_values('month').reset_index(drop=True)
+
+            return monthly_counts
+
+        except Exception as e:
+            print("Error generating monthly user trend:", e)
+            return pd.DataFrame(columns=['month', 'user_count'])
 
 
+    def monthly_activity_trend(self):
+        """
+        Returns a DataFrame showing the number of active users (with withdrawals)
+        in each of the last 12 months. Columns: 'month', 'active_user_count'.
+        """
+        try:
+            # Get all withdrawals
+            response = self.client.table("withdrawals").select("*").execute()
+            all_withdrawals = response.data
+
+            if not all_withdrawals:
+                return pd.DataFrame(columns=['month', 'active_user_count'])
+
+            # Convert to DataFrame
+            df = pd.DataFrame(all_withdrawals)
+
+            if df.empty or 'requested_at' not in df.columns:
+                return pd.DataFrame(columns=['month', 'active_user_count'])
+
+            # Ensure requested_at is datetime
+            df['requested_at'] = pd.to_datetime(df['requested_at'], errors='coerce')
+            df = df.dropna(subset=['requested_at'])
+
+            # Filter last 12 months
+            one_year_ago = pd.Timestamp.now() - pd.DateOffset(months=12)
+            df_last_12 = df[df['requested_at'] >= one_year_ago]
+
+            if df_last_12.empty:
+                return pd.DataFrame(columns=['month', 'active_user_count'])
+
+            # Extract month and group by unique user IDs per month
+            df_last_12['month'] = df_last_12['requested_at'].dt.to_period('M')
+            monthly_active = (
+                df_last_12.groupby('month')['business_id']
+                .nunique()
+                .reset_index(name='active_user_count')
+            )
+
+            # Sort by month
+            monthly_active = monthly_active.sort_values('month').reset_index(drop=True)
+
+            return monthly_active
+
+        except Exception as e:
+            print("Error generating monthly activity trend:", e)
+            return pd.DataFrame(columns=['month', 'active_user_count'])
+
+    
+    

@@ -325,6 +325,18 @@
             text-align: right;
         }
 
+
+        /*chart styles */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background: white;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+
+
         /* Responsive */
         @media (max-width: 768px) {
             .search-controls {
@@ -407,9 +419,8 @@
                     <h3>User Growth Trend</h3>
                     <p>Monthly user registrations over the past year</p>
                 </div>
-                <div class="chart-placeholder">
-                    User Growth Chart<br>
-                    <small>(Connect with Chart.js or similar)</small>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="userGrowthChart"></canvas>
                 </div>
             </div>
             <div class="chart-card">
@@ -435,11 +446,10 @@
             <div class="chart-card">
                 <div class="chart-header">
                     <h3>User Activity</h3>
-                    <p>Daily active users over the past month</p>
+                    <p>Monthly active users (with withdrawals) over the past year</p>
                 </div>
-                <div class="chart-placeholder">
-                    Activity Timeline Chart<br>
-                    <small>(Line chart showing daily activity)</small>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="userActivityChart"></canvas>
                 </div>
             </div>
         </div>
@@ -467,6 +477,259 @@
     </div>
 
     <script>
+
+        // user growth chart
+        // Get data from Flask template
+        const monthlyTrendData = {{ monthly_trend_data | tojson | safe }};
+
+        // Create the chart
+        const ctx = document.getElementById('userGrowthChart').getContext('2d');
+        const userGrowthChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: monthlyTrendData.labels,
+                datasets: [{
+                    label: 'New Users',
+                    data: monthlyTrendData.data,
+                    borderColor: '#dc2626',
+                    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#dc2626',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointHoverBackgroundColor: '#b91c1c',
+                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#dc2626',
+                        borderWidth: 1,
+                        cornerRadius: 6,
+                        displayColors: false,
+                        callbacks: {
+                            title: function(context) {
+                                return 'Month: ' + context[0].label;
+                            },
+                            label: function(context) {
+                                return 'New Users: ' + context.parsed.y;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#666',
+                            font: {
+                                family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                size: 12
+                            },
+                            callback: function(value, index, values) {
+                                // Format the month labels (e.g., "2024-01" -> "Jan 24")
+                                const label = this.getLabelForValue(value);
+                                if (label) {
+                                    const [year, month] = label.split('-');
+                                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                                                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                    return monthNames[parseInt(month) - 1] + ' ' + year.slice(-2);
+                                }
+                                return label;
+                            }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        ticks: {
+                            color: '#666',
+                            font: {
+                                family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                size: 12
+                            },
+                            callback: function(value) {
+                                return Math.floor(value);
+                            }
+                        }
+                    }
+                },
+                elements: {
+                    line: {
+                        capBezierPoints: false
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                }
+            }
+        });
+
+        window.addEventListener('load', function() {
+            userGrowthChart.update('show');
+        });
+
+        // User Activity Chart
+            // Get activity data from Flask template
+            const monthlyActivityData = {{ monthly_activity_data | tojson | safe }};
+
+            // Create the activity chart
+            const activityCtx = document.getElementById('userActivityChart').getContext('2d');
+            const userActivityChart = new Chart(activityCtx, {
+                type: 'line',
+                data: {
+                    labels: monthlyActivityData.labels,
+                    datasets: [{
+                        label: 'Active Users',
+                        data: monthlyActivityData.data,
+                        borderColor: '#059669',
+                        backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#059669',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointHoverBackgroundColor: '#047857',
+                        pointHoverBorderColor: '#ffffff',
+                        pointHoverBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: '#059669',
+                            borderWidth: 1,
+                            cornerRadius: 6,
+                            displayColors: false,
+                            callbacks: {
+                                title: function(context) {
+                                    return 'Month: ' + context[0].label;
+                                },
+                                label: function(context) {
+                                    return 'Active Users: ' + context.parsed.y;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#666',
+                                font: {
+                                    family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                    size: 12
+                                },
+                                callback: function(value, index, values) {
+                                    // Format the month labels (e.g., "2024-01" -> "Jan 24")
+                                    const label = this.getLabelForValue(value);
+                                    if (label) {
+                                        const [year, month] = label.split('-');
+                                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                                                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                        return monthNames[parseInt(month) - 1] + ' ' + year.slice(-2);
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            ticks: {
+                                color: '#666',
+                                font: {
+                                    family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                    size: 12
+                                },
+                                callback: function(value) {
+                                    return Math.floor(value);
+                                }
+                            }
+                        }
+                    },
+                    elements: {
+                        line: {
+                            capBezierPoints: false
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuart',
+                        delay: 200 // Small delay to stagger with other chart animations
+                    }
+                }
+            });
+
+            // Optional: Add animation on load
+            window.addEventListener('load', function() {
+                // Small delay to let the user growth chart animate first
+                setTimeout(() => {
+                    userActivityChart.update('show');
+                }, 300);
+            });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // User Search Functionality
         function formatDate(dateString) {
             if (!dateString) return 'Not provided';
             const date = new Date(dateString);
