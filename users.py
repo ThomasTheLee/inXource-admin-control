@@ -48,36 +48,42 @@ class Users:
     
 
     def total_user_growth_rate(self):
-        """Returns the total user growth rate comparing current total vs 30 days ago"""
+        """Returns the total user growth rate comparing current total vs 30 days ago."""
         try:
-            # Get current total
-            current_total = len(self.client.table("users").select("*").execute().data)
-            
-            # Get total from 30 days ago (users who existed then)
-            one_month_ago = datetime.now() - timedelta(days=30)
-            
-            users_30_days_ago = 0
+            # Fetch all users once
             response = self.client.table("users").select("*").execute()
-            
-            for user in response.data:
-                created_at = user.get('created_at')
+            users = response.data or []
+
+            # Current total
+            current_total = len(users)
+
+            # Cutoff date
+            one_month_ago = datetime.now() - timedelta(days=30)
+
+            # Count users that existed 30 days ago
+            users_30_days_ago = 0
+            for user in users:
+                created_at = user.get("created_at")
                 if created_at:
                     try:
                         created_dt = datetime.fromisoformat(created_at)
-                        if created_dt <= one_month_ago:  
+                        if created_dt <= one_month_ago:
                             users_30_days_ago += 1
                     except ValueError:
                         continue
-            
+
+            # Avoid division by zero
             if users_30_days_ago == 0:
                 return 0.0
-                
+
+            # Growth rate formula
             growth_rate = ((current_total - users_30_days_ago) / users_30_days_ago) * 100
             return round(growth_rate, 2)
-            
+
         except Exception as e:
             print(f"Error calculating user growth rate: {e}")
             return 0.0
+
 
     def total_new_registrations(self):
         """Returns the total number of new registrations in the last 30 days"""
