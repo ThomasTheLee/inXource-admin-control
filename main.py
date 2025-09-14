@@ -124,30 +124,56 @@ def reject_withdrawal():
 
     return redirect(url_for('wallet'))
 
-
 @app.route("/users")
 def users():
-    """loads the users management page"""
-
-    # variables
+    """Loads the users management page"""
+    
+    # Existing variables
     total_users = users_manager.total_users()
     total_user_growth_rate = users_manager.total_user_growth_rate()
     total_new_registrations = users_manager.total_new_registrations()
-    new_registrations_rate = users_manager.new_registrations_rate()  # Removed the comma
+    new_registrations_rate = users_manager.new_registrations_rate()
     total_active_users = users_manager.total_active_users()
-    active_users_growh_rate = users_manager.active_users_growh_rate()
+    active_users_growth_rate = users_manager.active_users_growh_rate()
     users_per_location = users_manager.users_per_location()
     
-    return render_template('users.html', 
-                           total_users = total_users,
-                            total_user_growth_rate = total_user_growth_rate,
-                            total_new_registrations = total_new_registrations,
-                            new_registrations_rate = new_registrations_rate,
-                            total_active_users = total_active_users,
-                            active_users_growh_rate = active_users_growh_rate,
-                            users_per_location = users_per_location
-                           ) 
+    # Get monthly users chart data
+    monthly_user_trend_df = users_manager.monthly_user_trend()
+    
+    # Convert DataFrame to JSON-serializable formatt
+    monthly_users_chart_data = {
+        'labels': [],
+        'data': []
+    }
+    
+    if not monthly_user_trend_df.empty:
+        # Convert Period to string for JSON serialization
+        monthly_users_chart_data['labels'] = [str(month) for month in monthly_user_trend_df['month'].tolist()]
+        monthly_users_chart_data['data'] = monthly_user_trend_df['user_count'].tolist()
 
+
+    # Get chart data for user activity
+    monthly_activity_df = users_manager.monthly_activity_trend()
+    activity_chart_data = {
+        'labels': [],
+        'data': []
+    }
+    if not monthly_activity_df.empty:
+        activity_chart_data['labels'] = [str(month) for month in monthly_activity_df['month'].tolist()]
+        activity_chart_data['data'] = monthly_activity_df['active_user_count'].tolist()
+    
+    return render_template(
+        "users.html",
+        total_users=total_users,
+        total_user_growth_rate=total_user_growth_rate,
+        total_new_registrations=total_new_registrations,
+        new_registrations_rate=new_registrations_rate,
+        total_active_users=total_active_users,
+        active_users_growth_rate=active_users_growth_rate,
+        users_per_location=users_per_location,
+        monthly_trend_data=monthly_users_chart_data,
+        monthly_activity_data=activity_chart_data
+    )
 
 @app.route('/search_users', methods=['POST'])
 def search_users():
