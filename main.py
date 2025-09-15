@@ -234,6 +234,44 @@ def businesses():
                            )
 
 
+@app.route('/search_businesses', methods=['POST'])
+def search_businesses():
+    """Search businesses based on a query"""
+    query = request.form.get('query', '').strip()
+    
+    if not query:
+        return jsonify({
+            'success': False,
+            'message': 'Please enter a search query.',
+            'businesses': []
+        }), 400
+    
+    try:
+        # Retrieve businesses matching the query
+        businesses = business_manager.retrieve_business_information(query)
+        
+        if not businesses:
+            return jsonify({
+                'success': True,
+                'message': 'No businesses found matching the query.',
+                'businesses': []
+            }), 200
+        
+        return jsonify({
+            'success': True,
+            'message': f'Found {len(businesses)} business(es) matching the query.',
+            'businesses': businesses
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in search_businesses route: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'An error occurred while searching for businesses.',
+            'businesses': []
+        }), 500
+
+
 # Run the app
 if __name__ == "__main__":
     app.run(debug=True)
