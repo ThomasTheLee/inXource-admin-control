@@ -3,7 +3,7 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
 from datetime import datetime, timedelta
-
+from collections import defaultdict
 
 load_dotenv()  # loads the .env file
 
@@ -216,6 +216,94 @@ class Businesses:
             print(f"Error calculating active business growth rate: {e}")
             return 0.0
 
+
+    def retrieve_business_information(self, query):
+        """Searches for businesses matching the query in business name or industry."""
+        try:
+            response = (
+                self.client.table("businesses")
+                .select("*")
+                .or_(f"business_name.ilike.%{query}%,industry.ilike.%{query}%,company_alias.ilike.%{query}%")
+                .execute()
+            )
+
+            return response.data
+
+        except Exception as e:
+            print(f"Error searching businesses: {e}")
+            return []
+        
+
+
+    def top_performing_categories(self, limit=5):
+        """Returns the top performing business categories based on total approved withdrawals."""
+        try:
+            print(f"[DEBUG] Fetching top performing categories with limit={limit}")
+
+            # Step 1: Fetch withdrawals
+            response = (
+                self.client.table("withdrawals")
+                .select("business_id, amount")
+                .eq("status", "approved")
+                .execute()
+            )
+            withdrawals = response.data or []
+            print(f"[DEBUG] Retrieved {len(withdrawals)} withdrawals")
+
+            # Step 2: Sum per business_id
+            sums = defaultdict(float)
+            for w in withdrawals:
+                sums[w["business_id"]] += w["amount"]
+            print(f"[DEBUG] Summed withdrawals by business_id: {dict(sums)}")
+
+            # Step 3: Sort by total amount
+            sorted_sums = sorted(sums.items(), key=lambda x: x[1], reverse=True)
+            print(f"[DEBUG] Sorted businesses by total amount: {sorted_sums}")
+
+            # Step 4: Top business ids
+            top_businesses = [bid for bid, _ in sorted_sums[:limit]]
+            print(f"[DEBUG] Top business IDs: {top_businesses}")
+
+            # Step 5: Get their industries
+            industries_response = (
+                self.client.table("businesses")
+                .select("id, industry")
+                .in_("id", top_businesses)
+                .execute()
+            )
+            industries = industries_response.data or []
+            print(f"[DEBUG] Retrieved industries: {industries}")
+
+            # Step 6: Build final list
+            result = [
+                {
+                    "business_id": bid,
+                    "total": total,
+                    "industry": next(
+                        (i["industry"] for i in industries if i["id"] == bid),  # <-- fixed lookup
+                        None,
+                    ),
+                }
+                for bid, total in sorted_sums[:limit]
+            ]
+            print(f"[DEBUG] Top businesses with industries: {result}")
+
+            # Add "Others"
+            if len(sorted_sums) > limit:
+                others_total = sum(total for _, total in sorted_sums[limit:])
+                result.append({"business_id": "Others", "total": others_total, "industry": "Others"})
+                print(f"[DEBUG] Added 'Others' category with total={others_total}")
+
+            print(f"[DEBUG] Final result: {result}")
+            return result
+
+        except Exception as e:
+            print(f"Error fetching top performing categories: {e}")
+            return []
+
+
+
+
 # test
 test = Businesses()
-print(test.total_active_businesses_growth_rate())
+print(test.top_performing_categories())

@@ -679,27 +679,167 @@
     </div>
 
     <script>
-        // Basic search functionality placeholder
-        function searchBusiness() {
-            const searchInput = document.getElementById('businessSearch');
-            const query = searchInput.value.trim();
-            
-            if (!query) {
-                alert('Please enter a search query.');
-                return;
-            }
+        // Add this JavaScript code to the existing <script> section in your businesses.html file
 
-            // This is where you'll implement your Flask backend search
-            console.log('Searching for:', query);
-            // The actual search will be handled by your Flask backend
-        }
+// Business Search Functionality
+function formatDate(dateString) {
+    if (!dateString) return 'Not provided';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    });
+}
 
-        // Allow searching by pressing Enter
-        document.getElementById('businessSearch').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchBusiness();
-            }
+function formatPhone(phone) {
+    return phone || 'Not provided';
+}
+
+function formatRegistrationNumber(regNumber) {
+    return regNumber || 'Not provided';
+}
+
+function formatWalletBalance(balance) {
+    if (balance === null || balance === undefined) return 'K 0.00';
+    return `K ${parseFloat(balance).toFixed(2)}`;
+}
+
+function createBusinessCard(business) {
+    const statusBadge = business.is_active ? 
+        '<span class="status-badge status-active">Active</span>' : 
+        '<span class="status-badge status-inactive">Inactive</span>';
+    
+    return `
+        <div class="business-result">
+            <div class="business-info">
+                <div class="business-field">
+                    <label>Business ID</label>
+                    <span>${business.id || 'N/A'}</span>
+                </div>
+                <div class="business-field">
+                    <label>Business Name</label>
+                    <span>${business.business_name || 'Not provided'}</span>
+                </div>
+                <div class="business-field">
+                    <label>Company Alias</label>
+                    <span>${business.company_alias || 'Not provided'}</span>
+                </div>
+                <div class="business-field">
+                    <label>Industry</label>
+                    <span>${business.industry || 'Not specified'}</span>
+                </div>
+                <div class="business-field">
+                    <label>Registration Number</label>
+                    <span>${formatRegistrationNumber(business.registration_number)}</span>
+                </div>
+                <div class="business-field">
+                    <label>Phone</label>
+                    <span>${formatPhone(business.phone)}</span>
+                </div>
+                <div class="business-field">
+                    <label>Registration Date</label>
+                    <span>${formatDate(business.created_at)}</span>
+                </div>
+                <div class="business-field">
+                    <label>Status</label>
+                    ${statusBadge}
+                </div>
+                <div class="business-field">
+                    <label>Wallet Balance</label>
+                    <span>${formatWalletBalance(business.wallet_balance)}</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function hideAllMessages() {
+    document.getElementById('loadingMessage').style.display = 'none';
+    document.getElementById('errorMessage').style.display = 'none';
+    document.getElementById('noResultsMessage').style.display = 'none';
+    document.getElementById('searchResults').classList.remove('show');
+}
+
+function showLoading() {
+    hideAllMessages();
+    document.getElementById('loadingMessage').style.display = 'block';
+}
+
+function showError() {
+    hideAllMessages();
+    document.getElementById('errorMessage').style.display = 'block';
+}
+
+function showNoResults() {
+    hideAllMessages();
+    document.getElementById('noResultsMessage').style.display = 'block';
+}
+
+function showResults(businesses) {
+    hideAllMessages();
+    const resultsContainer = document.getElementById('searchResults');
+    
+    let html = '';
+    businesses.forEach(business => {
+        html += createBusinessCard(business);
+    });
+    
+    resultsContainer.innerHTML = html;
+    resultsContainer.classList.add('show');
+}
+
+async function searchBusiness() {
+    const searchInput = document.getElementById('businessSearch');
+    const searchBtn = document.getElementById('searchBtn');
+    const query = searchInput.value.trim();
+    
+    if (!query) {
+        alert('Please enter a search query.');
+        return;
+    }
+
+    // Show loading state
+    showLoading();
+    searchBtn.disabled = true;
+    searchBtn.textContent = 'Searching...';
+
+    try {
+        const formData = new FormData();
+        formData.append('query', query);
+
+        const response = await fetch('/search_businesses', {
+            method: 'POST',
+            body: formData
         });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            if (data.businesses && data.businesses.length > 0) {
+                showResults(data.businesses);
+            } else {
+                showNoResults();
+            }
+        } else {
+            showError();
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+        showError();
+    } finally {
+        // Reset button state
+        searchBtn.disabled = false;
+        searchBtn.textContent = 'Search Business';
+    }
+}
+
+// Replace the existing searchBusiness function and add the Enter key listener
+document.getElementById('businessSearch').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchBusiness();
+    }
+});
     </script>
 </body>
 {% endblock %}
