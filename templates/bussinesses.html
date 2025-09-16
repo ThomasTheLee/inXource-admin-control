@@ -429,13 +429,6 @@
                 <div class="stat-number">{{new_businesses}}</div>
                 <div class="stat-change">{{new_businesses_rate}}% from last month</div>
             </div>
-            <!--
-            <div class="stat-card">
-                <h3>Pending Approvals</h3>
-                <div class="stat-number">23</div>
-                <div class="stat-change">+15.0% from last month</div>
-            </div>
-            -->
         </div>
 
         <!-- Business Search -->
@@ -513,9 +506,8 @@
                     <h3>Business Growth Trend</h3>
                     <p>Monthly business registrations over the past year</p>
                 </div>
-                <div class="chart-placeholder">
-                    Business Growth Chart<br>
-                    <small>(Chart will be implemented here)</small>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="businessGrowthChart"></canvas>
                 </div>
             </div>
             <div class="chart-card">
@@ -557,78 +549,29 @@
                 <p>Distribution of businesses across different categories</p>
             </div>
             <ul class="category-list">
-                <li class="category-item">
-                    <span class="category-name">Restaurants & Food</span>
-                    <div class="category-count">
-                        <div class="category-bar">
-                            <div class="category-fill" style="width: 85%;"></div>
+                {% if top_categories %}
+                    {% for category in top_categories %}
+                    <li class="category-item">
+                        <span class="category-name">{{ category.industry | title }}</span>
+                        <div class="category-count">
+                            <div class="category-bar">
+                                <div class="category-fill" style="width: {{ category.width | default(0, true) | int }}%;"></div>
+                            </div>
+                            <span class="category-number">{{ category.total | int }}</span>
                         </div>
-                        <span class="category-number">287</span>
-                    </div>
-                </li>
-                <li class="category-item">
-                    <span class="category-name">Retail & Shopping</span>
-                    <div class="category-count">
-                        <div class="category-bar">
-                            <div class="category-fill" style="width: 72%;"></div>
+                    </li>
+                    {% endfor %}
+                {% else %}
+                    <li class="category-item">
+                        <span class="category-name">No categories available</span>
+                        <div class="category-count">
+                            <div class="category-bar">
+                                <div class="category-fill" style="width: 0%;"></div>
+                            </div>
+                            <span class="category-number">0</span>
                         </div>
-                        <span class="category-number">245</span>
-                    </div>
-                </li>
-                <li class="category-item">
-                    <span class="category-name">Services</span>
-                    <div class="category-count">
-                        <div class="category-bar">
-                            <div class="category-fill" style="width: 68%;"></div>
-                        </div>
-                        <span class="category-number">198</span>
-                    </div>
-                </li>
-                <li class="category-item">
-                    <span class="category-name">Healthcare</span>
-                    <div class="category-count">
-                        <div class="category-bar">
-                            <div class="category-fill" style="width: 45%;"></div>
-                        </div>
-                        <span class="category-number">156</span>
-                    </div>
-                </li>
-                <li class="category-item">
-                    <span class="category-name">Technology</span>
-                    <div class="category-count">
-                        <div class="category-bar">
-                            <div class="category-fill" style="width: 35%;"></div>
-                        </div>
-                        <span class="category-number">89</span>
-                    </div>
-                </li>
-                <li class="category-item">
-                    <span class="category-name">Education</span>
-                    <div class="category-count">
-                        <div class="category-bar">
-                            <div class="category-fill" style="width: 28%;"></div>
-                        </div>
-                        <span class="category-number">67</span>
-                    </div>
-                </li>
-                <li class="category-item">
-                    <span class="category-name">Entertainment</span>
-                    <div class="category-count">
-                        <div class="category-bar">
-                            <div class="category-fill" style="width: 22%;"></div>
-                        </div>
-                        <span class="category-number">45</span>
-                    </div>
-                </li>
-                <li class="category-item">
-                    <span class="category-name">Others</span>
-                    <div class="category-count">
-                        <div class="category-bar">
-                            <div class="category-fill" style="width: 18%;"></div>
-                        </div>
-                        <span class="category-number">160</span>
-                    </div>
-                </li>
+                    </li>
+                {% endif %}
             </ul>
         </div>
 
@@ -636,210 +579,355 @@
         <div class="activity-section">
             <div class="chart-header">
                 <h3>Recent Business Activities</h3>
-                <p>Latest business registrations, updates, and activities</p>
+                <p>Business activity summary for the last {{ business_activity['period_days'] | default(30) }} days</p>
             </div>
             <ul class="activity-list">
-                <li class="activity-item">
-                    <div class="activity-content">
-                        <div class="activity-title">New Business Registration</div>
-                        <div class="activity-description">"Green Valley Pharmacy" registered by Sarah Johnson in Healthcare category</div>
-                    </div>
-                    <div class="activity-time">2 hours ago</div>
-                </li>
-                <li class="activity-item">
-                    <div class="activity-content">
-                        <div class="activity-title">Business Status Updated</div>
-                        <div class="activity-description">"Tech Solutions Ltd" status changed from Pending to Active</div>
-                    </div>
-                    <div class="activity-time">4 hours ago</div>
-                </li>
-                <li class="activity-item">
-                    <div class="activity-content">
-                        <div class="activity-title">Business Information Updated</div>
-                        <div class="activity-description">"Mama's Kitchen" updated their location and contact information</div>
-                    </div>
-                    <div class="activity-time">6 hours ago</div>
-                </li>
-                <li class="activity-item">
-                    <div class="activity-content">
-                        <div class="activity-title">New Business Registration</div>
-                        <div class="activity-description">"City Fitness Center" registered by Mike Chen in Services category</div>
-                    </div>
-                    <div class="activity-time">1 day ago</div>
-                </li>
-                <li class="activity-item">
-                    <div class="activity-content">
-                        <div class="activity-title">Business Deactivated</div>
-                        <div class="activity-description">"Old Town Cafe" was deactivated due to closure</div>
-                    </div>
-                    <div class="activity-time">2 days ago</div>
-                </li>
+                {% if business_activity %}
+                    <!-- New User Registrations -->
+                    {% if business_activity['new_registrations'] > 0 %}
+                    <li class="activity-item">
+                        <div class="activity-content">
+                            <div class="activity-title">New User Registrations</div>
+                            <div class="activity-description">{{ business_activity['new_registrations'] }} new users registered on the platform</div>
+                        </div>
+                        <div class="activity-time">Last {{ business_activity['period_days'] }} days</div>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- New Business Registrations -->
+                    {% if business_activity['new_business_registrations'] > 0 %}
+                    <li class="activity-item">
+                        <div class="activity-content">
+                            <div class="activity-title">New Business Registrations</div>
+                            <div class="activity-description">{{ business_activity['new_business_registrations'] }} new businesses registered on the platform</div>
+                        </div>
+                        <div class="activity-time">Last {{ business_activity['period_days'] }} days</div>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- Deactivated Businesses -->
+                    {% if business_activity['deactivated_businesses'] > 0 %}
+                    <li class="activity-item">
+                        <div class="activity-content">
+                            <div class="activity-title">Business Deactivations</div>
+                            <div class="activity-description">{{ business_activity['deactivated_businesses'] }} businesses were deactivated</div>
+                        </div>
+                        <div class="activity-time">Last {{ business_activity['period_days'] }} days</div>
+                    </li>
+                    {% else %}
+                    <li class="activity-item">
+                        <div class="activity-content">
+                            <div class="activity-title">Business Status</div>
+                            <div class="activity-description">No businesses were deactivated - all businesses remain active</div>
+                        </div>
+                        <div class="activity-time">Last {{ business_activity['period_days'] }} days</div>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- Summary Activity -->
+                    <li class="activity-item">
+                        <div class="activity-content">
+                            <div class="activity-title">Platform Activity Summary</div>
+                            <div class="activity-description">
+                                Total activity: {{ business_activity['new_registrations'] + business_activity['new_business_registrations'] }} new registrations 
+                                {% if business_activity['deactivated_businesses'] > 0 %}
+                                and {{ business_activity['deactivated_businesses'] }} deactivations
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="activity-time">Last {{ business_activity['period_days'] }} days</div>
+                    </li>
+                {% else %}
+                    <!-- Fallback when no activity data is available -->
+                    <li class="activity-item">
+                        <div class="activity-content">
+                            <div class="activity-title">No Recent Activity</div>
+                            <div class="activity-description">No business activity data available for the recent period</div>
+                        </div>
+                        <div class="activity-time">N/A</div>
+                    </li>
+                {% endif %}
             </ul>
         </div>
     </div>
 
+    <!-- Chart.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
+    
     <script>
-        // Add this JavaScript code to the existing <script> section in your businesses.html file
+        // Business Growth Chart
+        const monthlyBusinessTrendData = {{ monthly_business_trend_data | tojson | safe }};
 
-// Business Search Functionality
-function formatDate(dateString) {
-    if (!dateString) return 'Not provided';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-    });
-}
-
-function formatPhone(phone) {
-    return phone || 'Not provided';
-}
-
-function formatRegistrationNumber(regNumber) {
-    return regNumber || 'Not provided';
-}
-
-function formatWalletBalance(balance) {
-    if (balance === null || balance === undefined) return 'K 0.00';
-    return `K ${parseFloat(balance).toFixed(2)}`;
-}
-
-function createBusinessCard(business) {
-    const statusBadge = business.is_active ? 
-        '<span class="status-badge status-active">Active</span>' : 
-        '<span class="status-badge status-inactive">Inactive</span>';
-    
-    return `
-        <div class="business-result">
-            <div class="business-info">
-                <div class="business-field">
-                    <label>Business ID</label>
-                    <span>${business.id || 'N/A'}</span>
-                </div>
-                <div class="business-field">
-                    <label>Business Name</label>
-                    <span>${business.business_name || 'Not provided'}</span>
-                </div>
-                <div class="business-field">
-                    <label>Company Alias</label>
-                    <span>${business.company_alias || 'Not provided'}</span>
-                </div>
-                <div class="business-field">
-                    <label>Industry</label>
-                    <span>${business.industry || 'Not specified'}</span>
-                </div>
-                <div class="business-field">
-                    <label>Registration Number</label>
-                    <span>${formatRegistrationNumber(business.registration_number)}</span>
-                </div>
-                <div class="business-field">
-                    <label>Phone</label>
-                    <span>${formatPhone(business.phone)}</span>
-                </div>
-                <div class="business-field">
-                    <label>Registration Date</label>
-                    <span>${formatDate(business.created_at)}</span>
-                </div>
-                <div class="business-field">
-                    <label>Status</label>
-                    ${statusBadge}
-                </div>
-                <div class="business-field">
-                    <label>Wallet Balance</label>
-                    <span>${formatWalletBalance(business.wallet_balance)}</span>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function hideAllMessages() {
-    document.getElementById('loadingMessage').style.display = 'none';
-    document.getElementById('errorMessage').style.display = 'none';
-    document.getElementById('noResultsMessage').style.display = 'none';
-    document.getElementById('searchResults').classList.remove('show');
-}
-
-function showLoading() {
-    hideAllMessages();
-    document.getElementById('loadingMessage').style.display = 'block';
-}
-
-function showError() {
-    hideAllMessages();
-    document.getElementById('errorMessage').style.display = 'block';
-}
-
-function showNoResults() {
-    hideAllMessages();
-    document.getElementById('noResultsMessage').style.display = 'block';
-}
-
-function showResults(businesses) {
-    hideAllMessages();
-    const resultsContainer = document.getElementById('searchResults');
-    
-    let html = '';
-    businesses.forEach(business => {
-        html += createBusinessCard(business);
-    });
-    
-    resultsContainer.innerHTML = html;
-    resultsContainer.classList.add('show');
-}
-
-async function searchBusiness() {
-    const searchInput = document.getElementById('businessSearch');
-    const searchBtn = document.getElementById('searchBtn');
-    const query = searchInput.value.trim();
-    
-    if (!query) {
-        alert('Please enter a search query.');
-        return;
-    }
-
-    // Show loading state
-    showLoading();
-    searchBtn.disabled = true;
-    searchBtn.textContent = 'Searching...';
-
-    try {
-        const formData = new FormData();
-        formData.append('query', query);
-
-        const response = await fetch('/search_businesses', {
-            method: 'POST',
-            body: formData
+        // Create the business growth chart
+        const businessCtx = document.getElementById('businessGrowthChart').getContext('2d');
+        const businessGrowthChart = new Chart(businessCtx, {
+            type: 'line',
+            data: {
+                labels: monthlyBusinessTrendData.labels,
+                datasets: [{
+                    label: 'New Businesses',
+                    data: monthlyBusinessTrendData.data,
+                    borderColor: '#dc2626',
+                    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#dc2626',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointHoverBackgroundColor: '#b91c1c',
+                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#dc2626',
+                        borderWidth: 1,
+                        cornerRadius: 6,
+                        displayColors: false,
+                        callbacks: {
+                            title: function(context) {
+                                return 'Month: ' + context[0].label;
+                            },
+                            label: function(context) {
+                                return 'New Businesses: ' + context.parsed.y;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#666',
+                            font: {
+                                family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                size: 12
+                            },
+                            callback: function(value, index, values) {
+                                // Format the month labels (e.g., "2024-01" -> "Jan 24")
+                                const label = this.getLabelForValue(value);
+                                if (label) {
+                                    const [year, month] = label.split('-');
+                                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                                                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                    return monthNames[parseInt(month) - 1] + ' ' + year.slice(-2);
+                                }
+                                return label;
+                            }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        ticks: {
+                            color: '#666',
+                            font: {
+                                family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                size: 12
+                            },
+                            callback: function(value) {
+                                return Math.floor(value);
+                            }
+                        }
+                    }
+                },
+                elements: {
+                    line: {
+                        capBezierPoints: false
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                }
+            }
         });
 
-        const data = await response.json();
+        // Animation on load
+        window.addEventListener('load', function() {
+            businessGrowthChart.update('show');
+        });
 
-        if (response.ok) {
-            if (data.businesses && data.businesses.length > 0) {
-                showResults(data.businesses);
-            } else {
-                showNoResults();
-            }
-        } else {
-            showError();
+        // Business Search Functionality
+        function formatDate(dateString) {
+            if (!dateString) return 'Not provided';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-GB', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
         }
-    } catch (error) {
-        console.error('Search error:', error);
-        showError();
-    } finally {
-        // Reset button state
-        searchBtn.disabled = false;
-        searchBtn.textContent = 'Search Business';
-    }
-}
 
-// Replace the existing searchBusiness function and add the Enter key listener
-document.getElementById('businessSearch').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        searchBusiness();
-    }
-});
+        function formatPhone(phone) {
+            return phone || 'Not provided';
+        }
+
+        function formatRegistrationNumber(regNumber) {
+            return regNumber || 'Not provided';
+        }
+
+        function formatWalletBalance(balance) {
+            if (balance === null || balance === undefined) return 'K 0.00';
+            return `K ${parseFloat(balance).toFixed(2)}`;
+        }
+
+        function createBusinessCard(business) {
+            const statusBadge = business.is_active ? 
+                '<span class="status-badge status-active">Active</span>' : 
+                '<span class="status-badge status-inactive">Inactive</span>';
+            
+            return `
+                <div class="business-result">
+                    <div class="business-info">
+                        <div class="business-field">
+                            <label>Business ID</label>
+                            <span>${business.id || 'N/A'}</span>
+                        </div>
+                        <div class="business-field">
+                            <label>Business Name</label>
+                            <span>${business.business_name || 'Not provided'}</span>
+                        </div>
+                        <div class="business-field">
+                            <label>Company Alias</label>
+                            <span>${business.company_alias || 'Not provided'}</span>
+                        </div>
+                        <div class="business-field">
+                            <label>Industry</label>
+                            <span>${business.industry || 'Not specified'}</span>
+                        </div>
+                        <div class="business-field">
+                            <label>Registration Number</label>
+                            <span>${formatRegistrationNumber(business.registration_number)}</span>
+                        </div>
+                        <div class="business-field">
+                            <label>Phone</label>
+                            <span>${formatPhone(business.phone)}</span>
+                        </div>
+                        <div class="business-field">
+                            <label>Registration Date</label>
+                            <span>${formatDate(business.created_at)}</span>
+                        </div>
+                        <div class="business-field">
+                            <label>Status</label>
+                            ${statusBadge}
+                        </div>
+                        <div class="business-field">
+                            <label>Wallet Balance</label>
+                            <span>${formatWalletBalance(business.wallet_balance)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function hideAllMessages() {
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('noResultsMessage').style.display = 'none';
+            document.getElementById('searchResults').classList.remove('show');
+        }
+
+        function showLoading() {
+            hideAllMessages();
+            document.getElementById('loadingMessage').style.display = 'block';
+        }
+
+        function showError() {
+            hideAllMessages();
+            document.getElementById('errorMessage').style.display = 'block';
+        }
+
+        function showNoResults() {
+            hideAllMessages();
+            document.getElementById('noResultsMessage').style.display = 'block';
+        }
+
+        function showResults(businesses) {
+            hideAllMessages();
+            const resultsContainer = document.getElementById('searchResults');
+            
+            let html = '';
+            businesses.forEach(business => {
+                html += createBusinessCard(business);
+            });
+            
+            resultsContainer.innerHTML = html;
+            resultsContainer.classList.add('show');
+        }
+
+        async function searchBusiness() {
+            const searchInput = document.getElementById('businessSearch');
+            const searchBtn = document.getElementById('searchBtn');
+            const query = searchInput.value.trim();
+            
+            if (!query) {
+                alert('Please enter a search query.');
+                return;
+            }
+
+            // Show loading state
+            showLoading();
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Searching...';
+
+            try {
+                const formData = new FormData();
+                formData.append('query', query);
+
+                const response = await fetch('/search_businesses', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (data.businesses && data.businesses.length > 0) {
+                        showResults(data.businesses);
+                    } else {
+                        showNoResults();
+                    }
+                } else {
+                    showError();
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                showError();
+            } finally {
+                // Reset button state
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Search Business';
+            }
+        }
+
+        // Allow searching by pressing Enter
+        document.getElementById('businessSearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchBusiness();
+            }
+        });
     </script>
-</body>
+
 {% endblock %}

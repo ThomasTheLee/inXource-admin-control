@@ -216,22 +216,59 @@ def search_users():
 @app.route("/businesses")
 def businesses():
     """loads the businesses management page"""
-
+    
     total_businesses = business_manager.total_businesses()
     business_growth_rate = business_manager.total_businesses_growth_rate()
     new_businesses = business_manager.new_businesses_registrations()
     new_businesses_rate = business_manager.new_businesses_registrations_rate()
     total_active_businesses = business_manager.total_active_businesses()
     total_active_businesses_growth_rate = business_manager.total_active_businesses_growth_rate()
+    
+    # Get category data
+    top_categories = business_manager.top_performing_categories()
+    
+    # Calculate percentages for progress bars
+    if top_categories:
+        max_total = max(category['total'] for category in top_categories)
+        for category in top_categories:
+            category['width'] = int((category['total'] / max_total) * 100) if max_total > 0 else 0
+    
+    # Get business activity data
+    business_activity = business_manager.load_business_activity()
+    
+    # Get the monthly business trend
+    monthly_business_trend_df = business_manager.monthly_business_trend()
+    
+    # Convert dataframe to json
+    monthly_business_chart_data = {
+        'labels': [],
+        'data': []
+    }
+    
+    if not monthly_business_trend_df.empty:
+        # Convert Period to string for JSON serialization
+        monthly_business_chart_data['labels'] = [str(month) for month in monthly_business_trend_df['month'].tolist()]
+        monthly_business_chart_data['data'] = monthly_business_trend_df['business_count'].tolist()
 
+    # get the top performing indsustries
+    top_performing_indsutries = business_manager.get_top_performing_industries()
+
+    
+
+    
     return render_template('bussinesses.html',
-                           total_businesses = total_businesses,
-                            business_growth_rate = business_growth_rate,
-                            new_businesses = new_businesses,
-                            new_businesses_rate = new_businesses_rate,
-                            total_active_businesses = total_active_businesses,
-                            total_active_businesses_growth_rate = total_active_businesses_growth_rate
+                           total_businesses=total_businesses,
+                           business_growth_rate=business_growth_rate,
+                           new_businesses=new_businesses,
+                           new_businesses_rate=new_businesses_rate,
+                           total_active_businesses=total_active_businesses,
+                           total_active_businesses_growth_rate=total_active_businesses_growth_rate,
+                           top_categories=top_categories,
+                           business_activity=business_activity,
+                           monthly_business_trend_data=monthly_business_chart_data
                            )
+
+
 
 
 @app.route('/search_businesses', methods=['POST'])
@@ -275,3 +312,18 @@ def search_businesses():
 # Run the app
 if __name__ == "__main__":
     app.run(debug=True)
+
+
+# Get monthly users chart data
+    monthly_user_trend_df = users_manager.monthly_user_trend()
+    
+    # Convert DataFrame to JSON-serializable formatt
+    monthly_users_chart_data = {
+        'labels': [],
+        'data': []
+    }
+    
+    if not monthly_user_trend_df.empty:
+        # Convert Period to string for JSON serialization
+        monthly_users_chart_data['labels'] = [str(month) for month in monthly_user_trend_df['month'].tolist()]
+        monthly_users_chart_data['data'] = monthly_user_trend_df['user_count'].tolist()
