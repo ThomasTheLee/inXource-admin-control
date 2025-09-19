@@ -1,0 +1,1188 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        /* Overall Platform Metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #dc2626;
+        }
+
+        .metric-card h3 {
+            font-size: 0.9rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .metric-number {
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .metric-change {
+            font-size: 0.85rem;
+            color: #059669;
+        }
+
+        .metric-change.negative {
+            color: #dc2626;
+        }
+
+        .metric-subtitle {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        /* Industry Search Section */
+        .search-section {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .search-header {
+            margin-bottom: 20px;
+        }
+
+        .search-header h2 {
+            font-size: 1.4rem;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .search-header p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .search-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 300px;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        .search-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        .search-btn:hover {
+            background: #b91c1c;
+        }
+
+        .search-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        /* Loading and Error States */
+        .loading-message {
+            display: none;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .error-message {
+            display: none;
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc2626;
+        }
+
+        .no-results {
+            display: none;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #f59e0b;
+        }
+
+        /* Industry Analysis Results - Hidden by default */
+        .industry-analysis {
+            display: none;
+        }
+
+        .industry-analysis.show {
+            display: block;
+        }
+
+        .industry-title {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            border-left: 4px solid #dc2626;
+        }
+
+        .industry-title h2 {
+            font-size: 1.8rem;
+            color: #dc2626;
+            margin-bottom: 4px;
+        }
+
+        .industry-title .subtitle {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        /* Section Headers */
+        .section-header {
+            background: white;
+            border-radius: 8px;
+            padding: 20px 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .section-header h2 {
+            font-size: 1.6rem;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .section-header p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .chart-header {
+            margin-bottom: 20px;
+        }
+
+        .chart-header h3 {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .chart-header p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .chart-placeholder {
+            height: 300px;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-style: italic;
+            text-align: center;
+        }
+
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+
+        /* Performance Summary */
+        .performance-summary {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .summary-item {
+            text-align: center;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+
+        .summary-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #dc2626;
+            margin-bottom: 4px;
+        }
+
+        .summary-label {
+            font-size: 0.85rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Insights Section */
+        .insights-section {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-top: 20px;
+        }
+
+        .insight-card {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #dc2626;
+        }
+
+        .insight-card.strength {
+            border-left-color: #059669;
+            background: #f0fdf4;
+        }
+
+        .insight-card.risk {
+            border-left-color: #f59e0b;
+            background: #fffbeb;
+        }
+
+        .insight-card.opportunity {
+            border-left-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .insight-card.benchmark {
+            border-left-color: #8b5cf6;
+            background: #faf5ff;
+        }
+
+        .insight-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .insight-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+        }
+
+        .insight-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .insight-content {
+            color: #555;
+            line-height: 1.6;
+            font-size: 0.9rem;
+        }
+
+        .insight-list {
+            list-style: none;
+            margin-top: 8px;
+        }
+
+        .insight-list li {
+            padding: 4px 0;
+            position: relative;
+            padding-left: 16px;
+        }
+
+        .insight-list li:before {
+            content: "•";
+            color: #dc2626;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .search-controls {
+                flex-direction: column;
+            }
+
+            .search-input {
+                min-width: 100%;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .metric-number {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Industry Insights</h1>
+            <p>Comprehensive analysis and performance metrics for industry sectors</p>
+        </div>
+
+        <!-- Overall Platform Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <h3>Total Industries</h3>
+                <div class="metric-number">{{total_industries}}</div>
+                <div class="metric-change">{{new_industries}} new industries</div>
+                <div class="metric-subtitle">Active on platform</div>
+            </div>
+            <div class="metric-card">
+                <h3>Platform Revenue</h3>
+                <div class="metric-number">ZMK{{industries_total}}</div>
+                <div class="metric-change">{{industry_revenue_growth_rate}}%</div>
+                <div class="metric-subtitle">All industries combined</div>
+            </div>
+            <div class="metric-card">
+                <h3>Top Performing</h3>
+                <div class="metric-number">{{top_performing_industry}}</div>
+                <div class="metric-change">{{industry_market_share}}% market share</div>
+                <div class="metric-subtitle">Leading industry by revenue</div>
+            </div>
+            <div class="metric-card">
+                <h3>Average Growth</h3>
+                <div class="metric-number">{{industry_average_growth_rate}}%</div>
+                <div class="metric-change">{{yearly_industry_growth_rate}}% from last year</div>
+                <div class="metric-subtitle">Across all industries</div>
+            </div>
+        </div>
+
+        <!-- Industry Search Section -->
+        <div class="search-section">
+            <div class="search-header">
+                <h2>Industry Analysis</h2>
+                <p>Search for a specific industry to view detailed performance analysis and insights</p>
+            </div>
+            <div class="search-controls">
+                <input type="text" class="search-input" id="industrySearch" placeholder="Enter industry name (e.g., Technology, Healthcare, Retail...)">
+                <button class="search-btn" id="searchBtn" onclick="searchIndustry()">Analyze Industry</button>
+            </div>
+            
+            <!-- Loading Message -->
+            <div class="loading-message" id="loadingMessage">
+                Analyzing industry data...
+            </div>
+            
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage">
+                <span id="errorText">An error occurred while loading industry data. Please try again.</span>
+            </div>
+            
+            <!-- No Results Message -->
+            <div class="no-results" id="noResultsMessage">
+                Industry not found. Please check the spelling or try a different industry name.
+            </div>
+        </div>
+
+        <!-- Industry Analysis Results - Hidden by default -->
+        <div class="industry-analysis" id="industryAnalysis">
+            <!-- Industry Title -->
+            <div class="industry-title">
+                <h2 id="industryName">Technology Industry</h2>
+                <p class="subtitle">Detailed performance analysis and market insights</p>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="section-header">
+                <h2>Performance Trends</h2>
+                <p>Visual analysis of key performance indicators over time</p>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Revenue Trend</h3>
+                        <p>Monthly revenue performance over the past 12 months</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Customer Growth Trend</h3>
+                        <p>Number of unique customers acquired over time</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="customerChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Average Order Size</h3>
+                        <p>Trends in average order value over time</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="averageOrderChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Seasonal Performance</h3>
+                        <p>Sales performance breakdown by seasonal periods</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="seasonalPerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Summary -->
+            <div class="performance-summary">
+                <div class="section-header" style="background: none; box-shadow: none; padding: 0; margin-bottom: 16px;">
+                    <h2>Performance Summary</h2>
+                    <p>Key performance indicators for this industry</p>
+                </div>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-value">92%</div>
+                        <div class="summary-label">Customer Retention</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value">K 1,965</div>
+                        <div class="summary-label">Avg Order Value</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value">4.2</div>
+                        <div class="summary-label">Orders per Customer</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value">7.3 days</div>
+                        <div class="summary-label">Avg Processing Time</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights and Analysis -->
+            <div class="insights-section">
+                <div class="section-header" style="background: none; box-shadow: none; padding: 0; margin-bottom: 16px;">
+                    <h2>Industry Insights & Analysis</h2>
+                    <p>Strategic insights and recommendations based on performance data</p>
+                </div>
+
+                <div class="insights-grid">
+                    <div class="insight-card strength">
+                        <div class="insight-header">
+                            <svg class="insight-icon" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <h3 class="insight-title">Key Strengths</h3>
+                        </div>
+                        <div class="insight-content">
+                            This industry demonstrates exceptional performance:
+                            <ul class="insight-list">
+                                <li>Steady year-over-year growth rate</li>
+                                <li>High customer retention rates</li>
+                                <li>Strong market position</li>
+                                <li>Diverse customer base</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="insight-card risk">
+                        <div class="insight-header">
+                            <svg class="insight-icon" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            <h3 class="insight-title">Risks & Challenges</h3>
+                        </div>
+                        <div class="insight-content">
+                            Areas requiring attention:
+                            <ul class="insight-list">
+                                <li>Market saturation concerns</li>
+                                <li>Increasing competition</li>
+                                <li>Economic sensitivity</li>
+                                <li>Regulatory challenges</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="insight-card opportunity">
+                        <div class="insight-header">
+                            <svg class="insight-icon" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                            </svg>
+                            <h3 class="insight-title">Growth Opportunities</h3>
+                        </div>
+                        <div class="insight-content">
+                            Strategic opportunities for expansion:
+                            <ul class="insight-list">
+                                <li>Seasonal campaign optimization</li>
+                                <li>Mobile platform improvements</li>
+                                <li>Cross-selling opportunities</li>
+                                <li>International expansion potential</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="insight-card benchmark">
+                        <div class="insight-header">
+                            <svg class="insight-icon" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <h3 class="insight-title">Platform Benchmarking</h3>
+                        </div>
+                        <div class="insight-content">
+                            Performance vs platform averages:
+                            <ul class="insight-list">
+                                <li>Revenue growth performance</li>
+                                <li>Customer retention comparison</li>
+                                <li>Order value benchmarking</li>
+                                <li>Processing time efficiency</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let revenueChart = null;
+
+        function hideAllMessages() {
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('noResultsMessage').style.display = 'none';
+            document.getElementById('industryAnalysis').classList.remove('show');
+        }
+
+        function showLoading() {
+            hideAllMessages();
+            document.getElementById('loadingMessage').style.display = 'block';
+        }
+
+        function showError(message = 'An error occurred while loading industry data. Please try again.') {
+            hideAllMessages();
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMessage').style.display = 'block';
+        }
+
+        function showNoResults() {
+            hideAllMessages();
+            document.getElementById('noResultsMessage').style.display = 'block';
+        }
+
+        function createRevenueChart(chartData) {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (revenueChart) {
+                revenueChart.destroy();
+            }
+
+            revenueChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Revenue',
+                        data: chartData.data,
+                        borderColor: '#dc2626',
+                        backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#dc2626',
+                        pointBorderColor: '#dc2626',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#f3f4f6'
+                            },
+                            ticks: {
+                                color: '#666'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: '#f3f4f6'
+                            },
+                            ticks: {
+                                color: '#666',
+                                maxRotation: 45
+                            }
+                        }
+                    },
+                    elements: {
+                        point: {
+                            hoverRadius: 8
+                        }
+                    }
+                }
+            });
+        }
+
+        function showAnalysis(industryName, chartData) {
+            hideAllMessages();
+            document.getElementById('industryName').textContent = industryName + ' Industry';
+            
+            // Create the revenue chart with actual data
+            if (chartData && chartData.labels && chartData.data) {
+                createRevenueChart(chartData);
+            }
+            
+            document.getElementById('industryAnalysis').classList.add('show');
+        }
+
+        async function searchIndustry() {
+            const searchInput = document.getElementById('industrySearch');
+            const searchBtn = document.getElementById('searchBtn');
+            const query = searchInput.value.trim();
+            
+            if (!query) {
+                alert('Please enter an industry name.');
+                return;
+            }
+
+            // Show loading state
+            showLoading();
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Analyzing...';
+
+            try {
+                // Make AJAX call to your Flask route
+                const response = await fetch('/search_industry', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        industry: query
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Success - show the analysis with chart data
+                    showAnalysis(data.industry, data);
+                } else {
+                    // Handle different types of errors
+                    if (response.status === 404) {
+                        showNoResults();
+                    } else {
+                        showError(data.error || 'An error occurred while loading industry data.');
+                    }
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                showError('Network error occurred. Please check your connection and try again.');
+            } finally {
+                // Reset button state
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Analyze Industry';
+            }
+        }
+
+        // Allow searching by pressing Enter
+        document.getElementById('industrySearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchIndustry();
+            }
+        });
+
+        // Cleanup chart when page is unloaded
+        window.addEventListener('beforeunload', function() {
+            if (revenueChart) {
+                revenueChart.destroy();
+            }
+        });
+
+
+        // Add this variable at the top with the existing revenueChart variable
+        let customerChart = null;
+
+        // Add this new function after the createRevenueChart function
+        function createCustomerChart(chartData) {
+            const ctx = document.getElementById('customerChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (customerChart) {
+                customerChart.destroy();
+            }
+            
+            customerChart = new Chart(ctx, {
+                type: 'line', // Changed from 'bar' to 'line'
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'New Customers',
+                        data: chartData.data,
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)', // Made more transparent for line chart
+                        borderColor: '#3b82f6',
+                        borderWidth: 3, // Increased for better visibility
+                        fill: true, // Fill area under the line
+                        tension: 0.4, // This creates the curved/smooth line effect
+                        pointBackgroundColor: '#3b82f6',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        pointHoverBackgroundColor: '#3b82f6',
+                        pointHoverBorderColor: '#ffffff',
+                        pointHoverBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#f3f4f6'
+                            },
+                            ticks: {
+                                color: '#666',
+                                stepSize: 1
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: '#f3f4f6'
+                            },
+                            ticks: {
+                                color: '#666',
+                                maxRotation: 45
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    hover: {
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        // Update the showAnalysis function to handle both charts
+        function showAnalysis(industryName, chartData) {
+            hideAllMessages();
+            document.getElementById('industryName').textContent = industryName + ' Industry';
+            
+            // Create the revenue chart with actual data
+            if (chartData && chartData.revenue_trend && chartData.revenue_trend.labels && chartData.revenue_trend.data) {
+                createRevenueChart(chartData.revenue_trend);
+            }
+            
+            // Create the customer chart with actual data
+            if (chartData && chartData.customer_trend && chartData.customer_trend.labels && chartData.customer_trend.data) {
+                createCustomerChart(chartData.customer_trend);
+            }
+            
+            document.getElementById('industryAnalysis').classList.add('show');
+        }
+
+        // Update the cleanup code in the beforeunload event
+        window.addEventListener('beforeunload', function() {
+            if (revenueChart) {
+                revenueChart.destroy();
+            }
+            if (customerChart) {
+                customerChart.destroy();
+            }
+        });
+
+
+        // Add this variable at the top with the existing chart variables
+        let averageOrderChart = null;
+
+        // Add this new function after the createCustomerChart function
+        function createAverageOrderChart(chartData) {
+            const ctx = document.getElementById('averageOrderChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (averageOrderChart) {
+                averageOrderChart.destroy();
+            }
+            
+            averageOrderChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Average Order Size',
+                        data: chartData.data,
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)', // Green color with transparency
+                        borderColor: '#22c55e',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4, // Curved line
+                        pointBackgroundColor: '#22c55e',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        pointHoverBackgroundColor: '#22c55e',
+                        pointHoverBorderColor: '#ffffff',
+                        pointHoverBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#f3f4f6'
+                            },
+                            ticks: {
+                                color: '#666',
+                                callback: function(value) {
+                                    return value.toFixed(1); // Show one decimal place
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: '#f3f4f6'
+                            },
+                            ticks: {
+                                color: '#666',
+                                maxRotation: 45
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    hover: {
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        // Update the showAnalysis function to handle all three charts
+        function showAnalysis(industryName, chartData) {
+            hideAllMessages();
+            document.getElementById('industryName').textContent = industryName + ' Industry';
+            
+            // Create the revenue chart with actual data
+            if (chartData && chartData.revenue_trend && chartData.revenue_trend.labels && chartData.revenue_trend.data) {
+                createRevenueChart(chartData.revenue_trend);
+            }
+            
+            // Create the customer chart with actual data
+            if (chartData && chartData.customer_trend && chartData.customer_trend.labels && chartData.customer_trend.data) {
+                createCustomerChart(chartData.customer_trend);
+            }
+            
+            // Create the average order chart with actual data
+            if (chartData && chartData.average_order_trend && chartData.average_order_trend.labels && chartData.average_order_trend.data) {
+                createAverageOrderChart(chartData.average_order_trend);
+            }
+            
+            document.getElementById('industryAnalysis').classList.add('show');
+        }
+
+        // Update the cleanup code in the beforeunload event
+        window.addEventListener('beforeunload', function() {
+            if (revenueChart) {
+                revenueChart.destroy();
+            }
+            if (customerChart) {
+                customerChart.destroy();
+            }
+            if (averageOrderChart) {
+                averageOrderChart.destroy();
+            }
+        });
+
+
+        // Add this variable at the top with the existing chart variables
+        let seasonalPerformanceChart = null;
+
+        // Add this new function after the createAverageOrderChart function
+        function createSeasonalPerformanceChart(chartData) {
+            const ctx = document.getElementById('seasonalPerformanceChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (seasonalPerformanceChart) {
+                seasonalPerformanceChart.destroy();
+            }
+            
+            seasonalPerformanceChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Total Sales',
+                        data: chartData.data,
+                        backgroundColor: [
+                            'rgba(168, 85, 247, 0.6)', // Purple
+                            'rgba(14, 165, 233, 0.6)', // Sky blue
+                            'rgba(234, 179, 8, 0.6)',  // Yellow
+                            'rgba(239, 68, 68, 0.6)',  // Red
+                            'rgba(34, 197, 94, 0.6)'   // Green
+                        ],
+                        borderColor: [
+                            '#a855f7', // Purple
+                            '#0ea5e9', // Sky blue
+                            '#eab308', // Yellow
+                            '#ef4444', // Red
+                            '#22c55e'  // Green
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#f3f4f6'
+                            },
+                            ticks: {
+                                color: '#666',
+                                stepSize: 1,
+                                callback: function(value) {
+                                    return value.toFixed(1); // Show one decimal place
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: '#f3f4f6'
+                            },
+                            ticks: {
+                                color: '#666',
+                                maxRotation: 45
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    hover: {
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        // Update the showAnalysis function to handle all four charts
+        function showAnalysis(industryName, chartData) {
+            hideAllMessages();
+            document.getElementById('industryName').textContent = industryName + ' Industry';
+            
+            // Create the revenue chart with actual data
+            if (chartData && chartData.revenue_trend && chartData.revenue_trend.labels && chartData.revenue_trend.data) {
+                createRevenueChart(chartData.revenue_trend);
+            }
+            
+            // Create the customer chart with actual data
+            if (chartData && chartData.customer_trend && chartData.customer_trend.labels && chartData.customer_trend.data) {
+                createCustomerChart(chartData.customer_trend);
+            }
+            
+            // Create the average order chart with actual data
+            if (chartData && chartData.average_order_trend && chartData.average_order_trend.labels && chartData.average_order_trend.data) {
+                createAverageOrderChart(chartData.average_order_trend);
+            }
+            
+            // Create the seasonal performance chart with actual data
+            if (chartData && chartData.seasonal_performance && chartData.seasonal_performance.labels && chartData.seasonal_performance.data) {
+                createSeasonalPerformanceChart(chartData.seasonal_performance);
+            }
+            
+            document.getElementById('industryAnalysis').classList.add('show');
+        }
+
+        // Update the cleanup code in the beforeunload event
+        window.addEventListener('beforeunload', function() {
+            if (revenueChart) {
+                revenueChart.destroy();
+            }
+            if (customerChart) {
+                customerChart.destroy();
+            }
+            if (averageOrderChart) {
+                averageOrderChart.destroy();
+            }
+            if (seasonalPerformanceChart) {
+                seasonalPerformanceChart.destroy();
+            }
+        });
+
+
+</script>
+</body>
+{% endblock %}

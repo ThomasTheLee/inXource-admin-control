@@ -5,6 +5,7 @@ from users import Users
 from businesses import Businesses
 from products import Products
 from wallet import Wallet
+from industries import Industry
 import os
 from dotenv import load_dotenv
 
@@ -21,6 +22,8 @@ users_manager = Users()
 business_manager = Businesses()
 products_manager = Products()
 wallet_manager = Wallet()
+industry_manager = Industry()
+
 
 # Define a route
 @app.route("/")
@@ -250,11 +253,19 @@ def businesses():
         monthly_business_chart_data['labels'] = [str(month) for month in monthly_business_trend_df['month'].tolist()]
         monthly_business_chart_data['data'] = monthly_business_trend_df['business_count'].tolist()
 
-    # get the top performing indsustries
-    top_performing_indsutries = business_manager.get_top_performing_industries()
-
+    # get the top performing industries
+    top_performing_industries = business_manager.get_top_performing_industries()
     
-
+    # Format the industries data for the chart
+    industries_chart_data = {
+        'labels': [],
+        'data': []
+    }
+    
+    if top_performing_industries:
+        for industry, total in top_performing_industries:
+            industries_chart_data['labels'].append(industry.title())
+            industries_chart_data['data'].append(float(total))
     
     return render_template('bussinesses.html',
                            total_businesses=total_businesses,
@@ -265,7 +276,8 @@ def businesses():
                            total_active_businesses_growth_rate=total_active_businesses_growth_rate,
                            top_categories=top_categories,
                            business_activity=business_activity,
-                           monthly_business_trend_data=monthly_business_chart_data
+                           monthly_business_trend_data=monthly_business_chart_data,
+                           industries_chart_data=industries_chart_data
                            )
 
 
@@ -308,22 +320,155 @@ def search_businesses():
             'businesses': []
         }), 500
 
+@app.route('/industry_analysis')
+def industry_analysis():
+    total_industries = industry_manager.total_industries()
+    new_industries = industry_manager.check_new_industries()
+    industries_total = industry_manager.get_industries_total()
+    industry_revenue_growth_rate = industry_manager.total_industry_revenue_rate()
+    top_performing_industry = max(
+        business_manager.get_top_performing_industries(),
+        key=lambda x: x[1]
+    )[0].capitalize()
+    
+    industry_market_share = industry_manager.industry_market_share()
+    industry_average_growth_rate = industry_manager.industry_average_growth_rate()
+    yearly_industry_growth_rate = industry_manager.industry_average_growth_rate(days=365)
+    
+    return render_template('industries.html',
+                          total_industries=len(total_industries),
+                          new_industries=len(new_industries),
+                          industries_total=industries_total,
+                          industry_revenue_growth_rate=industry_revenue_growth_rate,
+                          top_performing_industry=top_performing_industry,
+                          industry_market_share=industry_market_share,
+                          industry_average_growth_rate=industry_average_growth_rate,
+                          yearly_industry_growth_rate=yearly_industry_growth_rate
+                          )
+
+
+@app.route('/search_industry', methods=['POST'])
+def search_industry():
+    # Get the industry from the request - handle both JSON and form data
+    industry = None
+    
+    # Try to get from JSON first
+    if request.is_json and request.json:
+        industry = request.json.get('industry', '').strip()
+    # Fallback to form data
+    elif request.form:
+        industry = request.form.get('industry', '').strip()
+    # Fallback to raw data if it's a simple string
+    else:
+        try:
+            data = request.get_data(as_text=True)
+            if data:
+                industry = data.strip()
+        except:
+            pass
+    
+    # Validate input
+    if not industry:
+        return jsonify({'error': 'Please provide an industry'}), 400
+    
+    try:
+        # Get the revenue trend data
+        revenue_trend_data_df = industry_manager.industry_revenue_trend(industry)
+        
+        # Get the customer growth trend data
+        customer_trend_data_df = industry_manager.customer_growth_trend(industry)
+        
+        # Get the average order trend data
+        average_order_trend_data_df = industry_manager.industry_average_order_trend(industry)
+        
+        # Get the seasonal performance trend data
+        seasonal_performance_trend_data_df = industry_manager.industry_seasonal_performance_trend(industry)
+        
+        # Check if all dataframes have data
+        if revenue_trend_data_df.empty and customer_trend_data_df.empty and average_order_trend_data_df.empty and seasonal_performance_trend_data_df.empty:
+            return jsonify({
+                'error': 'No data found for this industry',
+                'industry': industry
+            }), 404
+        
+        # Convert revenue trend data to json
+        monthly_industry_revenue_chart_data = {
+            'labels': [],
+            'data': [],
+            'industry': industry.capitalize()
+        }
+        
+        if not revenue_trend_data_df.empty:
+            # Convert Period to string for JSON serialization
+            monthly_industry_revenue_chart_data['labels'] = [str(month) for month in revenue_trend_data_df['month'].tolist()]
+            # Use the correct column name 'amount' from your DataFrame
+            monthly_industry_revenue_chart_data['data'] = revenue_trend_data_df['amount'].tolist()
+        
+        # Convert customer trend data to json
+        monthly_industry_customer_chart_data = {
+            'labels': [],
+            'data': []
+        }
+        
+        if not customer_trend_data_df.empty:
+            # Convert Period to string for JSON serialization
+            monthly_industry_customer_chart_data['labels'] = [str(month) for month in customer_trend_data_df['month'].tolist()]
+            # Use the correct column name 'customers' from your DataFrame
+            monthly_industry_customer_chart_data['data'] = customer_trend_data_df['customers'].tolist()
+        
+        # Convert average order trend data to json
+        monthly_industry_average_order_chart_data = {
+            'labels': [],
+            'data': []
+        }
+        
+        if not average_order_trend_data_df.empty:
+            # Convert Period to string for JSON serialization
+            monthly_industry_average_order_chart_data['labels'] = [str(month) for month in average_order_trend_data_df['month'].tolist()]
+            # Use the correct column name 'average_order_size' from your DataFrame
+            monthly_industry_average_order_chart_data['data'] = average_order_trend_data_df['average_order_size'].tolist()
+        
+        # Convert seasonal performance trend data to json
+        seasonal_performance_chart_data = {
+            'labels': [],
+            'data': []
+        }
+        
+        if not seasonal_performance_trend_data_df.empty:
+            # For seasonal data, the column names are 'season' and 'total_sales'
+            seasonal_performance_chart_data['labels'] = seasonal_performance_trend_data_df['season'].tolist()
+            seasonal_performance_chart_data['data'] = seasonal_performance_trend_data_df['total_sales'].tolist()
+        
+        # Combine all datasets in the response
+        response_data = {
+            'industry': industry.capitalize(),
+            'revenue_trend': monthly_industry_revenue_chart_data,
+            'customer_trend': monthly_industry_customer_chart_data,
+            'average_order_trend': monthly_industry_average_order_chart_data,
+            'seasonal_performance': seasonal_performance_chart_data
+        }
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
 
 # Run the app
 if __name__ == "__main__":
     app.run(debug=True)
 
 
-# Get monthly users chart data
-    monthly_user_trend_df = users_manager.monthly_user_trend()
+# Get the monthly business trend
+    monthly_business_trend_df = business_manager.monthly_business_trend()
     
-    # Convert DataFrame to JSON-serializable formatt
-    monthly_users_chart_data = {
+    # Convert dataframe to json
+    monthly_business_chart_data = {
         'labels': [],
         'data': []
     }
     
-    if not monthly_user_trend_df.empty:
+    if not monthly_business_trend_df.empty:
         # Convert Period to string for JSON serialization
-        monthly_users_chart_data['labels'] = [str(month) for month in monthly_user_trend_df['month'].tolist()]
-        monthly_users_chart_data['data'] = monthly_user_trend_df['user_count'].tolist()
+        monthly_business_chart_data['labels'] = [str(month) for month in monthly_business_trend_df['month'].tolist()]
+        monthly_business_chart_data['data'] = monthly_business_trend_df['business_count'].tolist()
