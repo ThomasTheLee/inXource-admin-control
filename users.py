@@ -377,7 +377,7 @@ class Users:
         of the last 12 months. Columns: 'month', 'user_count'.
         """
         try:
-            # et all users
+            # get all users
             response = self.client.table("users").select("*").execute()
             all_users = response.data
 

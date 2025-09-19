@@ -491,31 +491,52 @@ class Businesses:
 
          
     def get_top_performing_industries(self):
-        """returns the top 4 performing industries and bundles the rest under others maiking a total of 5"""
+        """returns the top 4 performing industries and bundles the rest under others"""
 
-        # query the orders table
+        # Step 1: Get all completed orders
         orders_response = (
-        self.client
-        .table('orders')
-        .select('business_id, total_amount')
-        .eq('order_payment_status', 'completed') 
-        .execute()
+            self.client
+            .table('orders')
+            .select('business_id, total_amount')
+            .eq('order_payment_status', 'completed')
+            .execute()
         )
+        orders = orders_response.data or []
 
-        indsutry_orders = orders_response.data
+        # Step 2: Get all businesses with their industries
+        businesses_response = (
+            self.client
+            .table('businesses')
+            .select('id, industry')
+            .execute()
+        )
+        businesses = {b['id']: b['industry'] for b in businesses_response.data or []}
+
+        # Step 3: Aggregate totals per industry
+        industry_totals = {}
+        for order in orders:
+            industry = businesses.get(order['business_id'], "Unknown")
+            industry_totals[industry] = industry_totals.get(industry, 0) + order['total_amount']
+
+        # Step 4: Sort industries by total amount
+        sorted_industries = sorted(industry_totals.items(), key=lambda x: x[1], reverse=True)
+
+        # Step 5: Top 4 + bundle rest as "Others"
+        top_4 = sorted_industries[:4]
+        others = sum([x[1] for x in sorted_industries[4:]])
+        if others > 0:
+            top_4.append(("Others", others))
+
+        return top_4
     
-        # query the businesses table and add a key for each data that records the industry
-        # [{'business_id': 'd9582dc8-f600-48ca-89db-5ce367edf369', 'total_amount': 2.0}]
 
-        for order in orders_response.data:
-            business_reponse = (self.client.table('businesses').select('industry').eq('id',order['business_id']).execute())
-            indsutry_orders['indsustry'] = business_reponse.data['industry']
+
+
 
 
     
 
-test = Businesses()
-print(test.get_top_performing_industries())
+
         
 
 
