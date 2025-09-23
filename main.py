@@ -8,6 +8,7 @@ from wallet import Wallet
 from industries import Industry
 import os
 from dotenv import load_dotenv
+from analysis import AnalAI
 
 load_dotenv() 
 
@@ -23,6 +24,7 @@ business_manager = Businesses()
 products_manager = Products()
 wallet_manager = Wallet()
 industry_manager = Industry()
+ai_manager = AnalAI(os.getenv('OPEN_AI_TEST_KEY'))
 
 
 # Define a route
@@ -452,7 +454,121 @@ def search_industry():
         
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+    
 
+
+@app.route('/analysis', methods=['POST', 'GET'])
+def analysis():
+    try:
+        # Get the most recent analytics data from database
+        latest_insight_record = ai_manager.grab_weekly_insights()
+        
+        # Initialize variables
+        weekly_data = None
+        insights_count = 0
+        tables_analyzed = 0
+        last_updated = 'Never'
+        
+        if latest_insight_record:
+            # Parse the JSON data
+            import json
+            try:
+                weekly_data = json.loads(latest_insight_record['insight'])
+                insights_count = len(weekly_data) if weekly_data else 0
+                tables_analyzed = len([k for k, v in weekly_data.items() if v]) if weekly_data else 0
+                
+                # Format the timestamp if available
+                if 'created_at' in latest_insight_record:
+                    last_updated = latest_insight_record['created_at']
+                else:
+                    last_updated = 'Recently'
+                
+            except (json.JSONDecodeError, KeyError) as e:
+                print(f"Error parsing insights JSON: {e}")
+                weekly_data = None
+        
+        return render_template('analysis.html', 
+                             weekly_data=weekly_data,
+                             insights_count=insights_count,
+                             tables_analyzed=tables_analyzed,
+                             last_updated=last_updated)
+    
+    except Exception as e:
+        print(f"Error in analysis route: {e}")
+        return render_template('analysis.html', 
+                             weekly_data=None,
+                             insights_count=0,
+                             tables_analyzed=0,
+                             last_updated='Error')
+    
+@app.route('/generate-insights', methods=['POST'])
+def generate_insights():
+    try:
+        from datetime import datetime, timedelta
+        import json
+        
+        # Get the most recent insight from database
+        latest_record = ai_manager.grab_weekly_insights()
+        
+        should_generate = True
+        days_difference = 0
+        
+        if latest_record and 'created_at' in latest_record:
+            # Parse the timestamp
+            created_at_str = latest_record['created_at']
+            
+            try:
+                # Handle different timestamp formats
+                if 'T' in created_at_str:
+                    created_at = datetime.fromisoformat(created_at_str.replace('Z', '+00:00'))
+                else:
+                    created_at = datetime.strptime(created_at_str, '%Y-%m-%d %H:%M:%S')
+                
+                # Calculate days difference
+                now = datetime.utcnow()
+                if created_at.tzinfo is None:
+                    now = now.replace(tzinfo=None)
+                
+                days_difference = (now - created_at).days
+                
+                print(f"Last insight was {days_difference} days ago")
+                
+                # Only generate if 7 or more days have passed
+                should_generate = days_difference >= 7
+                
+            except ValueError as e:
+                print(f"Could not parse timestamp: {created_at_str}, error: {e}")
+                should_generate = True
+        else:
+            print("No previous insights found or no timestamp")
+            should_generate = True
+        
+        if should_generate:
+            print("Generating new insights...")
+            ai_manager.generate_weekly_insights()
+            data = ai_manager.weekly_insights
+            ai_manager.store_weekly_report(data)
+            
+            return jsonify({
+                'success': True, 
+                'message': 'New insights generated successfully',
+                'generated': True
+            })
+        else:
+            return jsonify({
+                'success': True, 
+                'message': 'Recent insights are still valid. New insights will be generated after 7 days.',
+                'generated': False,
+                'days_remaining': 7 - days_difference
+            })
+    
+    except Exception as e:
+        print(f"Error in generate_insights: {e}")
+        return jsonify({
+            'success': False, 
+            'message': f'Error: {str(e)}',
+            'generated': False
+        })
 
 # Run the app
 if __name__ == "__main__":

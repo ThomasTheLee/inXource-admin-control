@@ -1,0 +1,303 @@
+@singleton
+class FileCleaner:
+    """Manages the user's data in the inXource platform"""
+
+    def __init__(self):
+        self.supabase_url = os.getenv('SUPABASE_URL')
+        self.supabase_service_role_key = os.getenv('SERVICE_ROLE_KEY')
+
+        if not self.supabase_url or not self.supabase_service_role_key:
+            raise ValueError("Supabase URL or service role key is not set in environment variables.")
+
+        self.supabase_client: Client = create_client(self.supabase_url, self.supabase_service_role_key)
+
+    def detect_dates(self, df: pd.DataFrame) -> tuple[pd.DataFrame, list]:
+        """Detects date columns (even if stored as strings) and converts them to datetime."""
+        date_cols = []
+        for col in df.columns:
+            if pd.api.types.is_string_dtype(df[col]) or pd.api.types.is_object_dtype(df[col]):
+                converted = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
+                if converted.notna().sum() / len(df) > 0.8:
+                    df[col] = converted
+                    date_cols.append(col)
+        return df, date_cols
+
+    def general_cleaning(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Automatically cleans string columns and removes duplicates, skipping date columns."""
+        df, date_cols = self.detect_dates(df)
+
+        # Clean string/categorical columns
+        for col in df.columns:
+            if col not in date_cols and (pd.api.types.is_string_dtype(df[col]) or df[col].dtype == 'object'):
+                df[col] = df[col].str.strip()
+                df[col] = df[col].str.lower()
+                df[col] = df[col].apply(lambda x: re.sub(r'[^a-z0-9_]', '', x) if isinstance(x, str) else x)
+
+        # Remove duplicate rows considering only non-date columns
+        non_date_cols = [c for c in df.columns if c not in date_cols]
+        df = df.drop_duplicates(subset=non_date_cols)
+
+        return df
+
+    def handle_missing_values(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Automatically handles missing values:
+        - Numeric: fill with mean if <50% missing, otherwise drop
+        - Categorical: fill with 'unknown' if <50% missing, otherwise drop
+        Skips date columns.
+        """
+        df, date_cols = self.detect_dates(df)
+
+        for col in df.columns:
+            if col in date_cols:
+                continue  # skip date columns
+
+            if pd.api.types.is_numeric_dtype(df[col]):
+                missing_ratio = df[col].isna().mean()
+                if missing_ratio < 0.5:
+                    df[col].fillna(df[col].mean(), inplace=True)
+                else:
+                    df.drop(columns=[col], inplace=True)
+                    print(f"Too many missing values in '{col}'. Column dropped.")
+
+            elif pd.api.types.is_string_dtype(df[col]) or df[col].dtype == 'object':
+                missing_ratio = df[col].isna().mean()
+                if missing_ratio < 0.5:
+                    df[col].fillna('unknown', inplace=True)
+                else:
+                    df.drop(columns=[col], inplace=True)
+                    print(f"Too many missing values in '{col}'. Column dropped.")
+
+        return df
+
+    def remove_duplicate_rows(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Removes duplicate rows, skipping date columns in the comparison.
+        """
+        df, date_cols = self.detect_dates(df)
+        non_date_cols = [c for c in df.columns if c not in date_cols]
+        df = df.drop_duplicates(subset=non_date_cols)
+        return df
+
+    def ensure_numeric(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Ensures all numeric columns are of type int or float.
+        Skips date columns.
+        Handles columns with units:
+        - If all units are the same, remove the unit.
+        - If <40% have different units, adjust them using the mean of majority unit.
+        - If ≥40% have different units, drop the column.
+        """
+        df, date_cols = self.detect_dates(df)
+
+        for col in df.columns:
+            if col in date_cols:
+                continue  # skip date columns
+
+            # check if column is numeric or numeric-like (may contain units)
+            if pd.api.types.is_numeric_dtype(df[col]):
+                df[col] = df[col].astype(float)
+                if df[col].dropna().apply(float.is_integer).all():
+                    df[col] = df[col].astype(int)
+
+            elif pd.api.types.is_string_dtype(df[col]):
+                # try to extract numbers and units
+                units = []
+                numeric_values = []
+                for val in df[col]:
+                    match = re.match(r'([0-9,.]+)\s*([a-zA-Z]*)', str(val))
+                    if match:
+                        num = float(match.group(1).replace(',', ''))
+                        unit = match.group(2).upper() if match.group(2) else None
+                        numeric_values.append(num)
+                        units.append(unit)
+                    else:
+                        numeric_values.append(np.nan)
+                        units.append(None)
+
+                df[col] = numeric_values
+                unit_counts = pd.Series(units).value_counts(dropna=True)
+
+                if len(unit_counts) == 0:
+                    # no units, proceed as usual
+                    df[col] = df[col].astype(float)
+                elif len(unit_counts) == 1:
+                    # all units same → remove unit
+                    df[col] = df[col].astype(float)
+                else:
+                    # multiple units
+                    majority_unit = unit_counts.idxmax()
+                    minority_total = sum(unit_counts.drop(majority_unit))
+                    total = sum(unit_counts)
+                    if minority_total / total < 0.4:
+                        # convert minority rows → set them to mean of majority
+                        mean_majority = df[col][pd.Series(units) == majority_unit].mean()
+                        df[col][pd.Series(units) != majority_unit] = mean_majority
+                    else:
+                        # too many different units → drop column
+                        df.drop(columns=[col], inplace=True)
+                        print(f"Column '{col}' dropped due to inconsistent units.")
+
+                # finally convert to int if all integers
+                if col in df.columns and df[col].dropna().apply(float.is_integer).all():
+                    df[col] = df[col].astype(int)
+
+        return df
+
+    def remove_outliers(self, df: pd.DataFrame, method='iqr', cap=False) -> pd.DataFrame:
+        """
+        Automatically detects and handles outliers in numeric columns.
+        
+        Args:
+            df: DataFrame to process
+            method: 'iqr' or 'zscore'
+            cap: If True, cap extreme values instead of removing rows
+        
+        Returns:
+            Cleaned DataFrame
+        """
+        df, date_cols = self.detect_dates(df)
+
+        for col in df.columns:
+            if col in date_cols:
+                continue  # skip date columns
+            if pd.api.types.is_numeric_dtype(df[col]):
+                if method == 'iqr':
+                    Q1 = df[col].quantile(0.25)
+                    Q3 = df[col].quantile(0.75)
+                    IQR = Q3 - Q1
+                    lower = Q1 - 1.5 * IQR
+                    upper = Q3 + 1.5 * IQR
+                elif method == 'zscore':
+                    mean = df[col].mean()
+                    std = df[col].std()
+                    lower = mean - 3 * std
+                    upper = mean + 3 * std
+                else:
+                    raise ValueError("method must be 'iqr' or 'zscore'")
+
+                if cap:
+                    df[col] = np.where(df[col] < lower, lower, df[col])
+                    df[col] = np.where(df[col] > upper, upper, df[col])
+                else:
+                    df = df[(df[col] >= lower) & (df[col] <= upper)]
+
+        return df
+
+    def infer_categories_from_first_char(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Automatically infers categorical groups from first characters of values.
+        Skips date columns.
+        """
+        df, date_cols = self.detect_dates(df)  # detect and skip date columns
+
+        for col in df.columns:
+            if col in date_cols:
+                continue  # skip dates
+
+            if pd.api.types.is_string_dtype(df[col]):
+                # normalize text
+                df[col] = df[col].astype(str).str.strip().str.lower()
+                df[col] = df[col].apply(lambda x: re.sub(r'[^a-z0-9]', '', x))
+
+                # get first character of each unique value
+                first_chars = df[col].str[0].unique()
+                mapping = {}
+
+                for ch in first_chars:
+                    # pick the most common value starting with this char
+                    group_values = df[col][df[col].str.startswith(ch)]
+                    most_common = group_values.value_counts().idxmax()
+                    mapping[ch] = most_common
+
+                # replace all values based on first char
+                df[col] = df[col].apply(lambda x: mapping.get(x[0], x))
+
+        return df
+
+    def normalize_text(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Normalizes string columns:
+        - Converts accented/non-ASCII characters to closest ASCII
+        - Removes symbols
+        - If normalization fails, replaces value with 'unknown'
+        Skips date columns.
+        """
+        df, date_cols = self.detect_dates(df)  # skip dates
+
+        for col in df.columns:
+            if col in date_cols:
+                continue  # skip date columns
+
+            if pd.api.types.is_string_dtype(df[col]):
+                def normalize_value(val):
+                    try:
+                        # Normalize accented characters to ASCII
+                        val = unicodedata.normalize('NFKD', str(val)).encode('ascii', 'ignore').decode('ascii')
+                        # Remove unwanted symbols (keep letters, numbers, underscore, and space)
+                        val = re.sub(r'[^a-zA-Z0-9_ ]', '', val).strip()
+                        if val == '':
+                            return 'unknown'
+                        return val.lower()  # optional: convert to lowercase
+                    except:
+                        return 'unknown'
+
+                df[col] = df[col].apply(normalize_value)
+
+        return df
+
+@singleton
+class Analysis:
+    def __init__(self) -> None:
+        self.websites = []
+    
+    def get_numeric_columns(self, df: pd.DataFrame) -> list:
+        """Extract all numeric columns from the dataframe."""
+        numeric_cols = []
+        for col in df.columns:
+            if pd.api.types.is_numeric_dtype(df[col]):
+                numeric_cols.append(col)
+        return numeric_cols
+
+    def generate_column_combinations(self, numeric_columns: list) -> list:
+        """Generate all possible combinations of numeric columns with operations."""
+        operations = ['+', '-', '*', '/']
+        combinations_list = []
+        
+        # Generate pairs of columns
+        for col1, col2 in combinations(numeric_columns, 2):
+            for operation in operations:
+                combinations_list.append((col1, col2, operation))
+        
+        return combinations_list
+
+    def generate_web_search_queries(self, col_a: str, col_b: str, operation: str) -> list:
+        """Generate search queries for a column combination."""
+        operation_text = {
+            '+': 'add plus sum',
+            '-': 'subtract minus difference',
+            '*': 'multiply times product',
+            '/': 'divide ratio percentage'
+        }
+        
+        op_words = operation_text.get(operation, operation)
+        
+        queries = [
+            f'"{col_a}" "{col_b}" {op_words}',
+            f'{col_a} {col_b} formula calculation',
+            f'{col_a} {col_b} business metric',
+            f'{col_a} {operation} {col_b} analysis'
+        ]
+        
+        return queries
+
+    def web_search_combination(self, queries):
+        """
+        Perform web search for a column combination.
+        Returns list of search results.
+        """
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_experimental_option('detach', True)
+        driver = webdriver.Chrome(options=chrome_options)
+        # Add your web search logic here
+        return []

@@ -1,0 +1,711 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 25%, #2d2d2d 75%, #3a3a3a 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .analytics-container {
+            padding: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .page-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #0f0f0f;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .time-selector {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .time-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(230, 0, 0, 0.2);
+            color: #0f0f0f;
+            padding: 0.8rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .time-btn.active {
+            background: linear-gradient(135deg, #e60000, #b30000);
+            color: white;
+            border-color: #e60000;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(230, 0, 0, 0.3);
+        }
+
+        .time-btn:hover:not(.active) {
+            border-color: #e60000;
+            background: rgba(230, 0, 0, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .insight-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 
+                0 6px 20px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(230, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .insight-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(135deg, #e60000, #b30000);
+        }
+
+        .insight-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, #e60000, #b30000);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #0f0f0f;
+            margin: 0;
+        }
+
+        .card-subtitle {
+            color: #666;
+            font-size: 0.85rem;
+            margin: 0.2rem 0 0 0;
+        }
+
+        .insights-content {
+            line-height: 1.6;
+        }
+
+        .insight-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .insight-section h4 {
+            color: #e60000;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .insight-text {
+            background: rgba(230, 0, 0, 0.02);
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 3px solid rgba(230, 0, 0, 0.3);
+            font-size: 0.9rem;
+            color: #333;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .recommendation-text {
+            background: rgba(16, 185, 129, 0.05);
+            border-left-color: #10b981;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 2rem;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.05);
+            border-left: 3px solid #ef4444;
+            color: #dc2626;
+        }
+
+        .metric-highlight {
+            background: linear-gradient(135deg, rgba(230, 0, 0, 0.1), rgba(179, 0, 0, 0.05));
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            font-weight: 600;
+            color: #b30000;
+        }
+
+        .refresh-section {
+            text-align: center;
+            margin: 3rem 0;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #e60000, #b30000);
+            color: white;
+            border: none;
+            padding: 1rem 3rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(230, 0, 0, 0.4);
+        }
+
+        .refresh-btn.loading {
+            pointer-events: none;
+        }
+
+        .refresh-btn.loading .fa-sync {
+            animation: spin 1s linear infinite;
+        }
+
+        .stats-overview {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(230, 0, 0, 0.05);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1.5rem;
+            background: rgba(230, 0, 0, 0.02);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            background: rgba(230, 0, 0, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #e60000;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-content {
+            text-align: center;
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(230, 0, 0, 0.1);
+            border-left-color: #e60000;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        .loading-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #0f0f0f;
+            margin-bottom: 0.5rem;
+        }
+
+        .loading-subtext {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .time-content {
+            display: none;
+        }
+
+        .time-content.active {
+            display: block;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .analytics-container {
+                padding: 1rem;
+            }
+
+            .analytics-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .time-selector {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .time-btn {
+                width: 200px;
+                justify-content: center;
+            }
+
+            .page-title {
+                font-size: 1.8rem;
+            }
+
+            .insight-card {
+                padding: 1.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="analytics-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">InXource Analytics Dashboard</h1>
+            <p class="page-subtitle">AI-powered insights and recommendations for your platform performance</p>
+        </div>
+
+        <!-- Time Period Selector -->
+        <div class="time-selector">
+            <button class="time-btn active" data-period="weekly" id="weeklyBtn">
+                <i class="fas fa-calendar-week"></i>
+                Weekly Insights
+            </button>
+            <button class="time-btn" data-period="monthly" id="monthlyBtn">
+                <i class="fas fa-calendar-alt"></i>
+                Monthly Insights
+            </button>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="stats-overview">
+            <h3 style="margin-bottom: 1rem; color: #0f0f0f; text-align: center;">
+                Weekly Performance Overview
+            </h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number">{{ insights_count if insights_count else '0' }}</div>
+                    <div class="stat-label">AI Insights Generated</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ tables_analyzed if tables_analyzed else '0' }}</div>
+                    <div class="stat-label">Tables Analyzed</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ last_updated if last_updated else 'Never' }}</div>
+                    <div class="stat-label">Last Updated</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ 'Active' if weekly_data else 'No Data' }}</div>
+                    <div class="stat-label">System Status</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weekly Content -->
+        <div class="time-content active" id="weeklyContent">
+            <div class="analytics-grid">
+                {% if weekly_data %}
+                    {% for table_name, insights in weekly_data.items() %}
+                        <div class="insight-card">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    {% if table_name == 'withdrawals' %}
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    {% elif table_name == 'orders' %}
+                                        <i class="fas fa-shopping-cart"></i>
+                                    {% elif table_name == 'users' %}
+                                        <i class="fas fa-users"></i>
+                                    {% elif table_name == 'businesses' %}
+                                        <i class="fas fa-building"></i>
+                                    {% elif table_name == 'business_owners' %}
+                                        <i class="fas fa-user-tie"></i>
+                                    {% elif table_name == 'business_settings' %}
+                                        <i class="fas fa-cog"></i>
+                                    {% elif table_name == 'industry_trucking' %}
+                                        <i class="fas fa-truck"></i>
+                                    {% else %}
+                                        <i class="fas fa-chart-bar"></i>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h3 class="card-title">{{ table_name.replace('_', ' ').title() }} Analysis</h3>
+                                    <p class="card-subtitle">AI-generated insights for {{ table_name }}</p>
+                                </div>
+                            </div>
+                            <div class="insights-content">
+                                {% if insights and insights is mapping %}
+                                    {% if insights.concern %}
+                                        <div class="insight-section">
+                                            <h4><i class="fas fa-exclamation-triangle"></i> Key Concerns</h4>
+                                            <div class="insight-text">{{ insights.concern }}</div>
+                                        </div>
+                                    {% endif %}
+                                    {% if insights.recommendation %}
+                                        <div class="insight-section">
+                                            <h4><i class="fas fa-lightbulb"></i> Recommendations</h4>
+                                            <div class="insight-text recommendation-text">{{ insights.recommendation }}</div>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="insight-section">
+                                        <h4><i class="fas fa-info-circle"></i> Raw Insight</h4>
+                                        <div class="insight-text">{{ insights if insights else 'No insights available for this table.' }}</div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="insight-card">
+                        <div class="card-header">
+                            <div class="card-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div>
+                                <h3 class="card-title">No Data Available</h3>
+                                <p class="card-subtitle">Generate insights to see analytics</p>
+                            </div>
+                        </div>
+                        <div class="insights-content">
+                            <div class="no-data">
+                                <p>No weekly insights available. Click "Refresh Analytics" to generate new insights.</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Monthly Content (placeholder - you can extend this similar to weekly) -->
+        <div class="time-content" id="monthlyContent">
+            <div class="analytics-grid">
+                <div class="insight-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Monthly Analytics</h3>
+                            <p class="card-subtitle">Coming Soon</p>
+                        </div>
+                    </div>
+                    <div class="insights-content">
+                        <div class="no-data">
+                            <p>Monthly analytics feature will be available soon. Currently showing weekly data only.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Refresh Section -->
+        <div class="refresh-section">
+            <button class="refresh-btn" id="refreshBtn" onclick="refreshAnalytics()">
+                <i class="fas fa-sync"></i>
+                Refresh Analytics
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Generating Insights...</div>
+            <div class="loading-subtext">AI is analyzing your data</div>
+        </div>
+    </div>
+
+    <script>
+        // Store the weekly data from Flask
+        const weeklyData = {{ weekly_data|tojson if weekly_data else '{}' }};
+        
+        console.log('Weekly Data:', weeklyData); // For debugging
+
+        // DOM Elements
+        const weeklyBtn = document.getElementById('weeklyBtn');
+        const monthlyBtn = document.getElementById('monthlyBtn');
+        const weeklyContent = document.getElementById('weeklyContent');
+        const monthlyContent = document.getElementById('monthlyContent');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        // Tab switching functionality
+        weeklyBtn.addEventListener('click', () => switchPeriod('weekly'));
+        monthlyBtn.addEventListener('click', () => switchPeriod('monthly'));
+
+        function switchPeriod(period) {
+            weeklyBtn.classList.remove('active');
+            monthlyBtn.classList.remove('active');
+            
+            if (period === 'weekly') {
+                weeklyBtn.classList.add('active');
+                weeklyContent.classList.add('active');
+                monthlyContent.classList.remove('active');
+            } else {
+                monthlyBtn.classList.add('active');
+                monthlyContent.classList.add('active');
+                weeklyContent.classList.remove('active');
+            }
+        }
+
+        // Refresh functionality
+        function refreshAnalytics() {
+            refreshBtn.classList.add('loading');
+            loadingOverlay.classList.add('active');
+
+            // Make API call to refresh analytics
+            fetch('/generate-insights', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.generated) {
+                        // New insights were generated, reload the page
+                        showNotification('New insights generated successfully!', 'success');
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        // Insights are still recent
+                        const daysRemaining = data.days_remaining || 'a few';
+                        showNotification(`Recent insights are still valid. New insights will be generated in ${daysRemaining} days.`, 'info');
+                    }
+                } else {
+                    throw new Error(data.message || 'Failed to generate insights');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error generating insights: ' + error.message, 'error');
+            })
+            .finally(() => {
+                refreshBtn.classList.remove('loading');
+                loadingOverlay.classList.remove('active');
+            });
+        }
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            let bgColor;
+            
+            switch(type) {
+                case 'success':
+                    bgColor = 'linear-gradient(135deg, #10b981, #059669)';
+                    break;
+                case 'error':
+                    bgColor = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                    break;
+                case 'info':
+                    bgColor = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
+                    break;
+                default:
+                    bgColor = 'linear-gradient(135deg, #10b981, #059669)';
+            }
+            
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${bgColor};
+                color: white;
+                padding: 1rem 2rem;
+                border-radius: 8px;
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+                z-index: 9999;
+                animation: slideInRight 0.3s ease;
+                max-width: 300px;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease forwards';
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
+
+        // Add CSS for notifications
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add smooth transitions to cards
+            const cards = document.querySelectorAll('.insight-card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.classList.add('fade-in');
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key.toLowerCase() === 'w' && !e.ctrlKey && !e.altKey) {
+                switchPeriod('weekly');
+            } else if (e.key.toLowerCase() === 'm' && !e.ctrlKey && !e.altKey) {
+                switchPeriod('monthly');
+            } else if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.altKey) {
+                refreshAnalytics();
+            }
+        });
+    </script>
+</body>
+{% endblock %}
