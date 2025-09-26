@@ -24,4 +24,7 @@ class SettingsManager:
     """Manages the businesses data in the inXource platform"""
     def __init__(self):
         self.business_activity_days = 3  # Default to last 3 days
+        self.open_ai_modal = 'gpt-5-nano'
+        self.low_stock_count = 3
+        self.product_performance_by = 'volume'
         

@@ -347,6 +347,238 @@
             display: block;
         }
 
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.8) translateY(20px);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-header {
+            padding: 2rem 2rem 1rem 2rem;
+            border-bottom: 1px solid rgba(230, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f0f0f;
+            margin: 0;
+            text-align: center;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #666;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(230, 0, 0, 0.1);
+            color: #e60000;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        /* File Upload Styles */
+        .upload-area {
+            border: 2px dashed rgba(230, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            background: rgba(230, 0, 0, 0.02);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 2rem;
+        }
+
+        .upload-area:hover {
+            border-color: #e60000;
+            background: rgba(230, 0, 0, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: #e60000;
+            background: rgba(230, 0, 0, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: rgba(230, 0, 0, 0.5);
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #0f0f0f;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-subtext {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-info {
+            display: none;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .file-info.active {
+            display: block;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #10b981;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .file-size {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .analyze-btn {
+            background: linear-gradient(135deg, #e60000, #b30000);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(230, 0, 0, 0.3);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Analysis Modal Styles */
+        .analysis-modal-content {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            width: 95vw;
+            height: 90vh;
+            transform: scale(0.8) translateY(20px);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+
+        .modal-overlay.active .analysis-modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        .analysis-modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid rgba(230, 0, 0, 0.1);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .analysis-modal-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #0f0f0f;
+            margin: 0;
+        }
+
+        .analysis-modal-body {
+            padding: 0;
+            height: calc(90vh - 80px);
+            background: white;
+            border-radius: 0 0 20px 20px;
+            overflow: auto;
+        }
+
+        .analysis-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #666;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
         /* Animations */
         @keyframes fadeInUp {
             from {
@@ -397,6 +629,23 @@
                 grid-template-columns: repeat(2, 1fr);
                 gap: 1rem;
             }
+
+            .modal-content {
+                width: 95%;
+            }
+
+            .analysis-modal-content {
+                width: 98vw;
+                height: 95vh;
+            }
+
+            .modal-body {
+                padding: 1.5rem;
+            }
+
+            .upload-area {
+                padding: 2rem 1rem;
+            }
         }
     </style>
 </head>
@@ -411,12 +660,13 @@
         <!-- Time Period Selector -->
         <div class="time-selector">
             <button class="time-btn active" data-period="weekly" id="weeklyBtn">
-                <i class="fas fa-calendar-week"></i>
                 Weekly Insights
             </button>
             <button class="time-btn" data-period="monthly" id="monthlyBtn">
-                <i class="fas fa-calendar-alt"></i>
                 Monthly Insights
+            </button>
+            <button class="time-btn" data-period="custom" id="customBtn">
+                Custom Data
             </button>
         </div>
 
@@ -520,7 +770,7 @@
             </div>
         </div>
 
-        <!-- Monthly Content (placeholder - you can extend this similar to weekly) -->
+        <!-- Monthly Content -->
         <div class="time-content" id="monthlyContent">
             <div class="analytics-grid">
                 <div class="insight-card">
@@ -542,12 +792,91 @@
             </div>
         </div>
 
+        <!-- Custom Data Content -->
+        <div class="time-content" id="customContent">
+            <div class="analytics-grid">
+                <div class="insight-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-upload"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title">Custom Data Analysis</h3>
+                            <p class="card-subtitle">Upload your own data for analysis</p>
+                        </div>
+                    </div>
+                    <div class="insights-content">
+                        <div class="no-data">
+                            <p>Upload a CSV or Excel file to get custom AI-powered insights.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Refresh Section -->
         <div class="refresh-section">
             <button class="refresh-btn" id="refreshBtn" onclick="refreshAnalytics()">
                 <i class="fas fa-sync"></i>
                 Refresh Analytics
             </button>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div class="modal-overlay" id="uploadModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Upload Custom Data</h2>
+                <button class="modal-close" onclick="closeUploadModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="upload-text">Click to upload or drag and drop</div>
+                    <div class="upload-subtext">CSV or Excel files only (Max 10MB)</div>
+                    <div class="upload-subtext">Only one file at a time</div>
+                </div>
+                
+                <input type="file" id="fileInput" class="file-input" accept=".csv,.xlsx,.xls" />
+                
+                <div class="file-info" id="fileInfo">
+                    <div class="file-name" id="fileName">
+                        <i class="fas fa-file-excel"></i>
+                        <span></span>
+                    </div>
+                    <div class="file-size" id="fileSize"></div>
+                </div>
+                
+                <button class="analyze-btn" id="analyzeBtn" disabled onclick="startAnalysis()">
+                    <i class="fas fa-chart-line"></i>
+                    Analyze Data
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis Results Modal -->
+    <div class="modal-overlay" id="analysisModal">
+        <div class="analysis-modal-content">
+            <div class="analysis-modal-header">
+                <h2 class="analysis-modal-title">Analysis Results</h2>
+                <button class="modal-close" onclick="closeAnalysisModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="analysis-modal-body" id="analysisModalBody">
+                <div class="analysis-placeholder">
+                    <div>
+                        <i class="fas fa-chart-bar" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                        <p>Analysis results and charts will appear here...</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -563,42 +892,318 @@
     <script>
         // Store the weekly data from Flask
         const weeklyData = {{ weekly_data|tojson if weekly_data else '{}' }};
+        let uploadedFile = null;
         
-        console.log('Weekly Data:', weeklyData); // For debugging
+        console.log('Weekly Data:', weeklyData);
 
         // DOM Elements
         const weeklyBtn = document.getElementById('weeklyBtn');
         const monthlyBtn = document.getElementById('monthlyBtn');
+        const customBtn = document.getElementById('customBtn');
         const weeklyContent = document.getElementById('weeklyContent');
         const monthlyContent = document.getElementById('monthlyContent');
+        const customContent = document.getElementById('customContent');
         const refreshBtn = document.getElementById('refreshBtn');
         const loadingOverlay = document.getElementById('loadingOverlay');
+        const uploadModal = document.getElementById('uploadModal');
+        const analysisModal = document.getElementById('analysisModal');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const uploadArea = document.querySelector('.upload-area');
 
         // Tab switching functionality
         weeklyBtn.addEventListener('click', () => switchPeriod('weekly'));
         monthlyBtn.addEventListener('click', () => switchPeriod('monthly'));
+        customBtn.addEventListener('click', () => switchPeriod('custom'));
 
         function switchPeriod(period) {
+            // Remove active class from all buttons and content
             weeklyBtn.classList.remove('active');
             monthlyBtn.classList.remove('active');
+            customBtn.classList.remove('active');
+            weeklyContent.classList.remove('active');
+            monthlyContent.classList.remove('active');
+            customContent.classList.remove('active');
             
             if (period === 'weekly') {
                 weeklyBtn.classList.add('active');
                 weeklyContent.classList.add('active');
-                monthlyContent.classList.remove('active');
-            } else {
+            } else if (period === 'monthly') {
                 monthlyBtn.classList.add('active');
                 monthlyContent.classList.add('active');
-                weeklyContent.classList.remove('active');
+            } else if (period === 'custom') {
+                customBtn.classList.add('active');
+                customContent.classList.add('active');
+                // Open upload modal when custom data is selected
+                setTimeout(() => openUploadModal(), 300);
             }
         }
+
+        // Modal Functions
+        function openUploadModal() {
+            uploadModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeUploadModal() {
+            uploadModal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+            // Reset form
+            resetUploadForm();
+        }
+
+        function openAnalysisModal() {
+            analysisModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAnalysisModal() {
+            analysisModal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function resetUploadForm() {
+            fileInput.value = '';
+            fileInfo.classList.remove('active');
+            analyzeBtn.disabled = true;
+            uploadedFile = null;
+        }
+
+        // File Upload Handling
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect(event) {
+    const file = event.target.files[0];
+    console.log('File selected:', file);
+    
+    if (file) {
+        // Validate file type
+        const validTypes = ['.csv', '.xlsx', '.xls'];
+        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+        
+        console.log('File extension:', fileExtension);
+        
+        if (!validTypes.includes(fileExtension)) {
+            showNotification('Please select a CSV or Excel file only.', 'error');
+            resetUploadForm();
+            return;
+        }
+        
+        // Validate file size (10MB max)
+        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        if (file.size > maxSize) {
+            showNotification('File size must be less than 10MB.', 'error');
+            resetUploadForm();
+            return;
+        }
+        
+        // Store the actual File object
+        uploadedFile = file;
+        console.log('Uploaded file stored:', uploadedFile);
+        
+        // Show file info
+        fileName.querySelector('span').textContent = file.name;
+        fileSize.textContent = `Size: ${formatFileSize(file.size)}`;
+        fileInfo.classList.add('active');
+        analyzeBtn.disabled = false;
+        
+        // Update upload area appearance
+        uploadArea.style.borderColor = '#10b981';
+        uploadArea.style.background = 'rgba(16, 185, 129, 0.05)';
+    }
+}
+        // Analysis function
+        function startAnalysis() {
+    if (!uploadedFile) {
+        showNotification('Please select a file first.', 'error');
+        return;
+    }
+    
+    console.log('Starting analysis with file:', uploadedFile.name, uploadedFile.size, uploadedFile.type);
+    
+    // Close upload modal and open analysis modal
+    closeUploadModal();
+    openAnalysisModal();
+    
+    // Show loading in analysis modal
+    const analysisBody = document.getElementById('analysisModalBody');
+    analysisBody.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;">
+            <div class="loading-spinner" style="margin-bottom: 1rem;"></div>
+            <div style="color: #666; font-size: 1.1rem;">Analyzing your data...</div>
+            <div style="color: #999; font-size: 0.9rem; margin-top: 0.5rem;">This may take a few moments</div>
+        </div>
+    `;
+    
+    // Create FormData correctly
+    const formData = new FormData();
+    formData.append('file', uploadedFile, uploadedFile.name); // Include filename
+    
+    // Debug: Log FormData contents
+    console.log('FormData entries:');
+    for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+    }
+    
+    // Send file to Flask backend with proper error handling
+    fetch('/custom_analysis', {
+        method: 'POST',
+        body: formData
+        // Don't set Content-Type header - let browser set it automatically
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        // Check if response is ok
+        if (!response.ok) {
+            return response.json().then(errorData => {
+                throw new Error(`HTTP ${response.status}: ${errorData.error || 'Unknown error'}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Analysis results:', data);
+        displayAnalysisResults(data);
+    })
+    .catch(error => {
+        console.error('Error during analysis:', error);
+        showNotification('Error analyzing file: ' + error.message, 'error');
+        
+        // Show error in modal
+        analysisBody.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ef4444; margin-bottom: 1rem;"></i>
+                <div style="color: #ef4444; font-size: 1.1rem; margin-bottom: 0.5rem;">Analysis Failed</div>
+                <div style="color: #666; font-size: 0.9rem; text-align: center;">${error.message}</div>
+            </div>
+        `;
+    });
+}
+
+        // Function to display analysis results
+        function displayAnalysisResults(chartData) {
+            const analysisBody = document.getElementById('analysisModalBody');
+            
+            if (Object.keys(chartData).length === 0) {
+                analysisBody.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;">
+                        <i class="fas fa-info-circle" style="font-size: 3rem; color: #666; margin-bottom: 1rem;"></i>
+                        <div style="color: #666; font-size: 1.1rem;">No charts generated</div>
+                        <div style="color: #999; font-size: 0.9rem; margin-top: 0.5rem;">The analysis completed but no visualizations were created</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Clear the loading state
+            analysisBody.innerHTML = '';
+            
+            // Create a container for charts
+            const chartsContainer = document.createElement('div');
+            chartsContainer.style.cssText = `
+                padding: 2rem;
+                display: grid;
+                gap: 2rem;
+                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+                min-height: 100%;
+            `;
+            
+            // Process each chart from the AI analysis
+            Object.entries(chartData).forEach(([chartKey, chartInfo], index) => {
+                const chartDiv = document.createElement('div');
+                chartDiv.id = `chart-${chartKey}`;
+                chartDiv.style.cssText = `
+                    background: white;
+                    border: 1px solid rgba(230, 0, 0, 0.1);
+                    border-radius: 12px;
+                    padding: 1.5rem;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+                    min-height: 300px;
+                `;
+                
+                // Add chart title if metadata exists
+                if (chartInfo.metadata && chartInfo.metadata.title) {
+                    const title = document.createElement('h3');
+                    title.textContent = chartInfo.metadata.title;
+                    title.style.cssText = `
+                        margin: 0 0 1rem 0;
+                        color: #0f0f0f;
+                        font-size: 1.2rem;
+                        font-weight: 600;
+                    `;
+                    chartDiv.appendChild(title);
+                }
+                
+                // Add placeholder for chart (your AI will replace this)
+                const chartPlaceholder = document.createElement('div');
+                chartPlaceholder.style.cssText = `
+                    height: 250px;
+                    background: rgba(230, 0, 0, 0.02);
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #666;
+                    font-style: italic;
+                `;
+                chartPlaceholder.textContent = `Chart for ${chartKey} will be rendered here`;
+                chartDiv.appendChild(chartPlaceholder);
+                
+                chartsContainer.appendChild(chartDiv);
+                
+                // Log the data for debugging
+                console.log(`Chart ${chartKey}:`, chartInfo);
+            });
+            
+            analysisBody.appendChild(chartsContainer);
+            
+            // Show success notification
+            showNotification('Analysis completed successfully!', 'success');
+        }
+
+        // Utility Functions
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Close modals when clicking outside
+        uploadModal.addEventListener('click', (e) => {
+            if (e.target === uploadModal) {
+                closeUploadModal();
+            }
+        });
+
+        analysisModal.addEventListener('click', (e) => {
+            if (e.target === analysisModal) {
+                closeAnalysisModal();
+            }
+        });
+
+        // Close modals with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (uploadModal.classList.contains('active')) {
+                    closeUploadModal();
+                } else if (analysisModal.classList.contains('active')) {
+                    closeAnalysisModal();
+                }
+            }
+        });
 
         // Refresh functionality
         function refreshAnalytics() {
             refreshBtn.classList.add('loading');
             loadingOverlay.classList.add('active');
 
-            // Make API call to refresh analytics
             fetch('/generate-insights', {
                 method: 'POST',
                 headers: {
@@ -609,11 +1214,9 @@
             .then(data => {
                 if (data.success) {
                     if (data.generated) {
-                        // New insights were generated, reload the page
                         showNotification('New insights generated successfully!', 'success');
                         setTimeout(() => window.location.reload(), 1500);
                     } else {
-                        // Insights are still recent
                         const daysRemaining = data.days_remaining || 'a few';
                         showNotification(`Recent insights are still valid. New insights will be generated in ${daysRemaining} days.`, 'info');
                     }
@@ -631,7 +1234,7 @@
             });
         }
 
-        // Show notification
+        // Show notification function
         function showNotification(message, type = 'success') {
             const notification = document.createElement('div');
             let bgColor;
@@ -688,7 +1291,6 @@
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
-            // Add smooth transitions to cards
             const cards = document.querySelectorAll('.insight-card');
             cards.forEach((card, index) => {
                 card.style.animationDelay = `${index * 0.1}s`;
@@ -698,12 +1300,17 @@
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
-            if (e.key.toLowerCase() === 'w' && !e.ctrlKey && !e.altKey) {
-                switchPeriod('weekly');
-            } else if (e.key.toLowerCase() === 'm' && !e.ctrlKey && !e.altKey) {
-                switchPeriod('monthly');
-            } else if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.altKey) {
-                refreshAnalytics();
+            // Only trigger if not typing in an input field
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                if (e.key.toLowerCase() === 'w' && !e.ctrlKey && !e.altKey) {
+                    switchPeriod('weekly');
+                } else if (e.key.toLowerCase() === 'm' && !e.ctrlKey && !e.altKey) {
+                    switchPeriod('monthly');
+                } else if (e.key.toLowerCase() === 'c' && !e.ctrlKey && !e.altKey) {
+                    switchPeriod('custom');
+                } else if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.altKey) {
+                    refreshAnalytics();
+                }
             }
         });
     </script>
