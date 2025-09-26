@@ -1,0 +1,999 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<head>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        /* Stats Overview */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #dc2626;
+        }
+
+        .stat-card h3 {
+            font-size: 0.9rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-number {
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .stat-change {
+            font-size: 0.85rem;
+            color: #059669;
+        }
+
+        .stat-change.negative {
+            color: #dc2626;
+        }
+
+        /* Product Search Section */
+        .search-section {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .search-header {
+            margin-bottom: 20px;
+        }
+
+        .search-header h2 {
+            font-size: 1.4rem;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .search-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 300px;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        .filter-select {
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+            background: white;
+            color: #333;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        .search-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        .search-btn:hover {
+            background: #b91c1c;
+        }
+
+        .search-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .add-product-btn {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        .add-product-btn:hover {
+            background: #047857;
+        }
+
+        /* Loading and Error States */
+        .loading-message {
+            display: none;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .error-message {
+            display: none;
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc2626;
+        }
+
+        .no-results {
+            display: none;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #f59e0b;
+        }
+
+        /* Search Results */
+        .search-results {
+            display: none;
+        }
+
+        .search-results.show {
+            display: block;
+        }
+
+        .product-result {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 20px;
+            background: #f9fafb;
+            margin-bottom: 16px;
+        }
+
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .product-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .product-sku {
+            font-size: 0.9rem;
+            color: #666;
+            font-family: monospace;
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .edit-btn {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .edit-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .delete-btn {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .delete-btn:hover {
+            background: #fecaca;
+        }
+
+        .product-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .product-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .product-field label {
+            font-size: 0.8rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .product-field span {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .status-inactive {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .status-out-of-stock {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .price {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #dc2626;
+        }
+
+        /* Analytics Section */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .chart-header {
+            margin-bottom: 20px;
+        }
+
+        .chart-header h3 {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .chart-header p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .chart-placeholder {
+            height: 300px;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-style: italic;
+            text-align: center;
+        }
+
+        /* Top Products Section */
+        .top-products {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .products-list {
+            list-style: none;
+        }
+
+        .product-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .product-item:last-child {
+            border-bottom: none;
+        }
+
+        .product-details {
+            flex: 1;
+        }
+
+        .product-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .product-category {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .product-metrics {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .metric {
+            text-align: center;
+        }
+
+        .metric-value {
+            display: block;
+            font-weight: 600;
+            color: #dc2626;
+            font-size: 1.1rem;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Chart styles */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background: white;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .search-controls {
+                flex-direction: column;
+            }
+
+            .search-input {
+                min-width: 100%;
+            }
+
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .product-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .product-metrics {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Product Management</h1>
+            <p>Monitor and manage your product inventory and analytics</p>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Products</h3>
+                <div class="stat-number">{{total_products}}</div>
+                <div class="stat-change">{{total_products_gr}}% from last month</div>
+            </div>
+            <!--
+            <div class="stat-card">
+                <h3>Active Products</h3>
+                <div class="stat-number">1,156</div>
+                <div class="stat-change">+8.2% from last month</div>
+            </div>
+            -->
+            <div class="stat-card">
+                <h3>Low of Stock</h3>
+                <div class="stat-number">{{low_stock_count}}</div>
+                <div class="stat-change negative">{{low_stock_percent}}% of total stock</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Revenue</h3>
+                <div class="stat-number">ZMK{{total_revenue}}</div>
+                <div class="stat-change">{{total_revenue_growth}}% from last month</div>
+            </div>
+        </div>
+
+        <!-- Product Search -->
+        <div class="search-section">
+            <div class="search-header">
+                <h2>Search Products</h2>
+                <p>Find specific products by name, SKU, category, or description</p>
+            </div>
+            <div class="search-controls">
+                <input type="text" class="search-input" id="productSearch" placeholder="Enter product name, SKU, or description...">
+                <select class="filter-select" id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="electronics">Electronics</option>
+                    <option value="clothing">Clothing</option>
+                    <option value="home">Home & Garden</option>
+                    <option value="books">Books</option>
+                    <option value="sports">Sports & Outdoors</option>
+                    <option value="beauty">Beauty & Health</option>
+                </select>
+                <select class="filter-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="out_of_stock">Out of Stock</option>
+                </select>
+                <button class="search-btn" id="searchBtn" onclick="searchProduct()">Search Products</button>
+                <!--<button class="add-product-btn" onclick="showAddProductForm()">Add Product</button>-->
+            </div>
+            
+            <!-- Loading Message -->
+            <div class="loading-message" id="loadingMessage">
+                Searching products...
+            </div>
+            
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage">
+                An error occurred while searching. Please try again.
+            </div>
+            
+            <!-- No Results Message -->
+            <div class="no-results" id="noResultsMessage">
+                No products found matching your search criteria.
+            </div>
+            
+            <!-- Search Results -->
+            <div class="search-results" id="searchResults">
+                <!-- Results will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Analytics Charts 
+        <div class="analytics-grid">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Sales Trend</h3>
+                    <p>Monthly product sales over the past year</p>
+                </div>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="salesTrendChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Category Distribution</h3>
+                    <p>Products breakdown by category</p>
+                </div>
+                <div class="chart-placeholder">
+                    Category Distribution Chart<br>
+                    <small>(Pie chart: Electronics 35%, Clothing 25%, Home 20%, Other 20%)</small>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Inventory Status</h3>
+                    <p>Stock levels across all products</p>
+                </div>
+                <div class="chart-placeholder">
+                    Inventory Status Chart<br>
+                    <small>(Bar chart: In Stock, Low Stock, Out of Stock)</small>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Revenue Analytics</h3>
+                    <p>Monthly revenue from product sales</p>
+                </div>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+        -->
+
+       <!-- Top Performing Products -->
+        <div class="top-products">
+            <div class="chart-header">
+                <h3>Top Performing Products</h3>
+                <p>Best selling products this month</p>
+            </div>
+            <ul class="products-list">
+                {% for product_id, details in ranking_products.items() %}
+                <li class="product-item">
+                    <div class="product-details">
+                        <div class="product-name">{{ details.name }}</div>
+                        <div class="product-category">{{ details.category }}</div>
+                    </div>
+                    <div class="product-metrics">
+                        <div class="metric">
+                            <span class="metric-value">{{ details.quantity }}</span>
+                            <span class="metric-label">Sales</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">ZMK{{ "%.2f"|format(details.revenue) }}</span>
+                            <span class="metric-label">Revenue</span>
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+    </div>
+
+    <script>
+        // Sales trend chart
+        const salesTrendData = {
+            labels: ['Jan 24', 'Feb 24', 'Mar 24', 'Apr 24', 'May 24', 'Jun 24', 'Jul 24', 'Aug 24', 'Sep 24', 'Oct 24', 'Nov 24', 'Dec 24'],
+            data: [450, 520, 380, 620, 710, 680, 590, 750, 890, 920, 780, 1050]
+        };
+
+        const salesCtx = document.getElementById('salesTrendChart').getContext('2d');
+        const salesTrendChart = new Chart(salesCtx, {
+            type: 'line',
+            data: {
+                labels: salesTrendData.labels,
+                datasets: [{
+                    label: 'Sales',
+                    data: salesTrendData.data,
+                    borderColor: '#dc2626',
+                    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#dc2626',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointHoverBackgroundColor: '#b91c1c',
+                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#dc2626',
+                        borderWidth: 1,
+                        cornerRadius: 6,
+                        displayColors: false,
+                        callbacks: {
+                            title: function(context) {
+                                return 'Month: ' + context[0].label;
+                            },
+                            label: function(context) {
+                                return 'Sales: ' + context.parsed.y;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#666',
+                            font: {
+                                family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                size: 12
+                            }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        ticks: {
+                            color: '#666',
+                            font: {
+                                family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Revenue chart
+        const revenueData = {
+            labels: ['Jan 24', 'Feb 24', 'Mar 24', 'Apr 24', 'May 24', 'Jun 24', 'Jul 24', 'Aug 24', 'Sep 24', 'Oct 24', 'Nov 24', 'Dec 24'],
+            data: [45000, 52000, 38000, 62000, 71000, 68000, 59000, 75000, 89000, 92000, 78000, 105000]
+        };
+
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        const revenueChart = new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: revenueData.labels,
+                datasets: [{
+                    label: 'Revenue',
+                    data: revenueData.data,
+                    borderColor: '#059669',
+                    backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#059669',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointHoverBackgroundColor: '#047857',
+                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#059669',
+                        borderWidth: 1,
+                        cornerRadius: 6,
+                        displayColors: false,
+                        callbacks: {
+                            title: function(context) {
+                                return 'Month: ' + context[0].label;
+                            },
+                            label: function(context) {
+                                return 'Revenue: $' + context.parsed.y.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#666',
+                            font: {
+                                family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                size: 12
+                            }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        ticks: {
+                            color: '#666',
+                            font: {
+                                family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                size: 12
+                            },
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Product Search Functionality
+        function formatPrice(price) {
+            return price ? `$${parseFloat(price).toFixed(2)}` : 'Not set';
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Not provided';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-GB', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        }
+
+        function getStatusBadge(status) {
+            const statusClasses = {
+                'active': 'status-active',
+                'inactive': 'status-inactive',
+                'out_of_stock': 'status-out-of-stock'
+            };
+            
+            const statusText = {
+                'active': 'Active',
+                'inactive': 'Inactive',
+                'out_of_stock': 'Out of Stock'
+            };
+
+            const className = statusClasses[status] || 'status-inactive';
+            const text = statusText[status] || status;
+            
+            return `<span class="status-badge ${className}">${text}</span>`;
+        }
+
+        function createProductCard(product) {
+            return `
+                <div class="product-result">
+                    <div class="product-header">
+                        <div>
+                            <div class="product-title">${product.name || 'Unnamed Product'}</div>
+                            <div class="product-sku">SKU: ${product.sku || 'N/A'}</div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="action-btn edit-btn" onclick="editProduct('${product.id}')">Edit</button>
+                            <button class="action-btn delete-btn" onclick="deleteProduct('${product.id}')">Delete</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-field">
+                            <label>Product ID</label>
+                            <span>${product.id || 'N/A'}</span>
+                        </div>
+                        <div class="product-field">
+                            <label>Category</label>
+                            <span>${product.category || 'Uncategorized'}</span>
+                        </div>
+                        <div class="product-field">
+                            <label>Price</label>
+                            <span class="price">${formatPrice(product.price)}</span>
+                        </div>
+                        <div class="product-field">
+                            <label>Stock Quantity</label>
+                            <span>${product.stock_quantity || '0'}</span>
+                        </div>
+                        <div class="product-field">
+                            <label>Status</label>
+                            <span>${getStatusBadge(product.status)}</span>
+                        </div>
+                        <div class="product-field">
+                            <label>Created Date</label>
+                            <span>${formatDate(product.created_at)}</span>
+                        </div>
+                        <div class="product-field">
+                            <label>Last Updated</label>
+                            <span>${formatDate(product.updated_at)}</span>
+                        </div>
+                        <div class="product-field">
+                            <label>Description</label>
+                            <span>${product.description || 'No description provided'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function hideAllMessages() {
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('noResultsMessage').style.display = 'none';
+            document.getElementById('searchResults').classList.remove('show');
+        }
+
+        function showLoading() {
+            hideAllMessages();
+            document.getElementById('loadingMessage').style.display = 'block';
+        }
+
+        function showError() {
+            hideAllMessages();
+            document.getElementById('errorMessage').style.display = 'block';
+        }
+
+        function showNoResults() {
+            hideAllMessages();
+            document.getElementById('noResultsMessage').style.display = 'block';
+        }
+
+        function showResults(products) {
+            hideAllMessages();
+            const resultsContainer = document.getElementById('searchResults');
+            
+            let html = '';
+            products.forEach(product => {
+                html += createProductCard(product);
+            });
+            
+            resultsContainer.innerHTML = html;
+            resultsContainer.classList.add('show');
+        }
+
+        async function searchProduct() {
+            const searchInput = document.getElementById('productSearch');
+            const categoryFilter = document.getElementById('categoryFilter');
+            const statusFilter = document.getElementById('statusFilter');
+            const searchBtn = document.getElementById('searchBtn');
+            
+            const query = searchInput.value.trim();
+            const category = categoryFilter.value;
+            const status = statusFilter.value;
+
+            // Show loading state
+            showLoading();
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Searching...';
+
+            try {
+                const formData = new FormData();
+                formData.append('query', query);
+                formData.append('category', category);
+                formData.append('status', status);
+
+                const response = await fetch('/search_products', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (data.products && data.products.length > 0) {
+                        showResults(data.products);
+                    } else {
+                        showNoResults();
+                    }
+                } else {
+                    showError();
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                showError();
+            } finally {
+                // Reset button state
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Search Products';
+            }
+        }
+
+        function editProduct(productId) {
+            alert(`Edit product functionality would be implemented for product ID: ${productId}`);
+            // Here you would typically open a modal or redirect to an edit form
+        }
+
+        function deleteProduct(productId) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                alert(`Delete product functionality would be implemented for product ID: ${productId}`);
+                // Here you would make an API call to delete the product
+            }
+        }
+
+        function showAddProductForm() {
+            alert('Add product form would be displayed here');
+            // Here you would typically open a modal or redirect to an add product form
+        }
+
+        // Allow searching by pressing Enter
+        document.getElementById('productSearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchProduct();
+            }
+        });
+
+        // Filter change handlers
+        document.getElementById('categoryFilter').addEventListener('change', function() {
+            if (document.getElementById('searchResults').classList.contains('show')) {
+                searchProduct();
+            }
+        });
+
+        document.getElementById('statusFilter').addEventListener('change', function() {
+            if (document.getElementById('searchResults').classList.contains('show')) {
+                searchProduct();
+            }
+        });
+    </script>
+</body>
+{% endblock %}

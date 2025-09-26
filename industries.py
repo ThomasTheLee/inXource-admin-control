@@ -7,10 +7,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from collections import Counter
 
 
 from businesses import Businesses
 from settings import SettingsManager
+
 
 
 
@@ -346,7 +348,7 @@ class Industry:
 
         industry = industry.lower()
 
-        # Step 1: Get business IDs for the industry
+        # Get business IDs for the industry
         businesses_response = (
             self.client.table('businesses')
             .select('id')
@@ -355,7 +357,7 @@ class Industry:
         )
         business_ids = [b['id'] for b in (businesses_response.data or [])]
 
-        # Step 2: Collect all orders for these businesses
+        # Collect all orders for these businesses
         all_orders = []
         for biz_id in business_ids:
             orders_response = (
@@ -373,21 +375,21 @@ class Industry:
             # Return empty DataFrame if no orders
             return pd.DataFrame(columns=['month', 'average_order_size'])
 
-        # Step 3: Convert to DataFrame
+        # Convert to DataFrame
         df = pd.DataFrame(all_orders)
 
         # Step 4: Ensure total_amount is numeric
         df['total_amount'] = pd.to_numeric(df['total_amount'], errors='coerce').fillna(0)
 
-        # Step 5: Convert created_at to datetime and extract month
+        # Convert created_at to datetime and extract month
         df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
         df['month'] = df['created_at'].dt.strftime('%Y-%m')  # e.g., '2025-09'
 
-        # Step 6: Group by month and calculate average order size
+        # Group by month and calculate average order size
         avg_order_trend = df.groupby('month')['total_amount'].mean().reset_index()
         avg_order_trend.rename(columns={'total_amount': 'average_order_size'}, inplace=True)
 
-        # Step 7: Sort by month
+        # Sort by month
         avg_order_trend = avg_order_trend.sort_values('month')
 
         return avg_order_trend
@@ -401,7 +403,7 @@ class Industry:
 
         industry = industry.lower()
 
-        # Step 1: Define seasons with their corresponding months
+        # Define seasons with their corresponding months
         seasons = {
             "School Holidays": [4, 8, 12],
             "Rainy Season": [11, 12, 1],
@@ -410,7 +412,7 @@ class Industry:
             "Festive Holidays": [4, 12, 1],
         }
 
-        # Step 2: Get business IDs for the industry
+        # Get business IDs for the industry
         businesses_response = (
             self.client.table('businesses')
             .select('id')
@@ -419,7 +421,7 @@ class Industry:
         )
         business_ids = [b['id'] for b in (businesses_response.data or [])]
 
-        # Step 3: Collect all completed orders for these businesses
+        # Collect all completed orders for these businesses
         all_orders = []
         for biz_id in business_ids:
             orders_response = (
@@ -437,20 +439,20 @@ class Industry:
             # Return empty DataFrame if no orders
             return pd.DataFrame(columns=['season', 'total_sales'])
 
-        # Step 4: Convert to DataFrame and ensure numeric
+        # Convert to DataFrame and ensure numeric
         df = pd.DataFrame(all_orders)
         df['total_amount'] = pd.to_numeric(df['total_amount'], errors='coerce').fillna(0)
         df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
         df['month'] = df['created_at'].dt.month  # Extract month as integer
 
-        # Step 5: Initialize dictionary for season totals
+        # Initialize dictionary for season totals
         season_totals = {season: 0 for season in seasons.keys()}
 
-        # Step 6: Sum sales per season (allow overlaps)
+        # Sum sales per season (allow overlaps)
         for season, months in seasons.items():
             season_totals[season] = df[df['month'].isin(months)]['total_amount'].sum()
 
-        # Step 7: Convert dictionary to DataFrame
+        # Convert dictionary to DataFrame
         season_df = pd.DataFrame(list(season_totals.items()), columns=['season', 'total_sales'])
 
         # Optional: sort by predefined order
@@ -461,7 +463,78 @@ class Industry:
         return season_df
 
 
+    def industry_customer_retention_rate(self, industry):
+        """returns the customer retention rate for that indsutry"""
 
+        # get the busienss ids for that industry
+        businesses_response = (
+            self.client.table('businesses')
+            .select('id')
+            .eq('industry', industry)
+            .execute()
+        )
+        business_ids = [b['id'] for b in (businesses_response.data or [])]
 
+        # get the the numbers from th customers table for thise busienss ids
+        customer_numbers = []
+        for biz_id in business_ids:
+            customers_response = (
+                self.client.table('customers')
+                .select('phone')
+                .eq('business_id', biz_id)
+                .execute()
+            )
+
+            customer_numbers.extend(customers_response.data)
+
+        indsutry_numbers = [num['phone'] for num in customer_numbers]
+        
+        # Count how many times each customer appears
+        customer_counts = Counter(indsutry_numbers)
+
+        total_customers = len(customer_counts)
+
+        # Customers who came back (appear more than once)
+        retained_customers = sum(1 for c in customer_counts.values() if c > 1)
+
+        # Retention rate
+        retention_rate = (retained_customers / total_customers) * 100
+
+        return round(retention_rate,2)
+    
+    def industry_average_order_value(self, industry):
+        """returns an average order value for that industry"""
+
+        # get business ids that belong to that indsutry
+        businesses_response = (
+            self.client.table('businesses')
+            .select('id')
+            .eq('industry', industry)
+            .execute()
+        )
+        business_ids = [b['id'] for b in (businesses_response.data or [])]
+
+        orders = []
+
+        # get a list of orsers fo those busienss ids
+        for biz_id in business_ids:
+            order_response = (
+                self.client.table('orders')
+                .select('total_amount')
+                .eq('order_status', 'completed')
+                .eq('order_payment_status', 'completed')
+                .eq('business_id', biz_id)
+                .execute()
+            )
+
+            orders.extend(order_response.data or [])
+
+        industry_orders = [amount['total_amount'] for amount in orders]
+        order_average = round(float(sum(industry_orders)/len(industry_orders)), 2)
+        return order_average
+    
+
+test = Industry()
+print(test.industry_average_order_value('loans'))
 
  
