@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from clients import Clients
 
 load_dotenv()  # loads the .env file
 
@@ -22,22 +23,16 @@ def singleton(cls):
     return wrapper
 
 @singleton
-class Users:
+class Users(Clients):
     """Manages the users data in the inXource platform"""
 
     def __init__(self):
-        self.supabase_url = os.getenv('SUPABASE_URL')
-        self.supabase_service_role_key = os.getenv('SERVICE_ROLE_KEY')
-
-        if not self.supabase_url or not self.supabase_service_role_key:
-            raise ValueError("Supabase URL or service role key is not set in environment variables.")
-
-        self.client: Client = create_client(self.supabase_url, self.supabase_service_role_key) 
+        super().__init__()
 
     def total_users(self):
         """Returns the total number of users on the platform"""
         try:
-            response = self.client.table("users").select("*").execute()
+            response = self.supabase_client.table("users").select("*").execute()
             if response.data:
                 return len(response.data or []) 
             return 0
@@ -51,7 +46,7 @@ class Users:
         """Returns the total user growth rate comparing current total vs 30 days ago."""
         try:
             # Fetch all users once
-            response = self.client.table("users").select("*").execute()
+            response = self.supabase_client.table("users").select("*").execute()
             users = response.data or []
 
             # Current total
@@ -91,7 +86,7 @@ class Users:
             now = datetime.now()
             thirty_days_ago = now - timedelta(days=30)
             
-            response = self.client.table("users").select("*").execute()
+            response = self.supabase_client.table("users").select("*").execute()
             
             recent_users = 0  # Last 30 days
             
@@ -120,7 +115,7 @@ class Users:
             thirty_days_ago = now - timedelta(days=30)
             sixty_days_ago = now - timedelta(days=60)
             
-            response = self.client.table("users").select("*").execute()
+            response = self.supabase_client.table("users").select("*").execute()
             
             recent_users = 0  # Last 30 days
             previous_users = 0  # 30-60 days ago
@@ -156,7 +151,7 @@ class Users:
 
             # Step 1: Get withdrawals from the last 7 days and collect unique business IDs
             response = (
-                self.client.table("withdrawals")
+                self.supabase_client.table("withdrawals")
                 .select("business_id")
                 .gte("requested_at", seven_days_ago.isoformat())
                 .execute()
@@ -171,7 +166,7 @@ class Users:
 
             # Step 2: Get user IDs owning these businesses
             user_response = (
-                self.client.table("business_owners")
+                self.supabase_client.table("business_owners")
                 .select("user_id")
                 .in_("business_id", list(business_ids))
                 .execute()
@@ -196,7 +191,7 @@ class Users:
 
             # Step 1: Get current active users (last 7 days)
             current_response = (
-                self.client.table("withdrawals")
+                self.supabase_client.table("withdrawals")
                 .select("business_id")
                 .gte("requested_at", seven_days_ago.isoformat())
                 .execute()
@@ -210,7 +205,7 @@ class Users:
                 return 0.0
 
             current_user_response = (
-                self.client.table("business_owners")
+                self.supabase_client.table("business_owners")
                 .select("user_id")
                 .in_("business_id", list(current_business_ids))
                 .execute()
@@ -224,7 +219,7 @@ class Users:
 
             # Step 2: Get previous active users (7-14 days ago)
             previous_response = (
-                self.client.table("withdrawals")
+                self.supabase_client.table("withdrawals")
                 .select("business_id")
                 .gte("requested_at", fourteen_days_ago.isoformat())
                 .lt("requested_at", seven_days_ago.isoformat())
@@ -239,7 +234,7 @@ class Users:
                 return 0.0
 
             previous_user_response = (
-                self.client.table("business_owners")
+                self.supabase_client.table("business_owners")
                 .select("user_id")
                 .in_("business_id", list(previous_business_ids))
                 .execute()
@@ -271,7 +266,7 @@ class Users:
             # Try exact UUID match first
             if len(query) == 36 and query.count('-') == 4:  # Basic UUID format check
                 try:
-                    response = self.client.table("users").select("*").eq("id", query).execute()
+                    response = self.supabase_client.table("users").select("*").eq("id", query).execute()
                     if response.data:
                         return response.data
                 except:
@@ -281,7 +276,7 @@ class Users:
             for column in ["name", "email", "phone", "location", "role"]:
                 try:
                     response = (
-                        self.client.table("users")
+                        self.supabase_client.table("users")
                         .select("*")
                         .ilike(column, f"%{query}%")
                         .execute()
@@ -309,7 +304,7 @@ class Users:
         try:
             # Step 1: Get business IDs owned by the user
             response = (
-                self.client.table("business_owners")
+                self.supabase_client.table("business_owners")
                 .select("business_id")
                 .eq("user_id", user_id)
                 .execute()
@@ -324,7 +319,7 @@ class Users:
 
             # Step 2: Get business details
             business_response = (
-                self.client.table("businesses")
+                self.supabase_client.table("businesses")
                 .select("*")
                 .in_("id", business_ids)
                 .execute()
@@ -341,7 +336,7 @@ class Users:
     def users_per_location(self):
         """Returns a breakdown of users by location, with count and width % for chart bars"""
         try:
-            response = self.client.table("users").select("location").execute()
+            response = self.supabase_client.table("users").select("location").execute()
             if not response.data:
                 return []
 
@@ -378,7 +373,7 @@ class Users:
         """
         try:
             # get all users
-            response = self.client.table("users").select("*").execute()
+            response = self.supabase_client.table("users").select("*").execute()
             all_users = response.data
 
             #  Convert to DataFrame
@@ -417,7 +412,7 @@ class Users:
         """
         try:
             # Get all withdrawals
-            response = self.client.table("withdrawals").select("*").execute()
+            response = self.supabase_client.table("withdrawals").select("*").execute()
             all_withdrawals = response.data
 
             if not all_withdrawals:

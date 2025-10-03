@@ -15,6 +15,7 @@ from selenium.webdriver.common.by import By
 import json
 
 from openai import OpenAI
+from clients import Clients
 
 
 from businesses import Businesses
@@ -30,17 +31,11 @@ settings_manager = SettingsManager()
 
 
 
-class FileCleaner:
+class FileCleaner(Clients):
     """Manages the user's data in the inXource platform with minimal cleaning for AI analysis"""
 
     def __init__(self):
-        self.supabase_url = os.getenv('SUPABASE_URL')
-        self.supabase_service_role_key = os.getenv('SERVICE_ROLE_KEY')
-
-        if not self.supabase_url or not self.supabase_service_role_key:
-            raise ValueError("Supabase URL or service role key is not set in environment variables.")
-
-        self.supabase_client: Client = create_client(self.supabase_url, self.supabase_service_role_key)
+        super().__init__()
 
     def detect_dates(self, df: pd.DataFrame) -> tuple[pd.DataFrame, list]:
         """Detects obvious date columns and converts them to datetime."""

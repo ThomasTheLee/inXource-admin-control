@@ -15,6 +15,10 @@ import json
 from datetime import datetime, timedelta
 from settings import SettingsManager
 
+from clients import Clients
+
+Client_manager = Clients()
+
 load_dotenv() 
 
 # Create the Flask app
@@ -30,7 +34,7 @@ business_manager = Businesses()
 products_manager = Products()
 wallet_manager = Wallet()
 industry_manager = Industry()
-ai_manager = AnalAI(test_key)
+ai_manager = AnalAI()
 settings_manager = SettingsManager()
 
 
@@ -351,6 +355,66 @@ def products():
         total_revenue_growth = total_revenue_growth,
         ranking_products = ranking_products
     )
+
+@app.route("/normalize-products", methods=["POST"])
+def normalize_products():
+    """Fetch only the last row from the products table"""
+    try:
+        response = (
+            ai_manager.supabase_client.table("products")
+            .select("*")
+            .order("id", desc=True)   
+            .limit(1)
+            .execute()
+        )
+
+        if not response.data:
+            return jsonify({"message": "No products found."}), 200
+
+        recent_row = response.data[0]
+        if recent_row["ai_name_updated_at"] is None and recent_row["ai_name"] is None:
+            products_manager.normalize_new_products()
+            return jsonify({"message": "Normalization triggered."}), 200
+
+        return jsonify({"message": "Last product already normalized."}), 200
+
+    except Exception as e:
+        print(f"Exception: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/search_product', methods=['GET', 'POST'])
+def search_product():
+    """Search for a product and return its summary information"""
+    try:
+        # Get the queried product
+        if request.method == 'POST':
+            product_query = request.form.get('query', '').strip()
+        else:
+            product_query = request.args.get('query', '').strip()
+        
+        if not product_query:
+            return jsonify({
+                "error": "Please provide a product name to search"
+            }), 400
+        
+        # Get product summary using your existing method
+        result = products_manager.product_information_summary(product_query)
+        
+        # Return the summary data
+        return jsonify({
+            "success": True,
+            "product_name": product_query,
+            "summary": result
+        }), 200
+        
+    except Exception as e:
+        print(f"Search error: {e}")
+        return jsonify({
+            "error": "An error occurred during search",
+            "details": str(e)
+        }), 500
+
 
 
 @app.route('/industry_analysis')

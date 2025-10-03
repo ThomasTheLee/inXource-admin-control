@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import Counter
+from clients import Clients
 
 
 from businesses import Businesses
@@ -33,23 +34,17 @@ def singleton(cls):
     return wrapper
 
 @singleton
-class Industry:
+class Industry(Clients):
     """Manages the users data in the inXource platform"""
 
     def __init__(self):
-        self.supabase_url = os.getenv('SUPABASE_URL')
-        self.supabase_service_role_key = os.getenv('SERVICE_ROLE_KEY')
-
-        if not self.supabase_url or not self.supabase_service_role_key:
-            raise ValueError("Supabase URL or service role key is not set in environment variables.")
-
-        self.client: Client = create_client(self.supabase_url, self.supabase_service_role_key) 
+        super().__init__()
 
     def total_industries(self):
         """returns the total list of industries in the database"""
         try:
             response = (
-                self.client.table('businesses')
+                self.supabase_client.table('businesses')
                 .select('industry')
                 .execute()
             )
@@ -69,7 +64,7 @@ class Industry:
 
         # Step 1: Get all completed orders
         orders_response = (
-            self.client
+            self.supabase_client
             .table('orders')
             .select('business_id, total_amount')
             .eq('order_payment_status', 'completed')
@@ -79,7 +74,7 @@ class Industry:
 
         # Step 2: Get all businesses with their industries
         businesses_response = (
-            self.client
+            self.supabase_client
             .table('businesses')
             .select('id, industry')
             .execute()
@@ -123,7 +118,7 @@ class Industry:
             # Case 1: No industries passed → calculate overall growth
             if industries is None:
                 current_response = (
-                    self.client.table("orders")
+                    self.supabase_client.table("orders")
                     .select("total_amount, created_at")
                     .eq("order_payment_status", "completed")
                     .gte("created_at", start_current)
@@ -133,7 +128,7 @@ class Industry:
                 current_total = sum(o["total_amount"] for o in current_orders if o.get("total_amount"))
 
                 previous_response = (
-                    self.client.table("orders")
+                    self.supabase_client.table("orders")
                     .select("total_amount, created_at")
                     .eq("order_payment_status", "completed")
                     .gte("created_at", start_previous)
@@ -150,7 +145,7 @@ class Industry:
             for industry in industries:
                 # Current period
                 current_response = (
-                    self.client.table("orders")
+                    self.supabase_client.table("orders")
                     .select("total_amount, created_at, businesses(industry)")
                     .eq("order_payment_status", "completed")
                     .eq("businesses.industry", industry)   # filter by joined column
@@ -162,7 +157,7 @@ class Industry:
 
                 # Previous period
                 previous_response = (
-                    self.client.table("orders")
+                    self.supabase_client.table("orders")
                     .select("total_amount, created_at, businesses(industry)")
                     .eq("order_payment_status", "completed")
                     .eq("businesses.industry", industry)   # filter by joined column
@@ -226,7 +221,7 @@ class Industry:
 
         try:
             response = (
-                self.client.table('industry_trucking')
+                self.supabase_client.table('industry_trucking')
                 .select('*')
                 .gte('created_at', start_current)  
                 .execute() 
@@ -246,7 +241,7 @@ class Industry:
         industry = industry.lower()
         # Step 1: Get business IDs for the industry
         businesses_response = (
-            self.client.table('businesses')
+            self.supabase_client.table('businesses')
             .select('id')
             .eq('industry', industry)
             .execute()
@@ -257,7 +252,7 @@ class Industry:
         all_orders = []
         for biz_id in business_ids:
             orders_response = (
-                self.client.table('orders')
+                self.supabase_client.table('orders')
                 .select('created_at, total_amount')
                 .eq('order_status', 'completed')
                 .eq('order_payment_status', 'completed')
@@ -300,7 +295,7 @@ class Industry:
 
         # Step 1: Get business IDs for the industry
         businesses_response = (
-            self.client.table('businesses')
+            self.supabase_client.table('businesses')
             .select('id')
             .eq('industry', industry)
             .execute()
@@ -311,7 +306,7 @@ class Industry:
         all_customers = []
         for biz_id in business_ids:
             response = (
-                self.client.table('customers')
+                self.supabase_client.table('customers')
                 .select('created_at')
                 .eq('business_id', biz_id)
                 .execute()
@@ -350,7 +345,7 @@ class Industry:
 
         # Get business IDs for the industry
         businesses_response = (
-            self.client.table('businesses')
+            self.supabase_client.table('businesses')
             .select('id')
             .eq('industry', industry)
             .execute()
@@ -361,7 +356,7 @@ class Industry:
         all_orders = []
         for biz_id in business_ids:
             orders_response = (
-                self.client.table('orders')
+                self.supabase_client.table('orders')
                 .select('created_at, total_amount')
                 .eq('order_status', 'completed')
                 .eq('order_payment_status', 'completed')
@@ -414,7 +409,7 @@ class Industry:
 
         # Get business IDs for the industry
         businesses_response = (
-            self.client.table('businesses')
+            self.supabase_client.table('businesses')
             .select('id')
             .eq('industry', industry)
             .execute()
@@ -425,7 +420,7 @@ class Industry:
         all_orders = []
         for biz_id in business_ids:
             orders_response = (
-                self.client.table('orders')
+                self.supabase_client.table('orders')
                 .select('created_at, total_amount')
                 .eq('order_status', 'completed')
                 .eq('order_payment_status', 'completed')
@@ -468,7 +463,7 @@ class Industry:
 
         # get the busienss ids for that industry
         businesses_response = (
-            self.client.table('businesses')
+            self.supabase_client.table('businesses')
             .select('id')
             .eq('industry', industry)
             .execute()
@@ -479,7 +474,7 @@ class Industry:
         customer_numbers = []
         for biz_id in business_ids:
             customers_response = (
-                self.client.table('customers')
+                self.supabase_client.table('customers')
                 .select('phone')
                 .eq('business_id', biz_id)
                 .execute()
@@ -507,7 +502,7 @@ class Industry:
 
         # get business ids that belong to that indsutry
         businesses_response = (
-            self.client.table('businesses')
+            self.supabase_client.table('businesses')
             .select('id')
             .eq('industry', industry)
             .execute()
@@ -519,7 +514,7 @@ class Industry:
         # get a list of orsers fo those busienss ids
         for biz_id in business_ids:
             order_response = (
-                self.client.table('orders')
+                self.supabase_client.table('orders')
                 .select('total_amount')
                 .eq('order_status', 'completed')
                 .eq('order_payment_status', 'completed')
@@ -533,8 +528,11 @@ class Industry:
         order_average = round(float(sum(industry_orders)/len(industry_orders)), 2)
         return order_average
     
-
+"""
 test = Industry()
+
 print(test.industry_average_order_value('loans'))
+"""
+
 
  

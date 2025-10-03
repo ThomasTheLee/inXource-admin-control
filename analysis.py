@@ -36,9 +36,8 @@ class AnalAI(FileCleaner):
     Note: Removed @singleton decorator to fix the TypeError.
     """
     
-    def __init__(self, api_key):
+    def __init__(self):
         super().__init__()
-        self.open_ai_client = OpenAI(api_key=api_key)
         self.tables = [
             'withdrawals',
             'users',
@@ -230,7 +229,7 @@ class AnalAI(FileCleaner):
         for table_name, prompt in prompts.items():
             try:
                 response = self.open_ai_client.chat.completions.create(
-                    model="gpt-3.5-turbo",  # Fixed model name
+                    model="gpt-3.5-turbo",  
                     messages=[
                         {"role": "user", "content": prompt}
                     ]
@@ -740,6 +739,10 @@ class AnalAI(FileCleaner):
         })
         
         return histogram_df
+
+    
+        
+
     
 
 # test
