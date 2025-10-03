@@ -2,6 +2,8 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
 import datetime
+from clients import Clients
+
 
 # custom modules
 from businesses import Businesses
@@ -20,24 +22,18 @@ def singleton(cls):
     return wrapper
 
 @singleton
-class Wallet:
+class Wallet(Clients):
     """Manages the wallet data in the inXource platform"""
 
     def __init__(self):
-        self.supabase_url = os.getenv('SUPABASE_URL')
-        self.supabase_service_role_key = os.getenv('SERVICE_ROLE_KEY')
-
-        if not self.supabase_url or not self.supabase_service_role_key:
-            raise ValueError("Supabase URL or service role key is not set in environment variables.")
-
-        self.client: Client = create_client(self.supabase_url, self.supabase_service_role_key) 
+        super().__init__()
 
     def total_withdrawal_requests(self):
         """returns a total of pending withdrawal requests"""
 
         try:
             response = (
-                self.client.table('withdrawals')
+                self.supabase_client.table('withdrawals')
                 .select('*')
                 .eq('status', 'pending')
                 .execute()
@@ -55,7 +51,7 @@ class Wallet:
         # get the total of all completed orders
         try:
             response = (
-                self.client.table('orders')
+                self.supabase_client.table('orders')
                 .select('partialAmountTotal')
                 .eq('order_payment_status', 'completed')
                 .execute()
@@ -66,7 +62,7 @@ class Wallet:
             
             # get the total of all withdrawals that have been approved
             withdrawal_response = (
-                self.client.table('withdrawals')
+                self.supabase_client.table('withdrawals')
                 .select('amount')
                 .eq('status', 'approved')
                 .execute()
@@ -87,7 +83,7 @@ class Wallet:
 
         try:
             withdrawal_response = (
-                self.client.table('withdrawals')
+                self.supabase_client.table('withdrawals')
                 .select('*')
                 .execute()
             )
@@ -131,7 +127,7 @@ class Wallet:
         try:
             # Fetch current wallet balance
             response = (
-                self.client.table('businesses')
+                self.supabase_client.table('businesses')
                 .select('wallet_balance')
                 .eq('id', business_id)
                 .single()
@@ -152,7 +148,7 @@ class Wallet:
 
             # Update the wallet balance
             update_response = (
-                self.client.table('businesses')
+                self.supabase_client.table('businesses')
                 .update({'wallet_balance': new_balance})
                 .eq('id', business_id)
                 .execute()
@@ -174,7 +170,7 @@ class Wallet:
 
         try:
             response = (
-                self.client.table('withdrawals')
+                self.supabase_client.table('withdrawals')
                 .update({'status': 'approved', 'processed_at': datetime.datetime.utcnow().isoformat()})
                 .eq('id', withdrawal_id)
                 .execute()
@@ -213,14 +209,14 @@ class Wallet:
             file_content = file_object.read()
 
             # Upload to Supabase Storage (raises exception on failure)
-            self.client.storage.from_("pay-outs").upload(
+            self.supabase_client.storage.from_("pay-outs").upload(
                 unique_filename,
                 file_content,
                 {"content-type": file_object.content_type or "application/octet-stream"}
             )
 
             # Get public URL
-            public_url = self.client.storage.from_("pay-outs").get_public_url(unique_filename)
+            public_url = self.supabase_client.storage.from_("pay-outs").get_public_url(unique_filename)
 
             if public_url:
                 print(f"File uploaded successfully: {public_url}")
@@ -238,7 +234,7 @@ class Wallet:
         """Update the proof_of_payment field in withdrawals table with the uploaded file URL"""
         try:
             response = (
-                self.client.table("withdrawals")
+                self.supabase_client.table("withdrawals")
                 .update({"proof_of_payment": proof_url})
                 .eq("id", withdrawal_id)
                 .execute()
@@ -263,7 +259,7 @@ class Wallet:
 
         try:
             response = (
-                self.client.table('withdrawals')
+                self.supabase_client.table('withdrawals')
                 .update({'status': 'rejected'})
                 .eq('id', withdrawal_id)
                 .execute()
@@ -282,9 +278,11 @@ class Wallet:
 
 
 
-
-
+"""
 test = Wallet()
+"""
+
+
 
 
 

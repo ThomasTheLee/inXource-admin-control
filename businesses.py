@@ -10,6 +10,9 @@ import pandas as pd
 from settings import SettingsManager
 settings_manager = SettingsManager()
 
+from clients import Clients
+
+
 load_dotenv()  # loads the .env file
 
 def singleton(cls):
@@ -24,17 +27,12 @@ def singleton(cls):
     return wrapper
 
 @singleton
-class Businesses:
+class Businesses(Clients):
     """Manages the businesses data in the inXource platform"""
 
     def __init__(self):
         self.supabase_url = os.getenv('SUPABASE_URL')
-        self.supabase_service_role_key = os.getenv('SERVICE_ROLE_KEY')
-
-        if not self.supabase_url or not self.supabase_service_role_key:
-            raise ValueError("Supabase URL or service role key is not set in environment variables.")
-
-        self.client: Client = create_client(self.supabase_url, self.supabase_service_role_key) 
+        super().__init__()
 
     def get_business_deatils(self, business_id):
         """Returns the business details using the business ID"""
@@ -43,7 +41,7 @@ class Businesses:
         try:
             # Fetch business details
             business_response = (
-                self.client.table('businesses')
+                self.supabase_client.table('businesses')
                 .select('*')
                 .eq('id', business_id)
                 .execute()
@@ -63,7 +61,7 @@ class Businesses:
 
             # Fetch business owner
             owner_response = (
-                self.client.table('business_owners')
+                self.supabase_client.table('business_owners')
                 .select('user_id')
                 .eq('business_id', business_id)
                 .execute()
@@ -77,7 +75,7 @@ class Businesses:
 
             # Fetch user details
             user_response = (
-                self.client.table('users')
+                self.supabase_client.table('users')
                 .select('*')
                 .eq('id', owner['user_id'])
                 .execute()
@@ -99,7 +97,7 @@ class Businesses:
     def total_businesses(self):
         """Returns the total number of users on the platform"""
         try:
-            response = self.client.table("businesses").select("*").execute()
+            response = self.supabase_client.table("businesses").select("*").execute()
             if response.data:
                 return len(response.data or []) 
             return 0
@@ -112,7 +110,7 @@ class Businesses:
         """Returns the growth rate of businesses on the platform."""
         try:
             # Fetch all businesses once
-            response = self.client.table("businesses").select("*").execute()
+            response = self.supabase_client.table("businesses").select("*").execute()
             businesses = response.data or []
 
             # Current total
@@ -149,7 +147,7 @@ class Businesses:
         """Returns the number of new businesses registered in the last 'days' days."""
         try:
             cutoff_date = datetime.now() - timedelta(days=days)
-            response = self.client.table("businesses").select("*").execute()
+            response = self.supabase_client.table("businesses").select("*").execute()
             if response.data:
                 new_businesses = [
                     biz for biz in response.data
@@ -187,7 +185,7 @@ class Businesses:
         """returns the total active businesses based on the number on the withdraws i the last 30 days"""
         try:
             cutoff_date = datetime.now() - timedelta(days=days)
-            response = self.client.table("withdrawals").select("business_id, requested_at").execute()
+            response = self.supabase_client.table("withdrawals").select("business_id, requested_at").execute()
             if response.data:
                 active_business_ids = {
                     wd["business_id"] for wd in response.data
@@ -228,7 +226,7 @@ class Businesses:
 
             # 1. Search directly in businesses
             business_response = (
-                self.client.table("businesses")
+                self.supabase_client.table("businesses")
                 .select("*")
                 .or_(f"business_name.ilike.%{query}%,industry.ilike.%{query}%,company_alias.ilike.%{query}%")
                 .execute()
@@ -239,7 +237,7 @@ class Businesses:
 
             # 2. Search for matching users (owners)
             user_response = (
-                self.client.table("users")
+                self.supabase_client.table("users")
                 .select("id")
                 .or_(f"name.ilike.%{query}%,email.ilike.%{query}%,phone.ilike.%{query}%")
                 .execute()
@@ -254,7 +252,7 @@ class Businesses:
 
                 # 3. Get businesses owned by those users
                 owner_response = (
-                    self.client.table("business_owners")
+                    self.supabase_client.table("business_owners")
                     .select("business_id")
                     .in_("user_id", user_ids)
                     .execute()
@@ -265,7 +263,7 @@ class Businesses:
 
                 if business_ids:
                     owner_businesses = (
-                        self.client.table("businesses")
+                        self.supabase_client.table("businesses")
                         .select("*")
                         .in_("id", business_ids)
                         .execute()
@@ -289,7 +287,7 @@ class Businesses:
 
             # Step 1: Fetch withdrawals
             response = (
-                self.client.table("withdrawals")
+                self.supabase_client.table("withdrawals")
                 .select("business_id, amount")
                 .eq("status", "approved")
                 .execute()
@@ -313,7 +311,7 @@ class Businesses:
 
             # Step 5: Get their industries
             industries_response = (
-                self.client.table("businesses")
+                self.supabase_client.table("businesses")
                 .select("id, industry")
                 .in_("id", top_businesses)
                 .execute()
@@ -367,7 +365,7 @@ class Businesses:
             
             # Get user registrations in the last 'days' days
             users_reg_response = (
-                self.client.table("users")
+                self.supabase_client.table("users")
                 .select("*")
                 .gte("created_at", cutoff_date.isoformat())
                 .execute()
@@ -382,7 +380,7 @@ class Businesses:
 
             # Get new business registrations in the last 'days' days that are active and not deleted
             businesses_reg_response = (
-                self.client.table("businesses")
+                self.supabase_client.table("businesses")
                 .select("*")
                 .gte("created_at", cutoff_date.isoformat())
                 .eq("is_deleted", False)
@@ -399,7 +397,7 @@ class Businesses:
 
             # Get businesses that are deactivated in the last 'days' days
             deactivated_businesses_response = (
-                self.client.table("businesses")
+                self.supabase_client.table("businesses")
                 .select("*")
                 .gte("created_at", cutoff_date.isoformat())  # when the updated at field is made change to updated at
                 .eq("is_active", False)
@@ -416,7 +414,7 @@ class Businesses:
 
             # Get businesses that are deleted in the last 'days' days
             deleted_businesses_response = (
-                self.client.table("businesses")
+                self.supabase_client.table("businesses")
                 .select("*")
                 .gte("deleted_date", cutoff_date.isoformat())
                 .eq("is_deleted", True)
@@ -432,7 +430,7 @@ class Businesses:
 
             # Get withdraws made according to the days input
             withdraws_response = (
-                self.client.table("withdrawals")
+                self.supabase_client.table("withdrawals")
                 .select("*")
                 .gte("requested_at", cutoff_date.isoformat())
                 .execute()
@@ -456,7 +454,7 @@ class Businesses:
     def monthly_business_trend(self):
         """returns a dataframe of monthly businesses registered per month"""
         try:
-            response = self.client.table('businesses').select('*').execute()
+            response = self.supabase_client.table('businesses').select('*').execute()
             all_businesses = response.data
 
             # convert to a pandas data frame
@@ -495,7 +493,7 @@ class Businesses:
 
         # Step 1: Get all completed orders
         orders_response = (
-            self.client
+            self.supabase_client
             .table('orders')
             .select('business_id, total_amount')
             .eq('order_payment_status', 'completed')
@@ -505,7 +503,7 @@ class Businesses:
 
         # Step 2: Get all businesses with their industries
         businesses_response = (
-            self.client
+            self.supabase_client
             .table('businesses')
             .select('id, industry')
             .execute()
