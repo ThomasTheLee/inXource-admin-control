@@ -46,6 +46,7 @@ class AnalAI(FileCleaner):
             'industry_trucking',
             'business_owners',
             'business_settings',
+            'sunhistory',  # Added subscription history table
         ]
         self.weekly_insights = {}
 
@@ -144,9 +145,68 @@ class AnalAI(FileCleaner):
                 related_df = dataframe_data.get("businesses", pd.DataFrame())
                 if not related_df.empty:
                     related_tables_str = f"Related table: businesses\n{related_df.head(10).to_dict(orient='records')}\n"
+            elif table_name == "sunhistory":
+                # Add related tables for subscription analysis
+                related_df = dataframe_data.get("users", pd.DataFrame())
+                if not related_df.empty:
+                    related_tables_str = f"Related table: users\n{related_df.head(10).to_dict(orient='records')}\n"
+                related_df2 = dataframe_data.get("businesses", pd.DataFrame())
+                if not related_df2.empty:
+                    related_tables_str += f"Related table: businesses\n{related_df2.head(10).to_dict(orient='records')}\n"
+                related_df3 = dataframe_data.get("orders", pd.DataFrame())
+                if not related_df3.empty:
+                    related_tables_str += f"Related table: orders\n{related_df3.head(10).to_dict(orient='records')}\n"
 
             # Build the prompt with structured output requirement
-            prompt = f"""
+            # Special prompt for sunhistory table
+            if table_name == "sunhistory":
+                prompt = f"""
+                You are a business analyst for inXource, a platform for vendors.
+
+                Your task is to analyze the SUBSCRIPTION DATA (sunhistory table) and provide actionable insights.
+                This table contains information about users who have subscribed to use inXource, including subscription amounts, dates, and payment status.
+
+                Main table for analysis: {table_name}
+                Data:
+                {main_table_str}
+
+                {related_tables_str}
+
+                Guidelines for Subscription Analysis:
+                1. Analyze subscription revenue trends and patterns over time
+                2. Identify subscription renewal rates and churn indicators
+                3. Correlate subscription data with user activity (orders, business performance)
+                4. Identify high-value subscribers and their characteristics
+                5. Highlight any anomalies in payment patterns or subscription amounts
+                6. Analyze subscription distribution across different user segments or business types
+                7. Identify opportunities to increase subscription revenue or reduce churn
+                8. Provide recommendations for:
+                   - Pricing strategy optimization
+                   - Subscription tier improvements
+                   - User retention strategies
+                   - Marketing campaigns targeting specific subscriber segments
+
+                IMPORTANT: Structure your response as follows:
+                CONCERNS:
+                [List your main concerns and issues identified in the subscription data, including:
+                 - Revenue trends (increasing/decreasing)
+                 - Churn risks or patterns
+                 - Payment issues or failures
+                 - Underperforming subscription tiers
+                 - User segments with low subscription rates]
+
+                RECOMMENDATIONS:
+                [List your actionable recommendations based on the concerns, including:
+                 - Strategies to increase subscription revenue
+                 - Retention programs for at-risk subscribers
+                 - Pricing adjustments or new subscription tiers
+                 - Marketing initiatives to attract new subscribers
+                 - Improvements to subscription value proposition]
+
+                Keep each section clear and separate.
+                """
+            else:
+                prompt = f"""
                 You are a business analyst for inXource, a platform for vendors.
 
                 Your task is to provide actionable insights, not just raw numbers.
@@ -739,28 +799,3 @@ class AnalAI(FileCleaner):
         })
         
         return histogram_df
-
-    
-        
-
-    
-
-# test
-"""
-api_key = os.getenv('OPEN_AI_TEST_KEY')
-test = AnalAI(api_key)
-import os
-
-file_path = "messy_sales_data.csv"  # replace with your file name
-
-if os.path.exists(file_path):
-    print("File exists")
-else:
-    print("File does not exist")
-
-
-cleaned = test.clean_file("messy_sales_data.csv")
-print(test.ai_analyse_df(cleaned))
-"""
-
-

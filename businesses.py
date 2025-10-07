@@ -489,7 +489,7 @@ class Businesses(Clients):
 
          
     def get_top_performing_industries(self):
-        """returns the top 4 performing industries and bundles the rest under others"""
+        """Returns the top 4 performing industries and bundles the rest under 'Others'."""
 
         # Step 1: Get all completed orders
         orders_response = (
@@ -525,14 +525,13 @@ class Businesses(Clients):
         if others > 0:
             top_4.append(("Others", others))
 
-        return top_4
-    
-
-
-
-
+        # Ensure we never return an empty list
+        return top_4 if top_4 else [("N/A", 0)]
 
     
+
+#test = Businesses()
+#rint(test.get_top_performing_industries())
 
 
         

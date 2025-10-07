@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Overview - inXource</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -67,7 +68,7 @@
             box-shadow: 
                 0 6px 20px rgba(0, 0, 0, 0.06),
                 0 0 0 1px rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(230, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
             position: relative;
             overflow: hidden;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -81,7 +82,7 @@
             left: 0;
             width: 100%;
             height: 3px;
-            background: linear-gradient(90deg, #e60000, #b30000);
+            background: linear-gradient(90deg, #000, #333);
             opacity: 0;
             transition: opacity 0.3s ease;
         }
@@ -98,7 +99,7 @@
         }
 
         .stat-card.primary::before {
-            background: linear-gradient(90deg, #e60000, #b30000);
+            background: linear-gradient(90deg, #000, #333);
         }
 
         .stat-card.success::before {
@@ -133,7 +134,7 @@
             transition: all 0.3s ease;
         }
 
-        .stat-icon.primary { background: linear-gradient(135deg, #e60000, #b30000); }
+        .stat-icon.primary { background: linear-gradient(135deg, #000, #333); }
         .stat-icon.success { background: linear-gradient(135deg, #10b981, #059669); }
         .stat-icon.warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
         .stat-icon.info { background: linear-gradient(135deg, #3b82f6, #2563eb); }
@@ -179,7 +180,7 @@
             box-shadow: 
                 0 6px 20px rgba(0, 0, 0, 0.06),
                 0 0 0 1px rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(230, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
         }
 
@@ -221,21 +222,13 @@
 
         .period-btn.active,
         .period-btn:hover {
-            background: linear-gradient(135deg, #e60000, #b30000);
+            background: linear-gradient(135deg, #000, #333);
             color: white;
         }
 
-        .chart-placeholder {
-            height: 200px;
-            background: linear-gradient(135deg, rgba(230, 0, 0, 0.05), rgba(179, 0, 0, 0.02));
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #666;
-            font-size: 0.85rem;
-            border: 2px dashed rgba(230, 0, 0, 0.1);
-            gap: 0.5rem;
+        .chart-container {
+            height: 250px;
+            position: relative;
         }
 
         .recent-activities {
@@ -246,7 +239,7 @@
             box-shadow: 
                 0 6px 20px rgba(0, 0, 0, 0.06),
                 0 0 0 1px rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(230, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
         }
 
@@ -273,7 +266,7 @@
         .view-all-btn {
             background: none;
             border: none;
-            color: #e60000;
+            color: #000;
             font-size: 0.75rem;
             font-weight: 600;
             cursor: pointer;
@@ -283,7 +276,7 @@
         }
 
         .view-all-btn:hover {
-            background: rgba(230, 0, 0, 0.1);
+            background: rgba(0, 0, 0, 0.1);
         }
 
         .activity-item {
@@ -350,7 +343,7 @@
         .action-btn {
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(230, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             padding: 1rem;
             display: flex;
@@ -367,8 +360,8 @@
         .action-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-            background: linear-gradient(135deg, rgba(230, 0, 0, 0.05), rgba(179, 0, 0, 0.02));
-            border-color: rgba(230, 0, 0, 0.2);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.02));
+            border-color: rgba(0, 0, 0, 0.2);
             text-decoration: none;
             color: #111;
         }
@@ -377,7 +370,7 @@
             width: 28px;
             height: 28px;
             border-radius: 6px;
-            background: linear-gradient(135deg, #e60000, #b30000);
+            background: linear-gradient(135deg, #000, #333);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -408,8 +401,8 @@
                 font-size: 1.5rem;
             }
 
-            .chart-placeholder {
-                height: 180px;
+            .chart-container {
+                height: 200px;
             }
 
             .quick-actions {
@@ -498,7 +491,7 @@
                         <i class="fas fa-dollar-sign"></i>
                     </div>
                 </div>
-                <div class="stat-value">XXX XXX</div>
+                <div class="stat-value">{{revenues["all_time"]}}</div>
                 <div class="stat-label">Total Revenue</div>
             </div>
 
@@ -521,14 +514,8 @@
                     <div class="stat-icon success">
                         <i class="fas fa-chart-line"></i>
                     </div>
-                    <!--
-                    <div class="stat-trend trend-up">
-                        <i class="fas fa-arrow-up"></i>
-                        <span>+18%</span>
-                    </div>
-                    -->
                 </div>
-                <div class="stat-value">XX XXX</div>
+                <div class="stat-value">{{revenues["this_month"]}}</div>
                 <div class="stat-label">Monthly Sales</div>
             </div>
         </div>
@@ -539,15 +526,14 @@
                 <div class="chart-header">
                     <h3 class="chart-title">Revenue Analytics</h3>
                     <div class="chart-period">
-                        <button class="period-btn active">7D</button>
-                        <button class="period-btn">1M</button>
-                        <button class="period-btn">3M</button>
-                        <button class="period-btn">1Y</button>
+                        <button class="period-btn active" data-period="7d">7D</button>
+                        <button class="period-btn" data-period="1m">1M</button>
+                        <button class="period-btn" data-period="3m">3M</button>
+                        <button class="period-btn" data-period="1y">1Y</button>
                     </div>
                 </div>
-                <div class="chart-placeholder">
-                    <i class="fas fa-chart-area" style="font-size: 1.2rem; margin-right: 0.5rem; color: #e60000;"></i>
-                    Revenue chart will be rendered here by Python backend
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
                 </div>
             </div>
 
@@ -569,7 +555,7 @@
                 </div>
 
                 <div class="activity-item">
-                    <div class="activity-icon" style="background: linear-gradient(135deg, #e60000, #b30000);">
+                    <div class="activity-icon" style="background: linear-gradient(135deg, #000, #333);">
                         <i class="fas fa-credit-card"></i>
                     </div>
                     <div class="activity-content">
@@ -605,28 +591,28 @@
 
         <!-- Quick Actions -->
         <div class="quick-actions">
-            <a href="#" class="action-btn">
+            <a href="{{ url_for('users') }}"class="action-btn">
                 <div class="action-icon">
                     <i class="fas fa-users-cog"></i>
                 </div>
                 <span>Manage Users</span>
             </a>
             
-            <a href="#" class="action-btn">
+            <a href="{{ url_for('businesses') }}" class="action-btn">
                 <div class="action-icon">
                     <i class="fas fa-building"></i>
                 </div>
                 <span>View Businesses</span>
             </a>
             
-            <a href="#" class="action-btn">
+            <a href="{{ url_for('wallet') }}" class="action-btn">
                 <div class="action-icon">
                     <i class="fas fa-wallet"></i>
                 </div>
                 <span>Process Withdrawals</span>
             </a>
             
-            <a href="#" class="action-btn">
+            <a href="{{url_for('analysis')}}" class="action-btn">
                 <div class="action-icon">
                     <i class="fas fa-analytics"></i>
                 </div>
@@ -636,32 +622,195 @@
     </div>
 
     <script>
-        // === FRONTEND VISUAL INTERACTIONS ONLY ===
-        // All data and business logic handled by Python Flask backend
+        // Store revenue data from Flask
+        const revenueData = {{ revenue_data | tojson }};
+        
+        let revenueChart = null;
+
+        // Function to process data for different periods
+        function processRevenueData(period) {
+            let data;
+            switch(period) {
+                case '7d':
+                    data = revenueData.past_7_days || [];
+                    return aggregateByDay(data);
+                case '1m':
+                    data = revenueData.past_month || [];
+                    return aggregateByDay(data);
+                case '3m':
+                    data = revenueData.past_quarter || [];
+                    return aggregateByWeek(data);
+                case '1y':
+                    data = revenueData.past_year || [];
+                    return aggregateByMonth(data);
+                default:
+                    return { labels: [], data: [] };
+            }
+        }
+
+        // Aggregate revenue by day
+        function aggregateByDay(data) {
+            const grouped = {};
+            
+            data.forEach(item => {
+                const date = new Date(item.created_at);
+                const dateKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                
+                if (!grouped[dateKey]) {
+                    grouped[dateKey] = 0;
+                }
+                grouped[dateKey] += parseFloat(item.amount) || 0;
+            });
+
+            return {
+                labels: Object.keys(grouped),
+                data: Object.values(grouped)
+            };
+        }
+
+        // Aggregate revenue by week
+        function aggregateByWeek(data) {
+            const grouped = {};
+            
+            data.forEach(item => {
+                const date = new Date(item.created_at);
+                const weekStart = new Date(date);
+                weekStart.setDate(date.getDate() - date.getDay());
+                const weekKey = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                
+                if (!grouped[weekKey]) {
+                    grouped[weekKey] = 0;
+                }
+                grouped[weekKey] += parseFloat(item.amount) || 0;
+            });
+
+            return {
+                labels: Object.keys(grouped),
+                data: Object.values(grouped)
+            };
+        }
+
+        // Aggregate revenue by month
+        function aggregateByMonth(data) {
+            const grouped = {};
+            
+            data.forEach(item => {
+                const date = new Date(item.created_at);
+                const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+                
+                if (!grouped[monthKey]) {
+                    grouped[monthKey] = 0;
+                }
+                grouped[monthKey] += parseFloat(item.amount) || 0;
+            });
+
+            return {
+                labels: Object.keys(grouped),
+                data: Object.values(grouped)
+            };
+        }
+
+        // Create or update chart
+        function updateChart(period) {
+            const chartData = processRevenueData(period);
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+
+            if (revenueChart) {
+                revenueChart.destroy();
+            }
+
+            revenueChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Revenue',
+                        data: chartData.data,
+                        borderColor: '#000',
+                        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#000',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: {
+                                size: 13
+                            },
+                            bodyFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Revenue: $' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toFixed(0);
+                                },
+                                font: {
+                                    size: 11
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: {
+                                    size: 11
+                                },
+                                maxRotation: 45,
+                                minRotation: 0
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize chart with 7 days data
+            updateChart('7d');
             
-            // Period selector for charts (visual feedback only)
+            // Period button handlers
             const periodBtns = document.querySelectorAll('.period-btn');
             periodBtns.forEach(btn => {
                 btn.addEventListener('click', function() {
-                    // Visual feedback only - Python backend handles actual chart data
                     periodBtns.forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     
-                    // Add loading animation to chart
-                    const chartPlaceholder = this.closest('.chart-card').querySelector('.chart-placeholder');
-                    chartPlaceholder.style.opacity = '0.5';
-                    chartPlaceholder.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 1.2rem; margin-right: 0.5rem; color: #e60000;"></i> Loading chart data...';
-                    
-                    setTimeout(() => {
-                        chartPlaceholder.style.opacity = '1';
-                        chartPlaceholder.innerHTML = '<i class="fas fa-chart-area" style="font-size: 1.2rem; margin-right: 0.5rem; color: #e60000;"></i> Revenue chart will be rendered here by Python backend';
-                    }, 500);
+                    const period = this.getAttribute('data-period');
+                    updateChart(period);
                 });
             });
 
-            // Stat card hover effects
+            // Stat card interactions
             const statCards = document.querySelectorAll('.stat-card');
             statCards.forEach(card => {
                 card.addEventListener('mouseenter', function() {
@@ -673,7 +822,7 @@
                 });
             });
 
-            // Number counting animation (visual enhancement)
+            // Animate numbers
             function animateNumbers() {
                 const statValues = document.querySelectorAll('.stat-value');
                 
@@ -690,11 +839,10 @@
 
             animateNumbers();
 
-            // View all activities button
+            // View all button
             const viewAllBtn = document.querySelector('.view-all-btn');
             if (viewAllBtn) {
                 viewAllBtn.addEventListener('click', function() {
-                    // Visual feedback only - Python backend handles navigation
                     this.style.transform = 'scale(0.95)';
                     setTimeout(() => {
                         this.style.transform = '';
@@ -702,19 +850,18 @@
                 });
             }
 
-            // Activity item interactions
+            // Activity items interaction
             const activityItems = document.querySelectorAll('.activity-item');
             activityItems.forEach(item => {
                 item.addEventListener('click', function() {
-                    // Visual feedback only - Python backend handles activity details
-                    this.style.backgroundColor = 'rgba(230, 0, 0, 0.05)';
+                    this.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
                     setTimeout(() => {
                         this.style.backgroundColor = '';
                     }, 200);
                 });
             });
 
-            // Quick action button effects
+            // Action buttons hover effects
             const actionBtns = document.querySelectorAll('.action-btn');
             actionBtns.forEach(btn => {
                 btn.addEventListener('mouseenter', function() {
@@ -727,20 +874,9 @@
                     icon.style.transform = '';
                 });
             });
-
-            // Chart placeholder click handler
-            document.querySelectorAll('.chart-placeholder').forEach(chart => {
-                chart.addEventListener('click', function() {
-                    // Visual feedback only - Python backend would handle chart interactions
-                    this.style.transform = 'scale(0.98)';
-                    setTimeout(() => {
-                        this.style.transform = '';
-                    }, 150);
-                });
-            });
         });
 
-        // Utility function for formatting numbers (visual helper)
+        // Utility function to format numbers
         function formatNumber(num) {
             if (num >= 1000000) {
                 return (num / 1000000).toFixed(1) + 'M';

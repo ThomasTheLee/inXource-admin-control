@@ -62,7 +62,7 @@
         .stat-value {
             font-size: 1.4rem;
             font-weight: 700;
-            color: #e60000;
+            color: #000;
             margin-bottom: 0.2rem;
         }
 
@@ -80,7 +80,7 @@
             padding: 1.2rem;
             margin-bottom: 1.5rem;
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-            border: 1px solid rgba(230, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .filters-row {
@@ -112,13 +112,13 @@
 
         .filter-input:focus, .filter-select:focus {
             outline: none;
-            border-color: #e60000;
-            box-shadow: 0 0 0 3px rgba(230, 0, 0, 0.1);
+            border-color: #000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
         }
 
         .filter-btn {
             padding: 0.6rem 1.2rem;
-            background: linear-gradient(135deg, #e60000, #b30000);
+            background: linear-gradient(135deg, #000, #333);
             color: white;
             border: none;
             border-radius: 6px;
@@ -130,7 +130,7 @@
 
         .filter-btn:hover {
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(230, 0, 0, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
         .withdrawal-list {
@@ -145,7 +145,7 @@
             border-radius: 12px;
             padding: 1.5rem;
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-            border: 1px solid rgba(230, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
@@ -158,7 +158,7 @@
             left: 0;
             width: 4px;
             height: 100%;
-            background: linear-gradient(180deg, #e60000, #b30000);
+            background: linear-gradient(180deg, #000, #333);
             opacity: 0;
             transition: opacity 0.3s ease;
         }
@@ -240,7 +240,7 @@
         .amount-highlight {
             font-size: 1.2rem;
             font-weight: 700;
-            color: #e60000;
+            color: #000;
         }
 
         .wallet-comparison {
@@ -427,223 +427,221 @@
         .withdrawal-card:nth-child(4) { animation-delay: 0.4s; }
         .withdrawal-card:nth-child(5) { animation-delay: 0.5s; }
 
-        * Modal Styles */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
 
-.modal-overlay.show {
-    opacity: 1;
-}
+        .modal-overlay.show {
+            opacity: 1;
+        }
 
-.modal-container {
-    background: white;
-    border-radius: 16px;
-    width: 90%;
-    max-width: 500px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-    transform: translateY(20px) scale(0.95);
-    transition: transform 0.3s ease;
-}
+        .modal-container {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            transform: translateY(20px) scale(0.95);
+            transition: transform 0.3s ease;
+        }
 
-.modal-overlay.show .modal-container {
-    transform: translateY(0) scale(1);
-}
+        .modal-overlay.show .modal-container {
+            transform: translateY(0) scale(1);
+        }
 
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem;
-    border-bottom: 1px solid #eee;
-    background: linear-gradient(135deg, #e60000, #b30000);
-    color: white;
-    border-radius: 16px 16px 0 0;
-}
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #eee;
+            background: linear-gradient(135deg, #000, #333);
+            color: white;
+            border-radius: 16px 16px 0 0;
+        }
 
-.modal-header h3 {
-    margin: 0;
-    font-size: 1.2rem;
-    font-weight: 600;
-}
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
 
-.modal-close {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
+        .modal-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
 
-.modal-close:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
 
-.modal-body {
-    padding: 2rem;
-}
+        .modal-body {
+            padding: 2rem;
+        }
 
-.form-group {
-    margin-bottom: 1.5rem;
-}
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
 
-.form-label {
-    display: block;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+        .form-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-.file-input {
-    width: 100%;
-    padding: 0.8rem;
-    border: 2px dashed #ddd;
-    border-radius: 8px;
-    background: #fafafa;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 0.9rem;
-}
+        .file-input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
 
-.file-input:hover {
-    border-color: #e60000;
-    background: #fff5f5;
-}
+        .file-input:hover {
+            border-color: #000;
+            background: #f5f5f5;
+        }
 
-.file-input:focus {
-    outline: none;
-    border-color: #e60000;
-    box-shadow: 0 0 0 3px rgba(230, 0, 0, 0.1);
-}
+        .file-input:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        }
 
-.file-info {
-    margin-top: 0.5rem;
-}
+        .file-info {
+            margin-top: 0.5rem;
+        }
 
-.file-info small {
-    color: #666;
-    font-size: 0.8rem;
-}
+        .file-info small {
+            color: #666;
+            font-size: 0.8rem;
+        }
 
-.form-textarea {
-    width: 100%;
-    padding: 0.8rem;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 0.9rem;
-    resize: vertical;
-    min-height: 80px;
-    transition: border-color 0.2s ease;
-}
+        .form-textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 80px;
+            transition: border-color 0.2s ease;
+        }
 
-.form-textarea:focus {
-    outline: none;
-    border-color: #e60000;
-    box-shadow: 0 0 0 3px rgba(230, 0, 0, 0.1);
-}
+        .form-textarea:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        }
 
-.modal-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #eee;
-}
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #eee;
+        }
 
-.btn-secondary {
-    padding: 0.7rem 1.4rem;
-    background: #f8f9fa;
-    color: #666;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+        .btn-secondary {
+            padding: 0.7rem 1.4rem;
+            background: #f8f9fa;
+            color: #666;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-.btn-secondary:hover {
-    background: #e9ecef;
-    transform: translateY(-1px);
-}
+        .btn-secondary:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
 
-.btn-primary {
-    padding: 0.7rem 1.4rem;
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+        .btn-primary {
+            padding: 0.7rem 1.4rem;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-.btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
 
-.btn-primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-}
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
 
-/* Responsive */
-@media (max-width: 600px) {
-    .modal-container {
-        width: 95%;
-        margin: 1rem;
-    }
-    
-    .modal-body {
-        padding: 1.5rem;
-    }
-    
-    .modal-actions {
-        flex-direction: column-reverse;
-    }
-    
-    .modal-actions button {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
-
+        /* Responsive */
+        @media (max-width: 600px) {
+            .modal-container {
+                width: 95%;
+                margin: 1rem;
+            }
+            
+            .modal-body {
+                padding: 1.5rem;
+            }
+            
+            .modal-actions {
+                flex-direction: column-reverse;
+            }
+            
+            .modal-actions button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -659,12 +657,6 @@
                     <div class="stat-value">{{total_pending_withdraws or 0}}</div>
                     <div class="stat-label">Pending</div>
                 </div>
-                <!--
-                <div class="stat-item">
-                    <div class="stat-value">156</div>
-                    <div class="stat-label">Approved</div>
-                </div>
-                -->
                 <div class="stat-item">
                     <div class="stat-value">ZMK {{ toal_inhouse_money }}</div>
                     <div class="stat-label">Total</div>
@@ -791,426 +783,375 @@
                     </div>
                 </div>
                 
-            <div class="action-buttons">
-                <div class="approval-section">
-                    <input type="hidden" class="withdrawal-id" value="{{ request.withdrawal_id }}">
-                    <input type="hidden" class="business-id" value="{{ request.business_id }}">
-                    <input type="hidden" class="withdrawal-amount" value="{{ request.amount }}">
-                    <button class="btn btn-approve approve-btn"
-                        {% if request.withdrawal_status != 'pending' or request.wallet_balance < request.amount %}
-                            disabled style="opacity: 0.5; cursor: not-allowed;"
-                        {% endif %}>
-                        <i class="fas fa-check"></i> Approve
-                    </button>
+                <div class="action-buttons">
+                    <div class="approval-section">
+                        <input type="hidden" class="withdrawal-id" value="{{ request.withdrawal_id }}">
+                        <input type="hidden" class="business-id" value="{{ request.business_id }}">
+                        <input type="hidden" class="withdrawal-amount" value="{{ request.amount }}">
+                        <button class="btn btn-approve approve-btn"
+                            {% if request.withdrawal_status != 'pending' or request.wallet_balance < request.amount %}
+                                disabled style="opacity: 0.5; cursor: not-allowed;"
+                            {% endif %}>
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                    </div>
+
+                    <!-- Reject Form -->
+                    <form method="POST" action="{{ url_for('reject_withdrawal') }}" style="display:inline;">
+                        <input type="hidden" name="withdrawal_id" value="{{ request.withdrawal_id }}">
+                        <input type="hidden" name="business_id" value="{{ request.business_id }}">
+                        <input type="hidden" name="amount" value="{{ request.amount }}">
+                        <button class="btn btn-reject"
+                            {% if request.withdrawal_status != 'pending' %}
+                                disabled style="opacity: 0.5; cursor: not-allowed;"
+                            {% endif %}>
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    </form>
                 </div>
-            
-
-            <!-- Reject Form -->
-            <form method="POST" action="{{ url_for('reject_withdrawal') }}" style="display:inline;">
-                <input type="hidden" name="withdrawal_id" value="{{ request.withdrawal_id }}">
-                <input type="hidden" name="business_id" value="{{ request.business_id }}">
-                <input type="hidden" name="amount" value="{{ request.amount }}">
-                <button class="btn btn-reject"
-                    {% if request.withdrawal_status != 'pending' %}
-                        disabled style="opacity: 0.5; cursor: not-allowed;"
-                    {% endif %}>
-                    <i class="fas fa-times"></i> Reject
-                </button>
-            </form>
-
-        </div>
-
             </div>
             {% endfor %}
         </div>
-
     </div>
 
-
-<!-- Proof of Payout Upload Modal -->
-<div id="payoutModal" class="modal-overlay" style="display: none;">
-    <div class="modal-container">
-        <div class="modal-header">
-            <h3>Upload Proof of Payout</h3>
-            <button type="button" class="modal-close" id="closeModal">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        
-        <div class="modal-body">
-            <form id="payoutProofForm" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label for="proofFile" class="form-label">
-                        <i class="fas fa-upload"></i>
-                        Select Proof of Payout Document
-                    </label>
-                    <input type="file" id="proofFile" name="proof_file" class="file-input" 
-                           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required>
-                    <div class="file-info">
-                        <small>Accepted formats: PDF, JPG, PNG, DOC, DOCX (Max: 5MB)</small>
+    <!-- Proof of Payout Upload Modal -->
+    <div id="payoutModal" class="modal-overlay" style="display: none;">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3>Upload Proof of Payout</h3>
+                <button type="button" class="modal-close" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="payoutProofForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="proofFile" class="form-label">
+                            <i class="fas fa-upload"></i>
+                            Select Proof of Payout Document
+                        </label>
+                        <input type="file" id="proofFile" name="proof_file" class="file-input" 
+                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required>
+                        <div class="file-info">
+                            <small>Accepted formats: PDF, JPG, PNG, DOC, DOCX (Max: 5MB)</small>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="payoutNotes" class="form-label">
-                        <i class="fas fa-sticky-note"></i>
-                        Additional Notes (Optional)
-                    </label>
-                    <textarea id="payoutNotes" name="notes" class="form-textarea" 
-                              rows="3" placeholder="Add any additional notes about this payout..."></textarea>
-                </div>
+                    
+                    <div class="form-group">
+                        <label for="payoutNotes" class="form-label">
+                            <i class="fas fa-sticky-note"></i>
+                            Additional Notes (Optional)
+                        </label>
+                        <textarea id="payoutNotes" name="notes" class="form-textarea" 
+                                  rows="3" placeholder="Add any additional notes about this payout..."></textarea>
+                    </div>
 
-                <!-- Hidden fields for withdrawal data -->
-                <input type="hidden" id="withdrawalId" name="withdrawal_id">
-                <input type="hidden" id="businessId" name="business_id">
-                <input type="hidden" id="withdrawalAmount" name="amount">
-                
-                <div class="modal-actions">
-                    <button type="button" class="btn-secondary" id="cancelModal">
-                        <i class="fas fa-times"></i>
-                        Cancel
-                    </button>
-                    <button type="submit" class="btn-primary" id="submitPayout">
-                        <i class="fas fa-check"></i>
-                        Approve & Upload Proof
-                    </button>
-                </div>
-            </form>
+                    <!-- Hidden fields for withdrawal data -->
+                    <input type="hidden" id="withdrawalId" name="withdrawal_id">
+                    <input type="hidden" id="businessId" name="business_id">
+                    <input type="hidden" id="withdrawalAmount" name="amount">
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" id="cancelModal">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn-primary" id="submitPayout">
+                            <i class="fas fa-check"></i>
+                            Approve & Upload Proof
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-    // Filter functionality
-    const filterBtn = document.querySelector('.filter-btn');
-    const filterInputs = document.querySelectorAll('.filter-input, .filter-select');
+            const filterBtn = document.querySelector('.filter-btn');
+            const filterInputs = document.querySelectorAll('.filter-input, .filter-select');
 
-    filterBtn.addEventListener('click', function() {
-        // Visual feedback
-        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Filtering...';
-        
-        setTimeout(() => {
-            this.innerHTML = '<i class="fas fa-filter"></i> Apply Filters';
-            // Here you would typically send the filter data to the backend
-        }, 1000);
-    });
+            filterBtn.addEventListener('click', function() {
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Filtering...';
+                
+                setTimeout(() => {
+                    this.innerHTML = '<i class="fas fa-filter"></i> Apply Filters';
+                }, 1000);
+            });
 
-    // FIXED: Approve button handlers - listen to links instead of buttons
-    const approveLinks = document.querySelectorAll('a[href*="approve_withdrawal"]');
-    
-    approveLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            const btn = this.querySelector('.btn-approve');
+            const approveLinks = document.querySelectorAll('a[href*="approve_withdrawal"]');
             
-            // Check if button is disabled
-            if (btn && btn.disabled) {
-                e.preventDefault();
-                return;
-            }
-            
-            if (!confirm('Are you sure you want to approve this withdrawal request?')) {
-                e.preventDefault(); // Only prevent if user cancels
-            }
-            // If user confirms, let the link navigate naturally to your Flask route
-        });
-    });
+            approveLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const btn = this.querySelector('.btn-approve');
+                    
+                    if (btn && btn.disabled) {
+                        e.preventDefault();
+                        return;
+                    }
+                    
+                    if (!confirm('Are you sure you want to approve this withdrawal request?')) {
+                        e.preventDefault();
+                    }
+                });
+            });
 
-    // FIXED: Reject button handlers - listen to links instead of buttons
-    const rejectLinks = document.querySelectorAll('a[href*="reject_withdrawal"]');
-    
-    rejectLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault(); // Always prevent to get reason first
+            const rejectLinks = document.querySelectorAll('a[href*="reject_withdrawal"]');
             
-            const btn = this.querySelector('.btn-reject');
-            
-            // Check if button is disabled
-            if (btn && btn.disabled) {
-                return;
-            }
-            
-            const reason = prompt('Please provide a reason for rejection:');
-            if (reason && reason.trim()) {
-                // Navigate with reason as parameter
-                const url = new URL(this.href, window.location.origin);
-                url.searchParams.append('reason', encodeURIComponent(reason));
-                window.location.href = url.toString();
-            }
-        });
-    });
+            rejectLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const btn = this.querySelector('.btn-reject');
+                    
+                    if (btn && btn.disabled) {
+                        return;
+                    }
+                    
+                    const reason = prompt('Please provide a reason for rejection:');
+                    if (reason && reason.trim()) {
+                        const url = new URL(this.href, window.location.origin);
+                        url.searchParams.append('reason', encodeURIComponent(reason));
+                        window.location.href = url.toString();
+                    }
+                });
+            });
 
-    // Details button handlers (if you have any)
-    const detailButtons = document.querySelectorAll('.btn-details');
-    detailButtons.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            // Visual feedback
-            this.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                this.style.transform = '';
-            }, 150);
-            
-            // Here you would open a detailed view modal or navigate to details page
-            console.log('Details clicked for withdrawal');
-        });
-    });
+            const detailButtons = document.querySelectorAll('.btn-details');
+            detailButtons.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                    
+                    console.log('Details clicked for withdrawal');
+                });
+            });
 
-    // Card hover effects
-    const cards = document.querySelectorAll('.withdrawal-card');
-    cards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-3px)';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = '';
-        });
-    });
-
-    // FIXED: Real-time search functionality
-    const searchInput = document.querySelector('input[placeholder="Search businesses..."]');
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase().trim();
             const cards = document.querySelectorAll('.withdrawal-card');
-            let visibleCount = 0;
-            
             cards.forEach(card => {
-                // Get business name from the h3 element
-                const businessNameElement = card.querySelector('h3');
-                const businessName = businessNameElement ? businessNameElement.textContent.toLowerCase() : '';
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-3px)';
+                });
                 
-                // Get owner name from the first info-value element (Business Owner section)
-                const ownerNameElement = card.querySelector('.info-value');
-                const ownerName = ownerNameElement ? ownerNameElement.textContent.toLowerCase() : '';
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = '';
+                });
+            });
+
+            const searchInput = document.querySelector('input[placeholder="Search businesses..."]');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase().trim();
+                    const cards = document.querySelectorAll('.withdrawal-card');
+                    let visibleCount = 0;
+                    
+                    cards.forEach(card => {
+                        const businessNameElement = card.querySelector('h3');
+                        const businessName = businessNameElement ? businessNameElement.textContent.toLowerCase() : '';
+                        
+                        const ownerNameElement = card.querySelector('.info-value');
+                        const ownerName = ownerNameElement ? ownerNameElement.textContent.toLowerCase() : '';
+                        
+                        const phoneElements = card.querySelectorAll('.info-value');
+                        const phoneNumber = phoneElements[1] ? phoneElements[1].textContent.toLowerCase() : '';
+                        
+                        const requestIdElement = card.querySelector('p');
+                        const requestId = requestIdElement ? requestIdElement.textContent.toLowerCase() : '';
+                        
+                        const isMatch = businessName.includes(searchTerm) || 
+                                       ownerName.includes(searchTerm) || 
+                                       phoneNumber.includes(searchTerm) ||
+                                       requestId.includes(searchTerm);
+                        
+                        if (searchTerm === '' || isMatch) {
+                            card.style.display = 'block';
+                            card.style.animation = `fadeInUp 0.3s ease forwards`;
+                            visibleCount++;
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                    
+                    showEmptyState(visibleCount === 0 && searchTerm !== '');
+                });
+            }
+
+            function showEmptyState(show) {
+                let emptyState = document.querySelector('.search-empty-state');
                 
-                // Get phone number (second info-value element)
-                const phoneElements = card.querySelectorAll('.info-value');
-                const phoneNumber = phoneElements[1] ? phoneElements[1].textContent.toLowerCase() : '';
-                
-                // Get request ID from the paragraph element
-                const requestIdElement = card.querySelector('p');
-                const requestId = requestIdElement ? requestIdElement.textContent.toLowerCase() : '';
-                
-                // Check if search term matches any of the fields
-                const isMatch = businessName.includes(searchTerm) || 
-                               ownerName.includes(searchTerm) || 
-                               phoneNumber.includes(searchTerm) ||
-                               requestId.includes(searchTerm);
-                
-                if (searchTerm === '' || isMatch) {
-                    card.style.display = 'block';
-                    card.style.animation = `fadeInUp 0.3s ease forwards`;
-                    visibleCount++;
-                } else {
-                    card.style.display = 'none';
+                if (show && !emptyState) {
+                    emptyState = document.createElement('div');
+                    emptyState.className = 'empty-state search-empty-state';
+                    emptyState.innerHTML = `
+                        <div class="empty-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div class="empty-title">No matches found</div>
+                        <div class="empty-text">Try adjusting your search terms</div>
+                    `;
+                    document.querySelector('.withdrawal-list').appendChild(emptyState);
+                } else if (!show && emptyState) {
+                    emptyState.remove();
+                }
+            }
+
+            const statusFilter = document.querySelector('.filter-select');
+            const dateFilter = document.querySelectorAll('.filter-select')[2];
+            const amountFilter = document.querySelectorAll('.filter-select')[3];
+
+            filterInputs.forEach(input => {
+                input.addEventListener('change', applyAllFilters);
+                if (input.type === 'text') {
+                    input.addEventListener('input', applyAllFilters);
                 }
             });
-            
-            // Show/hide empty state message
-            showEmptyState(visibleCount === 0 && searchTerm !== '');
-        });
-    }
 
-    // Function to show/hide empty state when no results found
-    function showEmptyState(show) {
-        let emptyState = document.querySelector('.search-empty-state');
-        
-        if (show && !emptyState) {
-            // Create empty state element
-            emptyState = document.createElement('div');
-            emptyState.className = 'empty-state search-empty-state';
-            emptyState.innerHTML = `
-                <div class="empty-icon">
-                    <i class="fas fa-search"></i>
-                </div>
-                <div class="empty-title">No matches found</div>
-                <div class="empty-text">Try adjusting your search terms</div>
-            `;
-            document.querySelector('.withdrawal-list').appendChild(emptyState);
-        } else if (!show && emptyState) {
-            emptyState.remove();
-        }
-    }
+            function applyAllFilters() {
+                const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+                const statusValue = statusFilter ? statusFilter.value.toLowerCase() : '';
+                const cards = document.querySelectorAll('.withdrawal-card');
+                let visibleCount = 0;
 
-    // Enhanced filter functionality for all filter inputs
-    const statusFilter = document.querySelector('.filter-select');
-    const dateFilter = document.querySelectorAll('.filter-select')[2];
-    const amountFilter = document.querySelectorAll('.filter-select')[3];
+                cards.forEach(card => {
+                    let showCard = true;
 
-    // Add event listeners to all filter inputs for real-time filtering
-    filterInputs.forEach(input => {
-        input.addEventListener('change', applyAllFilters);
-        if (input.type === 'text') {
-            input.addEventListener('input', applyAllFilters);
-        }
-    });
+                    if (searchTerm) {
+                        const businessName = card.querySelector('h3')?.textContent.toLowerCase() || '';
+                        const ownerName = card.querySelector('.info-value')?.textContent.toLowerCase() || '';
+                        const phoneElements = card.querySelectorAll('.info-value');
+                        const phoneNumber = phoneElements[1]?.textContent.toLowerCase() || '';
+                        const requestId = card.querySelector('p')?.textContent.toLowerCase() || '';
+                        
+                        const searchMatch = businessName.includes(searchTerm) || 
+                                           ownerName.includes(searchTerm) || 
+                                           phoneNumber.includes(searchTerm) ||
+                                           requestId.includes(searchTerm);
+                        
+                        if (!searchMatch) showCard = false;
+                    }
 
-    function applyAllFilters() {
-        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-        const statusValue = statusFilter ? statusFilter.value.toLowerCase() : '';
-        const cards = document.querySelectorAll('.withdrawal-card');
-        let visibleCount = 0;
+                    if (statusValue && showCard) {
+                        const statusBadge = card.querySelector('.status-badge');
+                        const cardStatus = statusBadge ? statusBadge.textContent.toLowerCase().trim() : '';
+                        if (!cardStatus.includes(statusValue)) {
+                            showCard = false;
+                        }
+                    }
 
-        cards.forEach(card => {
-            let showCard = true;
+                    if (showCard) {
+                        card.style.display = 'block';
+                        card.style.animation = `fadeInUp 0.3s ease forwards`;
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
 
-            // Search filter
-            if (searchTerm) {
-                const businessName = card.querySelector('h3')?.textContent.toLowerCase() || '';
-                const ownerName = card.querySelector('.info-value')?.textContent.toLowerCase() || '';
-                const phoneElements = card.querySelectorAll('.info-value');
-                const phoneNumber = phoneElements[1]?.textContent.toLowerCase() || '';
-                const requestId = card.querySelector('p')?.textContent.toLowerCase() || '';
-                
-                const searchMatch = businessName.includes(searchTerm) || 
-                                   ownerName.includes(searchTerm) || 
-                                   phoneNumber.includes(searchTerm) ||
-                                   requestId.includes(searchTerm);
-                
-                if (!searchMatch) showCard = false;
+                showEmptyState(visibleCount === 0);
             }
+        });
 
-            // Status filter
-            if (statusValue && showCard) {
-                const statusBadge = card.querySelector('.status-badge');
-                const cardStatus = statusBadge ? statusBadge.textContent.toLowerCase().trim() : '';
-                if (!cardStatus.includes(statusValue)) {
-                    showCard = false;
+        const modal = document.getElementById('payoutModal');
+        const closeModalBtn = document.getElementById('closeModal');
+        const cancelModalBtn = document.getElementById('cancelModal');
+        const payoutForm = document.getElementById('payoutProofForm');
+
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.approve-btn')) {
+                e.preventDefault();
+                
+                const button = e.target.closest('.approve-btn');
+                const approvalSection = button.closest('.approval-section');
+                
+                const withdrawalId = approvalSection.querySelector('.withdrawal-id').value;
+                const businessId = approvalSection.querySelector('.business-id').value;
+                const amount = approvalSection.querySelector('.withdrawal-amount').value;
+                
+                document.getElementById('withdrawalId').value = withdrawalId;
+                document.getElementById('businessId').value = businessId;
+                document.getElementById('withdrawalAmount').value = amount;
+                
+                showModal();
+            }
+        });
+
+        closeModalBtn.addEventListener('click', hideModal);
+        cancelModalBtn.addEventListener('click', hideModal);
+
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                hideModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.style.display === 'flex') {
+                hideModal();
+            }
+        });
+
+        function showModal() {
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.classList.add('show');
+            }, 10);
+        }
+
+        function hideModal() {
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                payoutForm.reset();
+            }, 300);
+        }
+
+        payoutForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitPayout');
+            const fileInput = document.getElementById('proofFile');
+            
+            if (!fileInput.files[0]) {
+                alert('Please select a file to upload');
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            const formData = new FormData();
+            formData.append('proof_file', fileInput.files[0]);
+            formData.append('withdrawal_id', document.getElementById('withdrawalId').value);
+            formData.append('business_id', document.getElementById('businessId').value);
+            formData.append('amount', document.getElementById('withdrawalAmount').value);
+            formData.append('notes', document.getElementById('payoutNotes').value);
+            
+            fetch('/approve_withdrawal_with_proof', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Error approving withdrawal');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Approve & Upload Proof';
                 }
-            }
-
-            // Show/hide card based on all filters
-            if (showCard) {
-                card.style.display = 'block';
-                card.style.animation = `fadeInUp 0.3s ease forwards`;
-                visibleCount++;
-            } else {
-                card.style.display = 'none';
-            }
-        });
-
-        // Show empty state if no cards are visible
-        showEmptyState(visibleCount === 0);
-    }
-});
-
-    // Modal functionality
-    const modal = document.getElementById('payoutModal');
-    const closeModalBtn = document.getElementById('closeModal');
-    const cancelModalBtn = document.getElementById('cancelModal');
-    const payoutForm = document.getElementById('payoutProofForm');
-
-    // Open modal when approve button is clicked
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.approve-btn')) {
-            e.preventDefault(); // Prevent any default action
-            
-            const button = e.target.closest('.approve-btn');
-            const approvalSection = button.closest('.approval-section');
-            
-            // Get the withdrawal data from hidden inputs
-            const withdrawalId = approvalSection.querySelector('.withdrawal-id').value;
-            const businessId = approvalSection.querySelector('.business-id').value;
-            const amount = approvalSection.querySelector('.withdrawal-amount').value;
-            
-            // Populate the modal's hidden fields
-            document.getElementById('withdrawalId').value = withdrawalId;
-            document.getElementById('businessId').value = businessId;
-            document.getElementById('withdrawalAmount').value = amount;
-            
-            // Show the modal
-            showModal();
-        }
-    });
-
-    // Close modal functions
-    closeModalBtn.addEventListener('click', hideModal);
-    cancelModalBtn.addEventListener('click', hideModal);
-
-    // Close modal when clicking outside
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            hideModal();
-        }
-    });
-
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && modal.style.display === 'flex') {
-            hideModal();
-        }
-    });
-
-    // Show modal with animation
-    function showModal() {
-        modal.style.display = 'flex';
-        setTimeout(() => {
-            modal.classList.add('show');
-        }, 10);
-    }
-
-    // Hide modal with animation
-    function hideModal() {
-        modal.classList.remove('show');
-        setTimeout(() => {
-            modal.style.display = 'none';
-            // Reset form
-            payoutForm.reset();
-        }, 300);
-    }
-
-    // Handle form submission - send to Python backend
-    payoutForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const submitBtn = document.getElementById('submitPayout');
-        const fileInput = document.getElementById('proofFile');
-        
-        // Check if file is selected
-        if (!fileInput.files[0]) {
-            alert('Please select a file to upload');
-            return;
-        }
-        
-        // Disable submit button and show loading
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        
-        // Create FormData object to send file and data to Python
-        const formData = new FormData();
-        formData.append('proof_file', fileInput.files[0]);
-        formData.append('withdrawal_id', document.getElementById('withdrawalId').value);
-        formData.append('business_id', document.getElementById('businessId').value);
-        formData.append('amount', document.getElementById('withdrawalAmount').value);
-        formData.append('notes', document.getElementById('payoutNotes').value);
-        
-        // Send to your Python backend
-        fetch('/approve_withdrawal_with_proof', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Success - reload page to see updated status
-                window.location.reload();
-            } else {
-                // Error - show message and re-enable button
-                alert(data.message || 'Error approving withdrawal');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error submitting form');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fas fa-check"></i> Approve & Upload Proof';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error submitting form');
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-check"></i> Approve & Upload Proof';
+            });
         });
-    });
-</script>
+    </script>
 </body>
 
 {% endblock %}

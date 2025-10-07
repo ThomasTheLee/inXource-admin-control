@@ -528,11 +528,11 @@ class Industry(Clients):
         order_average = round(float(sum(industry_orders)/len(industry_orders)), 2)
         return order_average
     
-"""
-test = Industry()
 
-print(test.industry_average_order_value('loans'))
-"""
+#test = Industry()
+
+
+
 
 
  
