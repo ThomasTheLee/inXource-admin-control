@@ -14,6 +14,7 @@ from analysis import AnalAI
 import json
 from datetime import datetime, timedelta
 from settings import SettingsManager
+from subscriptions import Subscriptions
 
 from clients import Clients
 
@@ -36,9 +37,35 @@ wallet_manager = Wallet()
 industry_manager = Industry()
 ai_manager = AnalAI()
 settings_manager = SettingsManager()
+Subscription_manager = Subscriptions()
 
 
-# Define a route
+#routes
+@app.route("/normalize-products", methods=["POST"])
+def normalize_products():
+    """Normalize all products that don't have an ai_name"""
+    try:
+        # Check if there are any products without ai_name
+        response = (
+            ai_manager.supabase_client.table("products")
+            .select("id, ai_name")
+            .is_("ai_name", "null")  # Find products where ai_name is NULL
+            .limit(1)
+            .execute()
+        )
+
+        if not response.data:
+            return jsonify({"message": "All products already normalized."}), 200
+
+        # Trigger normalization for all unnormalized products
+        products_manager.normalize_new_products()
+        return jsonify({"message": "Normalization triggered for all unnormalized products."}), 200
+
+    except Exception as e:
+        print(f"Exception: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/")
 def index(): 
     """loads the overview dashboard"""
@@ -46,12 +73,29 @@ def index():
     total_businesses = business_manager.total_businesses()
     total_products = products_manager.total_products()
     total_pending_withdraws = wallet_manager.total_withdrawal_requests()
+    revenues = Subscription_manager.total_revenue()
+    
+    # Get revenue period data
+    revenue_data = Subscription_manager.revenue_period_data()
+    
+    # Convert DataFrames to JSON-serializable format
+    revenue_json = {}
+    for period, df in revenue_data.items():
+        if not df.empty:
+            # Convert datetime to string format
+            df_copy = df.copy()
+            df_copy['created_at'] = df_copy['created_at'].dt.strftime('%Y-%m-%d %H:%M:%S')
+            revenue_json[period] = df_copy.to_dict('records')
+        else:
+            revenue_json[period] = []
 
     return render_template('index.html',
-                           total_users = total_users,
-                           total_businesses = total_businesses,
-                           total_products = total_products,
-                           total_pending_withdraws = total_pending_withdraws 
+                           total_users=total_users,
+                           total_businesses=total_businesses,
+                           total_products=total_products,
+                           total_pending_withdraws=total_pending_withdraws,
+                           revenues=revenues,
+                           revenue_data=revenue_json
                            )
 
 
@@ -356,31 +400,6 @@ def products():
         ranking_products = ranking_products
     )
 
-@app.route("/normalize-products", methods=["POST"])
-def normalize_products():
-    """Fetch only the last row from the products table"""
-    try:
-        response = (
-            ai_manager.supabase_client.table("products")
-            .select("*")
-            .order("id", desc=True)   
-            .limit(1)
-            .execute()
-        )
-
-        if not response.data:
-            return jsonify({"message": "No products found."}), 200
-
-        recent_row = response.data[0]
-        if recent_row["ai_name_updated_at"] is None and recent_row["ai_name"] is None:
-            products_manager.normalize_new_products()
-            return jsonify({"message": "Normalization triggered."}), 200
-
-        return jsonify({"message": "Last product already normalized."}), 200
-
-    except Exception as e:
-        print(f"Exception: {e}")
-        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/search_product', methods=['GET', 'POST'])
@@ -792,3 +811,7 @@ def test_file_upload():
 # Run the app
 if __name__ == "__main__":
     app.run(debug=True)
+    products_manager = Products()
+    print("Starting bulk normalization...")
+    products_manager.normalize_new_products()
+    print("Done!")

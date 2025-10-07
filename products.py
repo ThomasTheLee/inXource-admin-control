@@ -10,7 +10,7 @@ from settings import SettingsManager
 settings_manager = SettingsManager()
 
 from clients import Clients
-from product_classifier import ProductClassifier
+# Removed ProductClassifier - using AI only now
 
 
 load_dotenv()  # loads the .env file
@@ -35,6 +35,78 @@ class Products(Clients):
 
     def __init__(self):
         super().__init__()
+
+    def _build_search_variations(self, product_query):
+        """Helper to create singular/plural variations for OR pattern"""
+        query = product_query.lower().strip()
+        variations = [query]
+        
+        # Handle plural/singular variations
+        if query.endswith('ies'):
+            variations.append(query[:-3] + 'y')  # batteries -> battery
+        elif query.endswith('ses'):
+            variations.append(query[:-2])  # glasses -> glass
+        elif query.endswith('s') and not query.endswith('ss'):
+            variations.append(query[:-1])  # phones -> phone
+        else:
+            variations.append(query + 's')  # phone -> phones
+            if query.endswith('y'):
+                variations.append(query[:-1] + 'ies')  # battery -> batteries
+        
+        return variations
+
+    def _search_products(self, product_query):
+        """
+        Helper method for efficient full-text search on ai_name.
+        Uses PostgreSQL full-text search via RPC function.
+        Falls back to OR pattern with ILIKE if no results found.
+        """
+        try:
+            # First attempt: Full-text search (fastest and handles stemming)
+            response = self.supabase_client.rpc(
+                'search_products_by_name',
+                {'search_term': product_query}
+            ).execute()
+            
+            if response.data:
+                print(f"[SEARCH] Full-text search found {len(response.data)} products")
+                return response.data
+            
+            # Second attempt: OR pattern with variations
+            print(f"[SEARCH] Full-text search returned no results, trying OR pattern...")
+            variations = self._build_search_variations(product_query)
+            
+            # Build OR condition for all variations
+            or_conditions = ','.join([f"ai_name.ilike.%{var}%" for var in variations])
+            
+            response = (
+                self.supabase_client.table('products')
+                .select('id, name, ai_name, business_id, price, category')
+                .or_(or_conditions)
+                .execute()
+            )
+            
+            if response.data:
+                print(f"[SEARCH] OR pattern found {len(response.data)} products")
+            else:
+                print(f"[SEARCH] No products found for query: {product_query}")
+            
+            return response.data or []
+            
+        except Exception as e:
+            print(f"[SEARCH] Full-text search failed, falling back to simple ILIKE: {e}")
+            # Final fallback: Simple ILIKE
+            try:
+                response = (
+                    self.supabase_client.table('products')
+                    .select('id, name, ai_name, business_id, price, category')
+                    .ilike('ai_name', f'%{product_query}%')
+                    .execute()
+                )
+                return response.data or []
+            except Exception as fallback_error:
+                print(f"[SEARCH] All search methods failed: {fallback_error}")
+                return []
 
     def total_products(self):
         """Returns the total number of products from businesses that are active"""
@@ -241,37 +313,36 @@ class Products(Clients):
 
 
     def ai_product_naming(self, name, description, category):
-        """Returns a generic, searchable product type for classification"""
+        """Returns a generic, searchable product type for classification using AI"""
         
-        # First, try keyword-based classification (fast and free!)
-        product_type = ProductClassifier.classify_from_text(name, description)
-        if product_type:
-            print(f"  ✓ Matched via keywords: '{product_type}'")
-            return product_type
-        
-        # If keyword matching fails, use AI
         try:
-            ai_examples = ProductClassifier.get_ai_examples()
-            
             ai_response = self.open_ai_client.chat.completions.create(
                 model=settings_manager.open_ai_modal,
                 messages=[
                     {
                         "role": "system", 
                         "content": (
-                            "You are a product identifier. Your job is to look at a product's name and description, "
-                            "then tell me what specific thing it is in ONE word. "
-                            "Examples: if it's a phone, say 'phone'. If it's shoes, say 'shoes'. "
-                            "DO NOT just repeat the category."
+                            "You are a product classifier. Given a product name, description, and category, "
+                            "return the most specific product type in 1-2 words maximum. "
+                            "Be specific but not overly broad. Examples:\n"
+                            "- iPhone 15 → phone\n"
+                            "- Nike Air Max → shoes\n"
+                            "- 300W Solar Panel → solar_panel\n"
+                            "- Deep Cycle Battery → battery\n"
+                            "- 3000W Inverter → inverter\n"
+                            "- MPPT Charge Controller → charge_controller\n"
+                            "- Air Filter → filter\n"
+                            "- Brake Pads → brake_pad\n"
+                            "- LED Bulb → bulb\n"
+                            "- Chocolate Cake → cake\n\n"
+                            "Use underscores for multi-word types. Return ONLY the product type, nothing else."
                         )
                     },
-                    *ai_examples,  # type: ignore
                     {
                         "role": "user", 
-                        "content": f"Product name: {name}\nDescription: {description}\n\nIn one word, what specific product is this?"
+                        "content": f"Product name: {name}\nCategory: {category}\nDescription: {description}\n\nProduct type:"
                     }
                 ],
-                temperature=0,
                 max_completion_tokens=10
             )
 
@@ -280,18 +351,19 @@ class Products(Clients):
                 if message_obj and message_obj.content:
                     # Clean the response
                     product_type = message_obj.content.strip().lower()
-                    product_type = ''.join(c for c in product_type if c.isalpha() or c.isspace())
-                    product_type = product_type.split()[0] if product_type.split() else product_type
+                    # Remove any extra punctuation or quotes
+                    product_type = ''.join(c for c in product_type if c.isalnum() or c == '_' or c.isspace())
+                    product_type = product_type.strip()
                     
-                    # Validate it's not a broad category
-                    if not ProductClassifier.is_valid_product_type(product_type):
-                        print(f"  ⚠ AI returned invalid category: '{product_type}'")
-                        return None
+                    # Take first word/phrase only
+                    if ' ' in product_type:
+                        product_type = product_type.replace(' ', '_')
                     
+                    print(f"  ✓ AI classified as: '{product_type}'")
                     return product_type
 
         except Exception as e:
-            print(f"AI naming error: {e}")
+            print(f"  ✗ AI naming error: {e}")
 
         return None
 
@@ -340,9 +412,9 @@ class Products(Clients):
                     row.get("category") or ""
                 )
 
-                # Fallback if both keyword and AI fail
+                # Fallback if AI fails
                 if not ai_product_type:
-                    print(f"  ⚠ All classification methods failed, using fallback")
+                    print(f"  ⚠ AI classification failed, using category as fallback")
                     # Use first word of category as last resort
                     ai_product_type = (row.get("category") or row["name"]).lower().split()[0]
 
@@ -375,18 +447,13 @@ class Products(Clients):
     def product_by_business(self, product_query):
         """Returns the number of businesses selling that product"""
         try:
-            response = (
-                self.supabase_client.table('products')
-                .select('business_id')
-                .ilike('ai_name', f'%{product_query}%')  # case-insensitive partial match
-                .execute()
-            )
-
-            if not response.data:
+            products = self._search_products(product_query)
+            
+            if not products:
                 return 0
 
             # Count unique business_ids
-            businesses = {row['business_id'] for row in response.data}
+            businesses = {row['business_id'] for row in products}
             return len(businesses)
 
         except Exception as e:
@@ -397,20 +464,13 @@ class Products(Clients):
     def average_product_price(self, product_query):
         """Returns the average price for the product queried using Supabase aggregation."""
         try:
-            # Use `.select('price')` and `.maybe_aggregate()` is not directly supported
-            # Instead, fetch all prices and filter None
-            response = (
-                self.supabase_client.table('products')
-                .select('price')
-                .ilike('ai_name', f'%{product_query}%')
-                .execute()
-            )
-
-            if not response.data:
+            products = self._search_products(product_query)
+            
+            if not products:
                 return 0
 
             # Filter out None prices
-            prices = [row['price'] for row in response.data if row['price'] is not None]
+            prices = [row['price'] for row in products if row['price'] is not None]
             if not prices:
                 return 0
 
@@ -430,42 +490,34 @@ class Products(Clients):
         print(f"[DEBUG] Period start: {period_start}, Today: {today}")
 
         try:
+            # Get matching product IDs using full-text search
+            products = self._search_products(product_query)
+            
+            if not products:
+                print("[DEBUG] No products found matching query.")
+                return 0
+
+            product_ids = [p['id'] for p in products]
+            print(f"[DEBUG] Found {len(product_ids)} matching products")
+
+            # Now query orders for these product IDs
             response = (
-                self.supabase_client.table('products')
-                .select('id, ai_name, orders(quantity, order_status, order_payment_status, created_at)')
-                .ilike('ai_name', f'%{product_query}%')
+                self.supabase_client.table('orders')
+                .select('product_id, quantity, order_status, order_payment_status, created_at')
+                .in_('product_id', product_ids)
+                .eq('order_status', 'completed')
+                .eq('order_payment_status', 'completed')
+                .gte('created_at', period_start.isoformat())
                 .execute()
             )
 
             print(f"[DEBUG] Raw response: {response}")
 
             if not response.data:
-                print("[DEBUG] No products found matching query.")
+                print("[DEBUG] No completed orders found for matching products.")
                 return 0
 
-            total = 0
-            for i, product in enumerate(response.data, start=1):
-                print(f"[DEBUG] Processing product {i}: {product.get('ai_name')}")
-                for j, order in enumerate(product.get('orders', []), start=1):
-                    print(f"  [DEBUG] Order {j}: {order}")
-
-                    try:
-                        order_date = datetime.fromisoformat(order['created_at'])
-                    except Exception as e:
-                        print(f"  [DEBUG] Skipping order {j}: Invalid date format ({order.get('created_at')}) - {e}")
-                        continue
-
-                    if (
-                        order['order_status'] == 'completed'
-                        and order['order_payment_status'] == 'completed'
-                        and order_date >= period_start
-                    ):
-                        qty = order.get('quantity', 0) or 0
-                        print(f"  [DEBUG] Counting order {j}, quantity={qty}")
-                        total += qty
-                    else:
-                        print(f"  [DEBUG] Skipping order {j}: Not completed/paid or outside period.")
-
+            total = sum(order.get('quantity', 0) or 0 for order in response.data)
             print(f"[DEBUG] Total sales volume: {total}")
             return total
 
@@ -480,26 +532,29 @@ class Products(Clients):
         period_start = today - timedelta(days=period)
 
         try:
+            # Get matching product IDs using full-text search
+            products = self._search_products(product_query)
+            
+            if not products:
+                return 0
+
+            product_ids = [p['id'] for p in products]
+
+            # Query orders for these product IDs
             response = (
-                self.supabase_client.table('products')
-                .select('id, ai_name, orders(total_amount, order_status, order_payment_status, created_at)')
-                .ilike('ai_name', f'%{product_query}%')
+                self.supabase_client.table('orders')
+                .select('product_id, total_amount, order_status, order_payment_status, created_at')
+                .in_('product_id', product_ids)
+                .eq('order_status', 'completed')
+                .eq('order_payment_status', 'completed')
+                .gte('created_at', period_start.isoformat())
                 .execute()
             )
 
             if not response.data:
                 return 0
 
-            total = 0
-            for product in response.data:
-                for order in product.get('orders', []):
-                    if (
-                        order['order_status'] == 'completed' and
-                        order['order_payment_status'] == 'completed' and
-                        datetime.fromisoformat(order['created_at']) >= period_start
-                    ):
-                        total += order['total_amount']
-
+            total = sum(order.get('total_amount', 0) or 0 for order in response.data)
             return total
 
         except Exception as e:
@@ -516,12 +571,23 @@ class Products(Clients):
         try:
             print(f"[DEBUG] Querying top location for product: {product_query}")
 
+            # Get matching product IDs using full-text search
+            products = self._search_products(product_query)
+            
+            if not products:
+                print("[DEBUG] No matching products found.")
+                return None
+
+            product_ids = [p['id'] for p in products]
+            print(f"[DEBUG] Found {len(product_ids)} matching products")
+
+            # Query orders with customer location
             response = (
                 self.supabase_client.table('orders')
-                .select('quantity, order_status, order_payment_status, products(ai_name), customers(location)')
+                .select('quantity, order_status, order_payment_status, customers(location)')
+                .in_('product_id', product_ids)
                 .eq('order_status', 'completed')
                 .eq('order_payment_status', 'completed')
-                .ilike('products.ai_name', f'%{product_query}%')  # filter by ai_name in products
                 .execute()
             )
 
@@ -537,13 +603,9 @@ class Products(Clients):
                 print(f"[DEBUG] Processing order {i}: {order}")
 
                 customer = order.get('customers')
-                product = order.get('products')
 
                 if not customer:
                     print(f"[DEBUG] Skipping order {i}: No customer data.")
-                    continue
-                if not product:
-                    print(f"[DEBUG] Skipping order {i}: Product join failed.")
                     continue
 
                 location = customer.get('location')
@@ -584,26 +646,30 @@ class Products(Clients):
             sixty_days_ago = today - timedelta(days=60)
             thirty_days_ago = today - timedelta(days=30)
 
+            # Get matching product IDs using full-text search
+            products = self._search_products(product_query)
+            
+            if not products:
+                return 0
+
+            product_ids = [p['id'] for p in products]
+
+            # Query orders for previous period
             response = (
-                self.supabase_client.table('products')
-                .select('id, ai_name, orders(total_amount, order_status, order_payment_status, created_at)')
-                .ilike('ai_name', f'%{product_query}%')
+                self.supabase_client.table('orders')
+                .select('total_amount, order_status, order_payment_status, created_at')
+                .in_('product_id', product_ids)
+                .eq('order_status', 'completed')
+                .eq('order_payment_status', 'completed')
+                .gte('created_at', sixty_days_ago.isoformat())
+                .lt('created_at', thirty_days_ago.isoformat())
                 .execute()
             )
 
             if not response.data:
-                return 0
-
-            previous_revenue = 0
-            for product in response.data:
-                for order in product.get('orders', []):
-                    if (
-                        order['order_status'] == 'completed' and
-                        order['order_payment_status'] == 'completed'
-                    ):
-                        order_date = datetime.fromisoformat(order['created_at'])
-                        if sixty_days_ago <= order_date < thirty_days_ago:
-                            previous_revenue += order['total_amount']
+                previous_revenue = 0
+            else:
+                previous_revenue = sum(order.get('total_amount', 0) or 0 for order in response.data)
 
             if previous_revenue == 0:
                 return None  # avoid division by zero
@@ -619,24 +685,28 @@ class Products(Clients):
         """Returns the market share (%) of a product in InXource."""
 
         try:
+            # Get matching product IDs using full-text search
+            products = self._search_products(product_query)
+            
+            if not products:
+                return 0
+
+            product_ids = [p['id'] for p in products]
+
+            # Query orders for these products
             response = (
-                self.supabase_client.table('products')
-                .select('id, ai_name, orders(total_amount, order_status, order_payment_status, created_at)')
-                .ilike('ai_name', f'%{product_query}%')
+                self.supabase_client.table('orders')
+                .select('total_amount, order_status, order_payment_status')
+                .in_('product_id', product_ids)
+                .eq('order_status', 'completed')
+                .eq('order_payment_status', 'completed')
                 .execute()
             )
 
             if not response.data:
-                return 0
-
-            product_total = 0
-            for product in response.data:
-                for order in product.get('orders', []):
-                    if (
-                        order['order_status'] == 'completed' and
-                        order['order_payment_status'] == 'completed'
-                    ):
-                        product_total += order['total_amount']
+                product_total = 0
+            else:
+                product_total = sum(order.get('total_amount', 0) or 0 for order in response.data)
 
             grand_total = self.total_revenue()
 
@@ -665,9 +735,4 @@ class Products(Clients):
 
         return product_summary
  
-      
-"""
-test = Products()
-print(test.product_information_summary('cakes'))
-"""
 

@@ -28,7 +28,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: #ffffff; /* plain white */
+        background-color: #ffffff;
         pointer-events: none;
         z-index: -1;
     }
@@ -36,7 +36,7 @@
     .navbar {
         background: rgba(255, 255, 255, 0.98);
         backdrop-filter: blur(25px);
-        border-bottom: 1px solid rgba(230, 0, 0, 0.1);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         padding: 0;
         position: sticky;
         top: 0;
@@ -63,7 +63,7 @@
         gap: 15px;
         font-size: 1.6rem;
         font-weight: 800;
-        background: linear-gradient(135deg, #e60000, #b30000, #cc0000);
+        background: linear-gradient(135deg, #000, #333, #111);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -78,7 +78,7 @@
     .logo-icon {
         width: 45px;
         height: 45px;
-        background: linear-gradient(135deg, #e60000, #b30000);
+        background: linear-gradient(135deg, #000, #333);
         border-radius: 12px;
         display: flex;
         align-items: center;
@@ -87,7 +87,7 @@
         font-weight: bold;
         font-size: 1.1rem;
         box-shadow: 
-            0 8px 25px rgba(230, 0, 0, 0.4),
+            0 8px 25px rgba(0, 0, 0, 0.4),
             inset 0 1px 0 rgba(255, 255, 255, 0.2);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
@@ -150,7 +150,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: linear-gradient(135deg, rgba(230, 0, 0, 0.1), rgba(179, 0, 0, 0.15));
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1));
         border-radius: 12px;
         opacity: 0;
         transition: all 0.3s ease;
@@ -158,7 +158,7 @@
     }
 
     .nav-link:hover {
-        color: #e60000;
+        color: #000;
         transform: translateY(-2px);
     }
 
@@ -167,10 +167,10 @@
     }
 
     .nav-link.active {
-        background: linear-gradient(135deg, #e60000, #b30000);
+        background: linear-gradient(135deg, #000, #333);
         color: white;
         box-shadow: 
-            0 8px 25px rgba(230, 0, 0, 0.3),
+            0 8px 25px rgba(0, 0, 0, 0.3),
             inset 0 1px 0 rgba(255, 255, 255, 0.2);
         transform: translateY(-1px);
     }
@@ -205,8 +205,8 @@
     }
 
     .notification-btn:hover {
-        background: rgba(230, 0, 0, 0.1);
-        color: #e60000;
+        background: rgba(0, 0, 0, 0.1);
+        color: #000;
         transform: translateY(-2px);
     }
 
@@ -214,7 +214,7 @@
         position: absolute;
         top: 5px;
         right: 5px;
-        background: linear-gradient(135deg, #e60000, #b30000);
+        background: linear-gradient(135deg, #000, #333);
         color: white;
         border-radius: 50%;
         width: 20px;
@@ -225,7 +225,7 @@
         justify-content: center;
         font-weight: 600;
         animation: pulse 2s infinite;
-        box-shadow: 0 2px 8px rgba(230, 0, 0, 0.4);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
     }
 
     @keyframes pulse {
@@ -254,7 +254,7 @@
     .user-avatar {
         width: 40px;
         height: 40px;
-        background: linear-gradient(135deg, #e60000, #b30000);
+        background: linear-gradient(135deg, #000, #333);
         border-radius: 12px;
         display: flex;
         align-items: center;
@@ -263,7 +263,7 @@
         font-weight: 700;
         font-size: 1rem;
         box-shadow: 
-            0 4px 15px rgba(230, 0, 0, 0.3),
+            0 4px 15px rgba(0, 0, 0, 0.3),
             inset 0 1px 0 rgba(255, 255, 255, 0.2);
     }
 
@@ -297,8 +297,8 @@
     }
 
     .mobile-menu-btn:hover {
-        background: rgba(230, 0, 0, 0.1);
-        color: #e60000;
+        background: rgba(0, 0, 0, 0.1);
+        color: #000;
     }
 
     .content-area {
@@ -315,7 +315,7 @@
         box-shadow: 
             0 20px 40px rgba(0, 0, 0, 0.1),
             0 0 0 1px rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(230, 0, 0, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.1);
         position: relative;
         overflow: hidden;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -328,7 +328,7 @@
         left: 0;
         width: 100%;
         height: 4px;
-        background: linear-gradient(90deg, #e60000, #b30000, #cc0000);
+        background: linear-gradient(90deg, #000, #333, #111);
     }
 
     .welcome-card:hover {
@@ -357,7 +357,6 @@
         max-width: 600px;
     }
 
-    /* Page content styling */
     .page-content {
         background: white;
         border-radius: 16px;
@@ -371,7 +370,7 @@
         color: #111;
         margin-bottom: 1rem;
         padding-bottom: 0.5rem;
-        border-bottom: 2px solid #e60000;
+        border-bottom: 2px solid #000;
         display: inline-block;
     }
 
@@ -393,7 +392,7 @@
             flex-direction: column;
             padding: 1rem;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            border-top: 1px solid rgba(230, 0, 0, 0.1);
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
         }
 
         .nav-menu.active {
@@ -461,7 +460,6 @@
         }
     }
 
-    /* Enhanced animations */
     @keyframes fadeInUp {
         from {
             opacity: 0;
@@ -496,12 +494,6 @@
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <!--
-            <div class="logo">
-                <div class="logo-icon">iX</div>
-                <span>inXource Admin</span>
-            </div>
-            -->
             <ul class="nav-menu" id="navMenu">
                 <li class="nav-item">
                     <a href="{{ url_for('index') }}" class="nav-link active" data-page="dashboard">
@@ -554,19 +546,8 @@
             </ul>
 
             <div class="user-section">
-                <button class="notification-btn">
-                    <i class="fas fa-bell nav-icon"></i>
-                    <span class="notification-badge">3</span>
-                </button>
-                
                 <div class="user-profile">
                     <div class="user-avatar">A</div>
-                    <!--
-                    <div class="user-info">
-                        <div class="user-name">Admin User</div>
-                        <div class="user-role">Administrator</div>
-                    </div>
-                    -->
                 </div>
 
                 <button class="mobile-menu-btn" id="mobileMenuBtn">
@@ -578,18 +559,15 @@
 
     <div class="content-area">
         <div id="pageContent">
-            <!-- Default Dashboard Content -->
             <div class="page-content" id="dashboard-content">
                 {% block content %}
                 <!-- Page-specific content goes here -->
                 {% endblock %}
             </div>
-
         </div>
     </div>
 
     <script>
-        // Mobile menu toggle
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
         const navMenu = document.getElementById('navMenu');
 
@@ -608,32 +586,23 @@
             });
         }
 
-        // Active tab functionality
         const navLinks = document.querySelectorAll('.nav-link');
         
-        // Function to set active tab
         function setActiveTab(clickedLink) {
-            // Remove active class from all nav links
             navLinks.forEach(link => {
                 link.classList.remove('active');
             });
-            
-            // Add active class to clicked link
             clickedLink.classList.add('active');
         }
 
-        // Add click event listeners to all nav links
         navLinks.forEach(link => {
             link.addEventListener('click', function(e) {
-                // Only prevent default for hash links (not actual navigation)
                 if (this.getAttribute('href').startsWith('#')) {
                     e.preventDefault();
                 }
                 
-                // Set this link as active
                 setActiveTab(this);
                 
-                // Close mobile menu if open
                 if (navMenu && navMenu.classList.contains('active')) {
                     navMenu.classList.remove('active');
                     const mobileIcon = mobileMenuBtn.querySelector('i');
@@ -641,7 +610,6 @@
                     mobileMenuBtn.style.transform = 'rotate(0deg)';
                 }
                 
-                // Add click animation
                 this.style.transform = 'scale(0.96) translateY(-2px)';
                 setTimeout(() => {
                     this.style.transform = '';
@@ -649,7 +617,6 @@
             });
         });
 
-        // Set active tab based on current page (for server-side navigation)
         function setActiveTabFromURL() {
             const currentPath = window.location.pathname;
             const currentHash = window.location.hash;
@@ -657,7 +624,6 @@
             navLinks.forEach(link => {
                 const href = link.getAttribute('href');
                 
-                // Check if the link matches current path or hash
                 if ((href.startsWith('/') && currentPath.includes(href.split('?')[0])) ||
                     (href.startsWith('#') && currentHash === href)) {
                     setActiveTab(link);
@@ -665,10 +631,8 @@
             });
         }
 
-        // Set active tab on page load
         document.addEventListener('DOMContentLoaded', setActiveTabFromURL);
 
-        // Notification button click
         const notificationBtn = document.querySelector('.notification-btn');
         if (notificationBtn) {
             notificationBtn.addEventListener('click', function() {
@@ -687,7 +651,6 @@
             });
         }
 
-        // Navbar scroll effects
         window.addEventListener('scroll', function() {
             const navbar = document.querySelector('.navbar');
             const scrolled = window.pageYOffset;
@@ -701,11 +664,10 @@
             }
         });
 
-        // Hover effects for navigation links
         navLinks.forEach(link => {
             link.addEventListener('mouseenter', function() {
                 if (!this.classList.contains('active')) {
-                    this.style.boxShadow = '0 8px 25px rgba(230, 0, 0, 0.15)';
+                    this.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
                 }
             });
             
@@ -716,7 +678,6 @@
             });
         });
 
-        // User profile click
         const userProfile = document.querySelector('.user-profile');
         if (userProfile) {
             userProfile.addEventListener('click', function() {
@@ -727,7 +688,6 @@
             });
         }
 
-        // Logo click animation
         const logo = document.querySelector('.logo');
         if (logo) {
             logo.addEventListener('click', function() {
