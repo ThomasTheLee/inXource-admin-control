@@ -1,0 +1,1246 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<head>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 25%, #2d2d2d 75%, #3a3a3a 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .settings-container {
+            padding: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .page-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0f0f0f;
+            margin-bottom: 0.3rem;
+        }
+
+        .page-subtitle {
+            color: #0f0f0f;
+            font-size: 0.9rem;
+        }
+
+        .settings-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 0.8rem 1.5rem;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: #000;
+        }
+
+        .tab-btn.active {
+            color: #000;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #000, #333);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .settings-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 
+                0 6px 20px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .settings-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 1.2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #000, #333);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #111;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.5);
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-input:disabled {
+            background: rgba(0, 0, 0, 0.02);
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #000, #333);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background: rgba(0, 0, 0, 0.05);
+            color: #333;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .staff-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .staff-table th {
+            background: rgba(0, 0, 0, 0.03);
+            padding: 0.8rem;
+            text-align: left;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .staff-table td {
+            padding: 0.8rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-size: 0.85rem;
+            color: #555;
+        }
+
+        .staff-table tr:hover {
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-admin {
+            background: rgba(0, 0, 0, 0.1);
+            color: #000;
+        }
+
+        .badge-staff {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        .badge-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .badge-inactive {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: none;
+            background: rgba(0, 0, 0, 0.05);
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            background: rgba(0, 0, 0, 0.1);
+            color: #000;
+        }
+
+        .btn-icon.danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background: linear-gradient(135deg, #000, #333);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-info h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #111;
+            margin-bottom: 0.3rem;
+        }
+
+        .setting-info p {
+            font-size: 0.8rem;
+            color: #666;
+            margin: 0;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #111;
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.2s ease;
+        }
+
+        .btn-close:hover {
+            color: #000;
+        }
+
+        .activity-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #111;
+            margin-bottom: 0.2rem;
+        }
+
+        .activity-desc {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .activity-time {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .settings-container {
+                padding: 0.8rem;
+            }
+
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .staff-table {
+                font-size: 0.75rem;
+            }
+
+            .staff-table th,
+            .staff-table td {
+                padding: 0.5rem;
+            }
+
+            .settings-tabs {
+                overflow-x: scroll;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="settings-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">Settings</h1>
+            <p class="page-subtitle">Manage your inXource platform settings and configurations</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="settings-tabs">
+            <button class="tab-btn active" data-tab="profile">
+                <i class="fas fa-user"></i> Profile
+            </button>
+            <button class="tab-btn" data-tab="staff">
+                <i class="fas fa-users-cog"></i> Staff Management
+            </button>
+            <button class="tab-btn" data-tab="platform">
+                <i class="fas fa-cog"></i> Platform Settings
+            </button>
+            <button class="tab-btn" data-tab="notifications">
+                <i class="fas fa-bell"></i> Notifications
+            </button>
+            <button class="tab-btn" data-tab="security">
+                <i class="fas fa-shield-alt"></i> Security
+            </button>
+        </div>
+
+        <!-- Profile Tab -->
+        <div class="tab-content active" id="profile">
+            <div class="settings-grid">
+                <div class="settings-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-user-edit"></i>
+                        </div>
+                        <h3 class="card-title">Edit Profile</h3>
+                    </div>
+                    <form>
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <input type="text" name="username" class="form-input" value="john_admin" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-input" value="john@inxource.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="full_name" class="form-input" value="John Doe" placeholder="Enter your full name">
+                        </div>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i>
+                            Save Changes
+                        </button>
+                    </form>
+                </div>
+
+                <div class="settings-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <h3 class="card-title">Change Password</h3>
+                    </div>
+                    <form>
+                        <div class="form-group">
+                            <label class="form-label">Current Password</label>
+                            <input type="password" name="current_password" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">New Password</label>
+                            <input type="password" name="new_password" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Confirm New Password</label>
+                            <input type="password" name="confirm_password" class="form-input" required>
+                        </div>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-key"></i>
+                            Update Password
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staff Management Tab -->
+        <div class="tab-content" id="staff">
+            <div class="settings-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h3 class="card-title">Add Staff Member</h3>
+                </div>
+                <form>
+                    <div class="settings-grid">
+                        <div>
+                            <div class="form-group">
+                                <label class="form-label">Username</label>
+                                <input type="text" name="username" class="form-input" placeholder="Enter username" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-input" placeholder="Enter email address" required>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="form-group">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" name="full_name" class="form-input" placeholder="Enter full name" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Default Password</label>
+                                <input type="password" name="password" class="form-input" placeholder="Set default password" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <select name="role" class="form-input" required>
+                            <option value="staff">Staff Member</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-user-plus"></i>
+                        Add Staff Member
+                    </button>
+                </form>
+            </div>
+
+            <div class="settings-card" style="margin-top: 1.5rem;">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="card-title">Current Staff Members</h3>
+                </div>
+                <table class="staff-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Added</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Jane Smith</strong></td>
+                            <td>jane@inxource.com</td>
+                            <td>
+                                <span class="badge badge-admin">Admin</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-active">Active</span>
+                            </td>
+                            <td>Jan 15, 2024</td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="btn-icon" onclick="editStaff(1)" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon danger" onclick="deleteStaff(1)" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mike Johnson</strong></td>
+                            <td>mike@inxource.com</td>
+                            <td>
+                                <span class="badge badge-staff">Staff</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-active">Active</span>
+                            </td>
+                            <td>Feb 20, 2024</td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="btn-icon" onclick="editStaff(2)" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon danger" onclick="deleteStaff(2)" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sarah Williams</strong></td>
+                            <td>sarah@inxource.com</td>
+                            <td>
+                                <span class="badge badge-staff">Staff</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-inactive">Inactive</span>
+                            </td>
+                            <td>Mar 10, 2024</td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="btn-icon" onclick="editStaff(3)" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon danger" onclick="deleteStaff(3)" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Platform Settings Tab -->
+        <div class="tab-content" id="platform">
+            <div class="settings-grid">
+                <div class="settings-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <h3 class="card-title">Commission Settings</h3>
+                    </div>
+                    <form>
+                        <div class="form-group">
+                            <label class="form-label">Platform Commission (%)</label>
+                            <input type="number" name="commission_rate" class="form-input" value="15.00" step="0.01" min="0" max="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Minimum Withdrawal Amount ($)</label>
+                            <input type="number" name="min_withdrawal" class="form-input" value="50.00" step="0.01" min="0" required>
+                        </div>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i>
+                            Save Settings
+                        </button>
+                    </form>
+                </div>
+
+                <div class="settings-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-toggle-on"></i>
+                        </div>
+                        <h3 class="card-title">Platform Features</h3>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>New Vendor Registration</h4>
+                            <p>Allow new vendors to register on the platform</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Product Approval Required</h4>
+                            <p>Require admin approval for new products</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Maintenance Mode</h4>
+                            <p>Put the platform in maintenance mode</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-card" style="margin-top: 1.5rem;">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <h3 class="card-title">Email Configuration</h3>
+                </div>
+                <form>
+                    <div class="settings-grid">
+                        <div>
+                            <div class="form-group">
+                                <label class="form-label">SMTP Host</label>
+                                <input type="text" name="smtp_host" class="form-input" value="smtp.gmail.com" placeholder="smtp.gmail.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">SMTP Port</label>
+                                <input type="number" name="smtp_port" class="form-input" value="587" placeholder="587">
+                            </div>
+                        </div>
+                        <div>
+                            <div class="form-group">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" name="email_address" class="form-input" value="noreply@inxource.com" placeholder="noreply@inxource.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email Password</label>
+                                <input type="password" name="email_password" class="form-input" placeholder="••••••••">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i>
+                        Update Email Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Notifications Tab -->
+        <div class="tab-content" id="notifications">
+            <div class="settings-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h3 class="card-title">Email Notifications</h3>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>New User Registration</h4>
+                        <p>Receive emails when new users register</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>Withdrawal Requests</h4>
+                        <p>Get notified about new withdrawal requests</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>New Business Registration</h4>
+                        <p>Email alerts for new business signups</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+<div class="setting-item">
+                    <div class="setting-info">
+                        <h4>Product Submissions</h4>
+                        <p>Notifications for new product listings</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>Daily Summary Report</h4>
+                        <p>Receive daily platform activity summary</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Tab -->
+        <div class="tab-content" id="security">
+            <div class="settings-grid">
+                <div class="settings-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3 class="card-title">Security Settings</h3>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Two-Factor Authentication</h4>
+                            <p>Add an extra layer of security to your account</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Login Alerts</h4>
+                            <p>Get notified of new login attempts</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Session Timeout</h4>
+                            <p>Auto-logout after 30 minutes of inactivity</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <h3 class="card-title">Login History</h3>
+                    </div>
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Last login: Today at 10:45 AM from Lusaka, Zambia</span>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-content">
+                            <div class="activity-title">Successful Login</div>
+                            <div class="activity-desc">Chrome on Windows • IP: 102.134.xxx.xxx</div>
+                        </div>
+                        <div class="activity-time">2 hours ago</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-content">
+                            <div class="activity-title">Successful Login</div>
+                            <div class="activity-desc">Safari on iPhone • IP: 102.134.xxx.xxx</div>
+                        </div>
+                        <div class="activity-time">Yesterday</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-content">
+                            <div class="activity-title">Password Changed</div>
+                            <div class="activity-desc">Security settings updated</div>
+                        </div>
+                        <div class="activity-time">3 days ago</div>
+                    </div>
+                    <button class="btn-secondary" style="margin-top: 1rem; width: 100%;">
+                        <i class="fas fa-list"></i>
+                        View Full History
+                    </button>
+                </div>
+            </div>
+
+            <div class="settings-card" style="margin-top: 1.5rem;">
+                <div class="card-header">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h3 class="card-title">Danger Zone</h3>
+                </div>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>These actions are irreversible. Please proceed with caution.</span>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>Clear All Activity Logs</h4>
+                        <p>Remove all platform activity and audit logs</p>
+                    </div>
+                    <button class="btn-danger">
+                        <i class="fas fa-trash"></i>
+                        Clear Logs
+                    </button>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>Reset Platform Statistics</h4>
+                        <p>Reset all analytics and statistics data</p>
+                    </div>
+                    <button class="btn-danger">
+                        <i class="fas fa-redo"></i>
+                        Reset Stats
+                    </button>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>Export Platform Data</h4>
+                        <p>Download all platform data as CSV</p>
+                    </div>
+                    <button class="btn-secondary">
+                        <i class="fas fa-download"></i>
+                        Export Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Staff Modal -->
+    <div class="modal" id="editStaffModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Staff Member</h3>
+                <button class="btn-close" onclick="closeModal('editStaffModal')">&times;</button>
+            </div>
+            <form>
+                <input type="hidden" name="staff_id" id="edit_staff_id">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" id="edit_username" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" id="edit_email" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="full_name" id="edit_full_name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <select name="role" id="edit_role" class="form-input" required>
+                        <option value="staff">Staff Member</option>
+                        <option value="admin">Administrator</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select name="is_active" id="edit_is_active" class="form-input" required>
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 0.8rem; margin-top: 1.5rem;">
+                    <button type="submit" class="btn-primary" style="flex: 1;">
+                        <i class="fas fa-save"></i>
+                        Save Changes
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="closeModal('editStaffModal')">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="deleteStaffModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Confirm Deletion</h3>
+                <button class="btn-close" onclick="closeModal('deleteStaffModal')">&times;</button>
+            </div>
+            <p style="color: #666; margin-bottom: 1.5rem;">Are you sure you want to delete this staff member? This action cannot be undone.</p>
+            <form>
+                <input type="hidden" name="staff_id" id="delete_staff_id">
+                <div style="display: flex; gap: 0.8rem;">
+                    <button type="submit" class="btn-danger" style="flex: 1;">
+                        <i class="fas fa-trash"></i>
+                        Delete Staff Member
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="closeModal('deleteStaffModal')">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+
+                    // Remove active class from all tabs and contents
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+
+                    // Add active class to clicked tab and corresponding content
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+
+            // Toggle switches
+            const toggleSwitches = document.querySelectorAll('.toggle-switch input');
+            toggleSwitches.forEach(toggle => {
+                toggle.addEventListener('change', function() {
+                    const settingItem = this.closest('.setting-item');
+                    if (this.checked) {
+                        settingItem.style.backgroundColor = 'rgba(16, 185, 129, 0.05)';
+                        setTimeout(() => {
+                            settingItem.style.backgroundColor = '';
+                        }, 300);
+                    }
+                });
+            });
+        });
+
+        // Modal functions
+        function editStaff(staffId) {
+            document.getElementById('editStaffModal').classList.add('active');
+            document.getElementById('edit_staff_id').value = staffId;
+            
+            // Example: Pre-fill form with data
+            document.getElementById('edit_username').value = 'staff_user';
+            document.getElementById('edit_email').value = 'staff@inxource.com';
+            document.getElementById('edit_full_name').value = 'Staff Member';
+            document.getElementById('edit_role').value = 'staff';
+            document.getElementById('edit_is_active').value = '1';
+        }
+
+        function deleteStaff(staffId) {
+            document.getElementById('deleteStaffModal').classList.add('active');
+            document.getElementById('delete_staff_id').value = staffId;
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('active');
+            }
+        });
+
+        // Form validation feedback
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent actual submission for demo
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    const originalHTML = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                    submitBtn.disabled = true;
+                    
+                    // Simulate processing
+                    setTimeout(() => {
+                        submitBtn.innerHTML = originalHTML;
+                        submitBtn.disabled = false;
+                        alert('Settings saved successfully!');
+                    }, 1500);
+                }
+            });
+        });
+
+        // Add animation to cards on hover
+        const settingsCards = document.querySelectorAll('.settings-card');
+        settingsCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-3px)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = '';
+            });
+        });
+
+        // Confirm dangerous actions
+        document.querySelectorAll('.btn-danger').forEach(btn => {
+            if (!btn.closest('.modal')) {
+                btn.addEventListener('click', function(e) {
+                    if (!confirm('Are you sure you want to perform this action? This cannot be undone.')) {
+                        e.preventDefault();
+                    }
+                });
+            }
+        });
+
+        // Auto-hide success alerts after 5 seconds
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert-success');
+            alerts.forEach(alert => {
+                alert.style.transition = 'opacity 0.5s ease';
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>
+{% endblock %}

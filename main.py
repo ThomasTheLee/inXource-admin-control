@@ -1,7 +1,7 @@
 from flask import Flask, render_template, flash, redirect, url_for, request, jsonify
 from werkzeug.utils import secure_filename
 from typing import Dict, Any, cast
-
+import logging
 # custom imports
 from users import Users
 from businesses import Businesses
@@ -39,13 +39,45 @@ ai_manager = AnalAI()
 settings_manager = SettingsManager()
 Subscription_manager = Subscriptions()
 
+# Configure logger with environment-based control
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
+
+# Create logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)  # Capture all levels
+
+# Create formatters
+detailed_formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+simple_formatter = logging.Formatter('%(levelname)s - %(message)s')
+
+# File handler - only WARNING and above (production-ready)
+file_handler = logging.FileHandler('app.log', mode='w')
+file_handler.setLevel(logging.WARNING)  # Only important logs to file
+file_handler.setFormatter(detailed_formatter)
+
+# Console handler - respects LOG_LEVEL environment variable
+console_handler = logging.StreamHandler()
+console_handler.setLevel(getattr(logging, LOG_LEVEL, logging.INFO))
+console_handler.setFormatter(simple_formatter)
+
+# Add handlers to logger
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
+logger.info("Application started successfully")
+logger.info(f"Flask app initialized with secret key: {'Set' if app.secret_key else 'Not Set'}")
+
 
 #routes
 @app.route("/normalize-products", methods=["POST"])
 def normalize_products():
     """Normalize all products that don't have an ai_name"""
+    logger.info("Normalize products endpoint called")
     try:
         # Check if there are any products without ai_name
+        logger.info("Checking for products without ai_name")
         response = (
             ai_manager.supabase_client.table("products")
             .select("id, ai_name")
@@ -55,13 +87,17 @@ def normalize_products():
         )
 
         if not response.data:
+            logger.info("All products already normalized")
             return jsonify({"message": "All products already normalized."}), 200
 
         # Trigger normalization for all unnormalized products
+        logger.info("Triggering normalization for unnormalized products")
         products_manager.normalize_new_products()
+        logger.info("Normalization completed successfully")
         return jsonify({"message": "Normalization triggered for all unnormalized products."}), 200
 
     except Exception as e:
+        logger.error(f"Error in normalize_products: {str(e)}", exc_info=True)
         print(f"Exception: {e}")
         return jsonify({"error": str(e)}), 500
 
@@ -69,57 +105,83 @@ def normalize_products():
 @app.route("/")
 def index(): 
     """loads the overview dashboard"""
-    total_users = users_manager.total_users()
-    total_businesses = business_manager.total_businesses()
-    total_products = products_manager.total_products()
-    total_pending_withdraws = wallet_manager.total_withdrawal_requests()
-    revenues = Subscription_manager.total_revenue()
-    
-    # Get revenue period data
-    revenue_data = Subscription_manager.revenue_period_data()
-    
-    # Convert DataFrames to JSON-serializable format
-    revenue_json = {}
-    for period, df in revenue_data.items():
-        if not df.empty:
-            # Convert datetime to string format
-            df_copy = df.copy()
-            df_copy['created_at'] = df_copy['created_at'].dt.strftime('%Y-%m-%d %H:%M:%S')
-            revenue_json[period] = df_copy.to_dict('records')
-        else:
-            revenue_json[period] = []
+    logger.info("Index page accessed")
+    try:
+        total_users = users_manager.total_users()
+        logger.debug(f"Total users: {total_users}")
+        
+        total_businesses = business_manager.total_businesses()
+        logger.debug(f"Total businesses: {total_businesses}")
+        
+        total_products = products_manager.total_products()
+        logger.debug(f"Total products: {total_products}")
+        
+        total_pending_withdraws = wallet_manager.total_withdrawal_requests()
+        logger.debug(f"Total pending withdrawals: {total_pending_withdraws}")
+        
+        revenues = Subscription_manager.total_revenue()
+        logger.debug(f"Total revenue: {revenues}")
+        
+        # Get revenue period data
+        logger.info("Fetching revenue period data")
+        revenue_data = Subscription_manager.revenue_period_data()
+        
+        # Convert DataFrames to JSON-serializable format
+        revenue_json = {}
+        for period, df in revenue_data.items():
+            if not df.empty:
+                # Convert datetime to string format
+                df_copy = df.copy()
+                df_copy['created_at'] = df_copy['created_at'].dt.strftime('%Y-%m-%d %H:%M:%S')
+                revenue_json[period] = df_copy.to_dict('records')
+                logger.debug(f"Revenue data for {period}: {len(df_copy)} records")
+            else:
+                revenue_json[period] = []
+                logger.debug(f"No revenue data for {period}")
 
-    return render_template('index.html',
-                           total_users=total_users,
-                           total_businesses=total_businesses,
-                           total_products=total_products,
-                           total_pending_withdraws=total_pending_withdraws,
-                           revenues=revenues,
-                           revenue_data=revenue_json
-                           )
+        logger.info("Index page rendered successfully")
+        return render_template('index.html',
+                               total_users=total_users,
+                               total_businesses=total_businesses,
+                               total_products=total_products,
+                               total_pending_withdraws=total_pending_withdraws,
+                               revenues=revenues,
+                               revenue_data=revenue_json
+                               )
+    except Exception as e:
+        logger.error(f"Error loading index page: {str(e)}", exc_info=True)
+        raise
 
 
 @app.route('/wallet')
 def wallet():
     """loads the wallet page"""
+    logger.info("Wallet page accessed")
+    try:
+        total_pending_withdraws = wallet_manager.total_withdrawal_requests()
+        logger.debug(f"Total pending withdrawals: {total_pending_withdraws}")
+        
+        toal_inhouse_money = wallet_manager.total_inhouse_money()
+        logger.debug(f"Total in-house money: {toal_inhouse_money}")
 
-    total_pending_withdraws = wallet_manager.total_withdrawal_requests()
-    toal_inhouse_money = wallet_manager.total_inhouse_money()
+        # card variables
+        withdraw_requests = wallet_manager.load_pending_withdrawals()
+        logger.debug(f"Loaded {len(withdraw_requests) if withdraw_requests else 0} withdrawal requests")
 
-    # card variables
-    withdraw_requests = wallet_manager.load_pending_withdrawals()
-
-
-
-    return render_template('wallet.html',
-                           total_pending_withdraws = total_pending_withdraws,
-                           toal_inhouse_money = toal_inhouse_money,
-                           withdraw_requests = withdraw_requests  
-                           )
+        logger.info("Wallet page rendered successfully")
+        return render_template('wallet.html',
+                               total_pending_withdraws = total_pending_withdraws,
+                               toal_inhouse_money = toal_inhouse_money,
+                               withdraw_requests = withdraw_requests  
+                               )
+    except Exception as e:
+        logger.error(f"Error loading wallet page: {str(e)}", exc_info=True)
+        raise
 
 @app.route('/approve_withdrawal_with_proof', methods=['POST'])
 def approve_withdrawal_with_proof():
     """Approve a withdrawal request with proof of payout file upload"""
+    logger.info("Approve withdrawal with proof endpoint called")
     
     try:
         # Get form data
@@ -128,36 +190,59 @@ def approve_withdrawal_with_proof():
         amount = float(request.form.get('amount', 0))
         notes = request.form.get('notes', '')  # Optional notes
         
+        logger.info(f"Processing withdrawal approval - ID: {withdrawal_id}, Business: {business_id}, Amount: {amount}")
+        
         # Get uploaded file
         if 'proof_file' not in request.files:
+            logger.warning("No file uploaded in request")
             return jsonify({"success": False, "message": "No file uploaded"})
         
         file_object = request.files['proof_file']
         if file_object.filename == '':
+            logger.warning("Empty filename in uploaded file")
             return jsonify({"success": False, "message": "No file selected"})
         
+        logger.info(f"File uploaded: {file_object.filename}")
+        
         # Upload file to Supabase bucket and get URL
+        logger.info("Uploading proof file to Supabase")
         proof_url = wallet_manager.upload_payout_proof(file_object, withdrawal_id)
         if not proof_url:
+            logger.error("Failed to upload proof file to Supabase")
             return jsonify({"success": False, "message": "Failed to upload proof file"})
         
+        logger.info(f"Proof file uploaded successfully: {proof_url}")
+        
         # Update the proof_of_payment field in withdrawals table
+        logger.info("Updating proof of payment in database")
         proof_update_success = wallet_manager.update_proof_of_payment(withdrawal_id, proof_url)
         if not proof_update_success:
+            logger.error("Failed to update proof of payment in database")
             return jsonify({"success": False, "message": "Failed to update proof of payment in database"})
         
-        # SApprove the withdrawal (same as before)
+        logger.info("Proof of payment updated successfully")
+        
+        # Approve the withdrawal (same as before)
+        logger.info("Approving withdrawal")
         approval_success = wallet_manager.aprove_withdrawal(withdrawal_id)
         if not approval_success:
+            logger.error("Failed to approve withdrawal")
             return jsonify({"success": False, "message": "Failed to approve withdrawal"})
         
+        logger.info("Withdrawal approved successfully")
+        
         # Reduce the business wallet balance (same as before)
+        logger.info(f"Reducing wallet balance for business {business_id} by {amount}")
         wallet_balance_result = wallet_manager.reduce_wallet_balance(
             business_id=business_id,
             withdraw_amount=amount
         )
         if not wallet_balance_result:
+            logger.error("Failed to reduce wallet balance")
             return jsonify({"success": False, "message": "Failed to reduce wallet balance"})
+        
+        logger.info(f"Wallet balance reduced successfully for business {business_id}")
+        logger.info(f"Withdrawal {withdrawal_id} processed completely")
         
         # Success - return JSON response for JavaScript
         return jsonify({
@@ -166,6 +251,7 @@ def approve_withdrawal_with_proof():
         })
         
     except Exception as e:
+        logger.error(f"Exception in approve_withdrawal_with_proof: {str(e)}", exc_info=True)
         print(f"Exception in approve_withdrawal_with_proof: {e}")
         return jsonify({"success": False, "message": "An error occurred while processing the withdrawal"})
 
@@ -174,12 +260,15 @@ def approve_withdrawal_with_proof():
 def reject_withdrawal():
     """Reject a withdrawal request by its ID"""
     withdrawal_id = request.form.get('withdrawal_id')
+    logger.info(f"Reject withdrawal endpoint called for ID: {withdrawal_id}")
 
     success = wallet_manager.reject_withdrawal(withdrawal_id)
 
     if success:
+        logger.info(f"Successfully rejected withdrawal {withdrawal_id}")
         flash(f"Successfully rejected withdrawal {withdrawal_id}.", "success")
     else:
+        logger.warning(f"Failed to reject withdrawal {withdrawal_id}")
         flash(f"Failed to reject withdrawal {withdrawal_id}.", "danger")
 
     return redirect(url_for('wallet'))
@@ -187,60 +276,84 @@ def reject_withdrawal():
 @app.route("/users")
 def users():
     """Loads the users management page"""
+    logger.info("Users page accessed")
     
-    # Existing variables
-    total_users = users_manager.total_users()
-    total_user_growth_rate = users_manager.total_user_growth_rate()
-    total_new_registrations = users_manager.total_new_registrations()
-    new_registrations_rate = users_manager.new_registrations_rate()
-    total_active_users = users_manager.total_active_users()
-    active_users_growth_rate = users_manager.active_users_growh_rate()
-    users_per_location = users_manager.users_per_location()
-    
-    # Get monthly users chart data
-    monthly_user_trend_df = users_manager.monthly_user_trend()
-    
-    # Convert DataFrame to JSON-serializable formatt
-    monthly_users_chart_data = {
-        'labels': [],
-        'data': []
-    }
-    
-    if not monthly_user_trend_df.empty:
-        # Convert Period to string for JSON serialization
-        monthly_users_chart_data['labels'] = [str(month) for month in monthly_user_trend_df['month'].tolist()]
-        monthly_users_chart_data['data'] = monthly_user_trend_df['user_count'].tolist()
+    try:
+        # Existing variables
+        total_users = users_manager.total_users()
+        logger.debug(f"Total users: {total_users}")
+        
+        total_user_growth_rate = users_manager.total_user_growth_rate()
+        logger.debug(f"User growth rate: {total_user_growth_rate}")
+        
+        total_new_registrations = users_manager.total_new_registrations()
+        logger.debug(f"New registrations: {total_new_registrations}")
+        
+        new_registrations_rate = users_manager.new_registrations_rate()
+        logger.debug(f"New registrations rate: {new_registrations_rate}")
+        
+        total_active_users = users_manager.total_active_users()
+        logger.debug(f"Active users: {total_active_users}")
+        
+        active_users_growth_rate = users_manager.active_users_growh_rate()
+        logger.debug(f"Active users growth rate: {active_users_growth_rate}")
+        
+        users_per_location = users_manager.users_per_location()
+        logger.debug(f"Users per location calculated: {len(users_per_location) if users_per_location else 0} locations")
+        
+        # Get monthly users chart data
+        logger.info("Fetching monthly user trend data")
+        monthly_user_trend_df = users_manager.monthly_user_trend()
+        
+        # Convert DataFrame to JSON-serializable format
+        monthly_users_chart_data = {
+            'labels': [],
+            'data': []
+        }
+        
+        if not monthly_user_trend_df.empty:
+            # Convert Period to string for JSON serialization
+            monthly_users_chart_data['labels'] = [str(month) for month in monthly_user_trend_df['month'].tolist()]
+            monthly_users_chart_data['data'] = monthly_user_trend_df['user_count'].tolist()
+            logger.debug(f"Monthly user trend: {len(monthly_users_chart_data['labels'])} data points")
 
-
-    # Get chart data for user activity
-    monthly_activity_df = users_manager.monthly_activity_trend()
-    activity_chart_data = {
-        'labels': [],
-        'data': []
-    }
-    if not monthly_activity_df.empty:
-        activity_chart_data['labels'] = [str(month) for month in monthly_activity_df['month'].tolist()]
-        activity_chart_data['data'] = monthly_activity_df['active_user_count'].tolist()
-    
-    return render_template(
-        "users.html",
-        total_users=total_users,
-        total_user_growth_rate=total_user_growth_rate,
-        total_new_registrations=total_new_registrations,
-        new_registrations_rate=new_registrations_rate,
-        total_active_users=total_active_users,
-        active_users_growth_rate=active_users_growth_rate,
-        users_per_location=users_per_location,
-        monthly_trend_data=monthly_users_chart_data,
-        monthly_activity_data=activity_chart_data
-    )
+        # Get chart data for user activity
+        logger.info("Fetching monthly activity trend data")
+        monthly_activity_df = users_manager.monthly_activity_trend()
+        activity_chart_data = {
+            'labels': [],
+            'data': []
+        }
+        if not monthly_activity_df.empty:
+            activity_chart_data['labels'] = [str(month) for month in monthly_activity_df['month'].tolist()]
+            activity_chart_data['data'] = monthly_activity_df['active_user_count'].tolist()
+            logger.debug(f"Monthly activity trend: {len(activity_chart_data['labels'])} data points")
+        
+        logger.info("Users page rendered successfully")
+        return render_template(
+            "users.html",
+            total_users=total_users,
+            total_user_growth_rate=total_user_growth_rate,
+            total_new_registrations=total_new_registrations,
+            new_registrations_rate=new_registrations_rate,
+            total_active_users=total_active_users,
+            active_users_growth_rate=active_users_growth_rate,
+            users_per_location=users_per_location,
+            monthly_trend_data=monthly_users_chart_data,
+            monthly_activity_data=activity_chart_data
+        )
+    except Exception as e:
+        logger.error(f"Error loading users page: {str(e)}", exc_info=True)
+        raise
 
 @app.route('/search_users', methods=['POST'])
 def search_users():
     """Search users based on a query"""
     query = request.form.get('query', '').strip()
+    logger.info(f"User search requested with query: '{query}'")
     
     if not query:
+        logger.warning("Empty search query provided")
         return jsonify({
             'success': False,
             'message': 'Please enter a search query.',
@@ -249,15 +362,18 @@ def search_users():
     
     try:
         # Retrieve users matching the query
+        logger.info(f"Searching for users matching: {query}")
         users = users_manager.retrieve_users_information(query)
         
         if not users:
+            logger.info(f"No users found for query: {query}")
             return jsonify({
                 'success': True,
                 'message': 'No users found matching the query.',
                 'users': []
             }), 200
         
+        logger.info(f"Found {len(users)} user(s) matching query: {query}")
         return jsonify({
             'success': True,
             'message': f'Found {len(users)} user(s) matching the query.',
@@ -265,6 +381,7 @@ def search_users():
         }), 200
         
     except Exception as e:
+        logger.error(f"Error in search_users route: {str(e)}", exc_info=True)
         print(f"Error in search_users route: {e}")
         return jsonify({
             'success': False,
@@ -276,66 +393,91 @@ def search_users():
 @app.route("/businesses")
 def businesses():
     """loads the businesses management page"""
+    logger.info("Businesses page accessed")
     
-    total_businesses = business_manager.total_businesses()
-    business_growth_rate = business_manager.total_businesses_growth_rate()
-    new_businesses = business_manager.new_businesses_registrations()
-    new_businesses_rate = business_manager.new_businesses_registrations_rate()
-    total_active_businesses = business_manager.total_active_businesses()
-    total_active_businesses_growth_rate = business_manager.total_active_businesses_growth_rate()
-    
-    # Get category data
-    top_categories = business_manager.top_performing_categories()
-    
-    # Calculate percentages for progress bars
-    if top_categories:
-        max_total = max(category['total'] for category in top_categories)
-        for category in top_categories:
-            category['width'] = int((category['total'] / max_total) * 100) if max_total > 0 else 0
-    
-    # Get business activity data
-    business_activity = business_manager.load_business_activity()
-    
-    # Get the monthly business trend
-    monthly_business_trend_df = business_manager.monthly_business_trend()
-    
-    # Convert dataframe to json
-    monthly_business_chart_data = {
-        'labels': [],
-        'data': []
-    }
-    
-    if not monthly_business_trend_df.empty:
-        # Convert Period to string for JSON serialization
-        monthly_business_chart_data['labels'] = [str(month) for month in monthly_business_trend_df['month'].tolist()]
-        monthly_business_chart_data['data'] = monthly_business_trend_df['business_count'].tolist()
+    try:
+        total_businesses = business_manager.total_businesses()
+        logger.debug(f"Total businesses: {total_businesses}")
+        
+        business_growth_rate = business_manager.total_businesses_growth_rate()
+        logger.debug(f"Business growth rate: {business_growth_rate}")
+        
+        new_businesses = business_manager.new_businesses_registrations()
+        logger.debug(f"New businesses: {new_businesses}")
+        
+        new_businesses_rate = business_manager.new_businesses_registrations_rate()
+        logger.debug(f"New businesses rate: {new_businesses_rate}")
+        
+        total_active_businesses = business_manager.total_active_businesses()
+        logger.debug(f"Active businesses: {total_active_businesses}")
+        
+        total_active_businesses_growth_rate = business_manager.total_active_businesses_growth_rate()
+        logger.debug(f"Active businesses growth rate: {total_active_businesses_growth_rate}")
+        
+        # Get category data
+        logger.info("Fetching top performing categories")
+        top_categories = business_manager.top_performing_categories()
+        
+        # Calculate percentages for progress bars
+        if top_categories:
+            max_total = max(category['total'] for category in top_categories)
+            for category in top_categories:
+                category['width'] = int((category['total'] / max_total) * 100) if max_total > 0 else 0
+            logger.debug(f"Processed {len(top_categories)} categories")
+        
+        # Get business activity data
+        logger.info("Loading business activity data")
+        business_activity = business_manager.load_business_activity()
+        logger.debug(f"Business activity records: {len(business_activity) if business_activity else 0}")
+        
+        # Get the monthly business trend
+        logger.info("Fetching monthly business trend")
+        monthly_business_trend_df = business_manager.monthly_business_trend()
+        
+        # Convert dataframe to json
+        monthly_business_chart_data = {
+            'labels': [],
+            'data': []
+        }
+        
+        if not monthly_business_trend_df.empty:
+            # Convert Period to string for JSON serialization
+            monthly_business_chart_data['labels'] = [str(month) for month in monthly_business_trend_df['month'].tolist()]
+            monthly_business_chart_data['data'] = monthly_business_trend_df['business_count'].tolist()
+            logger.debug(f"Monthly business trend: {len(monthly_business_chart_data['labels'])} data points")
 
-    # get the top performing industries
-    top_performing_industries = business_manager.get_top_performing_industries()
-    
-    # Format the industries data for the chart
-    industries_chart_data = {
-        'labels': [],
-        'data': []
-    }
-    
-    if top_performing_industries:
-        for industry, total in top_performing_industries:
-            industries_chart_data['labels'].append(industry.title())
-            industries_chart_data['data'].append(float(total))
-    
-    return render_template('bussinesses.html',
-                           total_businesses=total_businesses,
-                           business_growth_rate=business_growth_rate,
-                           new_businesses=new_businesses,
-                           new_businesses_rate=new_businesses_rate,
-                           total_active_businesses=total_active_businesses,
-                           total_active_businesses_growth_rate=total_active_businesses_growth_rate,
-                           top_categories=top_categories,
-                           business_activity=business_activity,
-                           monthly_business_trend_data=monthly_business_chart_data,
-                           industries_chart_data=industries_chart_data
-                           )
+        # get the top performing industries
+        logger.info("Fetching top performing industries")
+        top_performing_industries = business_manager.get_top_performing_industries()
+        
+        # Format the industries data for the chart
+        industries_chart_data = {
+            'labels': [],
+            'data': []
+        }
+        
+        if top_performing_industries:
+            for industry, total in top_performing_industries:
+                industries_chart_data['labels'].append(industry.title())
+                industries_chart_data['data'].append(float(total))
+            logger.debug(f"Top performing industries: {len(industries_chart_data['labels'])} industries")
+        
+        logger.info("Businesses page rendered successfully")
+        return render_template('bussinesses.html',
+                               total_businesses=total_businesses,
+                               business_growth_rate=business_growth_rate,
+                               new_businesses=new_businesses,
+                               new_businesses_rate=new_businesses_rate,
+                               total_active_businesses=total_active_businesses,
+                               total_active_businesses_growth_rate=total_active_businesses_growth_rate,
+                               top_categories=top_categories,
+                               business_activity=business_activity,
+                               monthly_business_trend_data=monthly_business_chart_data,
+                               industries_chart_data=industries_chart_data
+                               )
+    except Exception as e:
+        logger.error(f"Error loading businesses page: {str(e)}", exc_info=True)
+        raise
 
 
 
@@ -344,8 +486,10 @@ def businesses():
 def search_businesses():
     """Search businesses based on a query"""
     query = request.form.get('query', '').strip()
+    logger.info(f"Business search requested with query: '{query}'")
     
     if not query:
+        logger.warning("Empty search query provided")
         return jsonify({
             'success': False,
             'message': 'Please enter a search query.',
@@ -354,15 +498,18 @@ def search_businesses():
     
     try:
         # Retrieve businesses matching the query
+        logger.info(f"Searching for businesses matching: {query}")
         businesses = business_manager.retrieve_business_information(query)
         
         if not businesses:
+            logger.info(f"No businesses found for query: {query}")
             return jsonify({
                 'success': True,
                 'message': 'No businesses found matching the query.',
                 'businesses': []
             }), 200
         
+        logger.info(f"Found {len(businesses)} business(es) matching query: {query}")
         return jsonify({
             'success': True,
             'message': f'Found {len(businesses)} business(es) matching the query.',
@@ -370,6 +517,7 @@ def search_businesses():
         }), 200
         
     except Exception as e:
+        logger.error(f"Error in search_businesses route: {str(e)}", exc_info=True)
         print(f"Error in search_businesses route: {e}")
         return jsonify({
             'success': False,
@@ -380,25 +528,45 @@ def search_businesses():
 
 @app.route('/products')
 def products():
+    logger.info("Products page accessed")
+    
+    try:
+        total_products = products_manager.total_products()
+        logger.debug(f"Total products: {total_products}")
+        
+        total_products_gr = products_manager.total_products_growth()
+        logger.debug(f"Products growth rate: {total_products_gr}")
+        
+        low_stock_count = products_manager.low_stock_count()
+        logger.debug(f"Low stock count: {low_stock_count}")
+        
+        low_stock_percent = products_manager.low_stock_percent()
+        logger.debug(f"Low stock percentage: {low_stock_percent}")
+        
+        total_revenue = products_manager.total_revenue()
+        logger.debug(f"Total revenue: {total_revenue}")
+        
+        total_revenue_growth = products_manager.total_revenue_growth()
+        logger.debug(f"Revenue growth: {total_revenue_growth}")
+        
+        logger.info(f"Fetching product rankings by: {settings_manager.product_performance_by}")
+        ranking_products = products_manager.product_ranking(settings_manager.product_performance_by)
+        logger.debug(f"Retrieved {len(ranking_products) if ranking_products else 0} ranked products")
 
-    total_products = products_manager.total_products()
-    total_products_gr = products_manager.total_products_growth()
-    low_stock_count = products_manager.low_stock_count()
-    low_stock_percent = products_manager.low_stock_percent()
-    total_revenue = products_manager.total_revenue()
-    total_revenue_growth = products_manager.total_revenue_growth()
-    ranking_products = products_manager.product_ranking(settings_manager.product_performance_by)
-
-    return render_template(
-        'products.html',
-        total_products = total_products,
-        total_products_gr = total_products_gr,
-        low_stock_count = low_stock_count,
-        low_stock_percent = low_stock_percent,
-        total_revenue = total_revenue,
-        total_revenue_growth = total_revenue_growth,
-        ranking_products = ranking_products
-    )
+        logger.info("Products page rendered successfully")
+        return render_template(
+            'products.html',
+            total_products = total_products,
+            total_products_gr = total_products_gr,
+            low_stock_count = low_stock_count,
+            low_stock_percent = low_stock_percent,
+            total_revenue = total_revenue,
+            total_revenue_growth = total_revenue_growth,
+            ranking_products = ranking_products
+        )
+    except Exception as e:
+        logger.error(f"Error loading products page: {str(e)}", exc_info=True)
+        raise
 
 
 
@@ -412,14 +580,19 @@ def search_product():
         else:
             product_query = request.args.get('query', '').strip()
         
+        logger.info(f"Product search requested with query: '{product_query}' via {request.method}")
+        
         if not product_query:
+            logger.warning("Empty product search query provided")
             return jsonify({
                 "error": "Please provide a product name to search"
             }), 400
         
         # Get product summary using your existing method
+        logger.info(f"Fetching product information summary for: {product_query}")
         result = products_manager.product_information_summary(product_query)
         
+        logger.info(f"Product search completed for: {product_query}")
         # Return the summary data
         return jsonify({
             "success": True,
@@ -428,6 +601,7 @@ def search_product():
         }), 200
         
     except Exception as e:
+        logger.error(f"Search error in search_product: {str(e)}", exc_info=True)
         print(f"Search error: {e}")
         return jsonify({
             "error": "An error occurred during search",
@@ -438,29 +612,51 @@ def search_product():
 
 @app.route('/industry_analysis')
 def industry_analysis():
-    total_industries = industry_manager.total_industries()
-    new_industries = industry_manager.check_new_industries()
-    industries_total = industry_manager.get_industries_total()
-    industry_revenue_growth_rate = industry_manager.total_industry_revenue_rate()
-    top_performing_industry = max(
-        business_manager.get_top_performing_industries(),
-        key=lambda x: x[1]
-    )[0].capitalize()
+    logger.info("Industry analysis page accessed")
     
-    industry_market_share = industry_manager.industry_market_share()
-    industry_average_growth_rate = industry_manager.industry_average_growth_rate()
-    yearly_industry_growth_rate = industry_manager.industry_average_growth_rate(days=365)
-    
-    return render_template('industries.html',
-                          total_industries=len(total_industries),
-                          new_industries=len(new_industries),
-                          industries_total=industries_total,
-                          industry_revenue_growth_rate=industry_revenue_growth_rate,
-                          top_performing_industry=top_performing_industry,
-                          industry_market_share=industry_market_share,
-                          industry_average_growth_rate=industry_average_growth_rate,
-                          yearly_industry_growth_rate=yearly_industry_growth_rate
-                          )
+    try:
+        total_industries = industry_manager.total_industries()
+        logger.debug(f"Total industries: {len(total_industries)}")
+        
+        new_industries = industry_manager.check_new_industries()
+        logger.debug(f"New industries: {len(new_industries)}")
+        
+        industries_total = industry_manager.get_industries_total()
+        logger.debug(f"Industries total value: {industries_total}")
+        
+        industry_revenue_growth_rate = industry_manager.total_industry_revenue_rate()
+        logger.debug(f"Industry revenue growth rate: {industry_revenue_growth_rate}")
+        
+        logger.info("Calculating top performing industry")
+        top_performing_industry = max(
+            business_manager.get_top_performing_industries(),
+            key=lambda x: x[1]
+        )[0].capitalize()
+        logger.info(f"Top performing industry: {top_performing_industry}")
+        
+        industry_market_share = industry_manager.industry_market_share()
+        logger.debug(f"Industry market share calculated: {len(industry_market_share) if industry_market_share else 0} industries")
+        
+        industry_average_growth_rate = industry_manager.industry_average_growth_rate()
+        logger.debug(f"Industry average growth rate: {industry_average_growth_rate}")
+        
+        yearly_industry_growth_rate = industry_manager.industry_average_growth_rate(days=365)
+        logger.debug(f"Yearly industry growth rate: {yearly_industry_growth_rate}")
+        
+        logger.info("Industry analysis page rendered successfully")
+        return render_template('industries.html',
+                              total_industries=len(total_industries),
+                              new_industries=len(new_industries),
+                              industries_total=industries_total,
+                              industry_revenue_growth_rate=industry_revenue_growth_rate,
+                              top_performing_industry=top_performing_industry,
+                              industry_market_share=industry_market_share,
+                              industry_average_growth_rate=industry_average_growth_rate,
+                              yearly_industry_growth_rate=yearly_industry_growth_rate
+                              )
+    except Exception as e:
+        logger.error(f"Error loading industry analysis page: {str(e)}", exc_info=True)
+        raise
 
 
 @app.route('/search_industry', methods=['POST'])
@@ -468,40 +664,53 @@ def search_industry():
     # Get the industry from the request - handle both JSON and form data
     industry = None
     
+    logger.info("Industry search endpoint called")
+    
     # Try to get from JSON first
     if request.is_json and request.json:
         industry = request.json.get('industry', '').strip()
+        logger.debug("Industry extracted from JSON request")
     # Fallback to form data
     elif request.form:
         industry = request.form.get('industry', '').strip()
+        logger.debug("Industry extracted from form data")
     # Fallback to raw data if it's a simple string
     else:
         try:
             data = request.get_data(as_text=True)
             if data:
                 industry = data.strip()
+                logger.debug("Industry extracted from raw data")
         except:
             pass
     
+    logger.info(f"Industry search requested for: '{industry}'")
+    
     # Validate input
     if not industry:
+        logger.warning("Empty industry search query provided")
         return jsonify({'error': 'Please provide an industry'}), 400
     
     try:
         # Get the revenue trend data
+        logger.info(f"Fetching revenue trend data for industry: {industry}")
         revenue_trend_data_df = industry_manager.industry_revenue_trend(industry)
         
         # Get the customer growth trend data
+        logger.info(f"Fetching customer growth trend for industry: {industry}")
         customer_trend_data_df = industry_manager.customer_growth_trend(industry)
         
         # Get the average order trend data
+        logger.info(f"Fetching average order trend for industry: {industry}")
         average_order_trend_data_df = industry_manager.industry_average_order_trend(industry)
         
         # Get the seasonal performance trend data
+        logger.info(f"Fetching seasonal performance trend for industry: {industry}")
         seasonal_performance_trend_data_df = industry_manager.industry_seasonal_performance_trend(industry)
         
         # Check if all dataframes have data
         if revenue_trend_data_df.empty and customer_trend_data_df.empty and average_order_trend_data_df.empty and seasonal_performance_trend_data_df.empty:
+            logger.warning(f"No data found for industry: {industry}")
             return jsonify({
                 'error': 'No data found for this industry',
                 'industry': industry
@@ -519,6 +728,7 @@ def search_industry():
             monthly_industry_revenue_chart_data['labels'] = [str(month) for month in revenue_trend_data_df['month'].tolist()]
             # Use the correct column name 'amount' from your DataFrame
             monthly_industry_revenue_chart_data['data'] = revenue_trend_data_df['amount'].tolist()
+            logger.debug(f"Revenue trend data: {len(monthly_industry_revenue_chart_data['labels'])} data points")
         
         # Convert customer trend data to json
         monthly_industry_customer_chart_data = {
@@ -531,6 +741,7 @@ def search_industry():
             monthly_industry_customer_chart_data['labels'] = [str(month) for month in customer_trend_data_df['month'].tolist()]
             # Use the correct column name 'customers' from your DataFrame
             monthly_industry_customer_chart_data['data'] = customer_trend_data_df['customers'].tolist()
+            logger.debug(f"Customer trend data: {len(monthly_industry_customer_chart_data['labels'])} data points")
         
         # Convert average order trend data to json
         monthly_industry_average_order_chart_data = {
@@ -543,6 +754,7 @@ def search_industry():
             monthly_industry_average_order_chart_data['labels'] = [str(month) for month in average_order_trend_data_df['month'].tolist()]
             # Use the correct column name 'average_order_size' from your DataFrame
             monthly_industry_average_order_chart_data['data'] = average_order_trend_data_df['average_order_size'].tolist()
+            logger.debug(f"Average order trend data: {len(monthly_industry_average_order_chart_data['labels'])} data points")
         
         # Convert seasonal performance trend data to json
         seasonal_performance_chart_data = {
@@ -554,6 +766,7 @@ def search_industry():
             # For seasonal data, the column names are 'season' and 'total_sales'
             seasonal_performance_chart_data['labels'] = seasonal_performance_trend_data_df['season'].tolist()
             seasonal_performance_chart_data['data'] = seasonal_performance_trend_data_df['total_sales'].tolist()
+            logger.debug(f"Seasonal performance data: {len(seasonal_performance_chart_data['labels'])} data points")
         
         # Combine all datasets in the response
         response_data = {
@@ -564,17 +777,21 @@ def search_industry():
             'seasonal_performance': seasonal_performance_chart_data
         }
         
+        logger.info(f"Industry search completed successfully for: {industry}")
         return jsonify(response_data)
         
     except Exception as e:
+        logger.error(f"Error in search_industry for '{industry}': {str(e)}", exc_info=True)
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
     
 
 
 @app.route('/analysis', methods=['POST', 'GET'])
 def analysis():
+    logger.info("Analysis page accessed")
     try:
         # Get the most recent analytics data from database
+        logger.info("Fetching latest weekly insights from database")
         latest_insight_record = ai_manager.grab_weekly_insights()
         
         # Initialize variables
@@ -584,23 +801,29 @@ def analysis():
         last_updated = 'Never'
         
         if latest_insight_record:
+            logger.info("Latest insight record found")
             # Parse the JSON data
             try:
                 weekly_data = json.loads(latest_insight_record['insight'])
                 insights_count = len(weekly_data) if weekly_data else 0
                 tables_analyzed = len([k for k, v in weekly_data.items() if v]) if weekly_data else 0
+                logger.debug(f"Insights parsed - Count: {insights_count}, Tables: {tables_analyzed}")
                 
                 # Format the timestamp if available
                 if 'created_at' in latest_insight_record:
                     last_updated = datetime.fromisoformat(latest_insight_record['created_at']).date().isoformat()
-
+                    logger.debug(f"Last updated: {last_updated}")
                 else:
                     last_updated = 'Recently'
                 
             except (json.JSONDecodeError, KeyError) as e:
+                logger.error(f"Error parsing insights JSON: {str(e)}", exc_info=True)
                 print(f"Error parsing insights JSON: {e}")
                 weekly_data = None
+        else:
+            logger.info("No previous insights found in database")
         
+        logger.info("Analysis page rendered successfully")
         return render_template('analysis.html', 
                              weekly_data=weekly_data,
                              insights_count=insights_count,
@@ -608,6 +831,7 @@ def analysis():
                              last_updated=last_updated)
     
     except Exception as e:
+        logger.error(f"Error in analysis route: {str(e)}", exc_info=True)
         print(f"Error in analysis route: {e}")
         return render_template('analysis.html', 
                              weekly_data=None,
@@ -618,9 +842,11 @@ def analysis():
     
 @app.route('/generate-insights', methods=['POST'])
 def generate_insights():
+    logger.info("Generate insights endpoint called")
     try:
         
         # Get the most recent insight from database
+        logger.info("Checking for existing insights")
         latest_record = ai_manager.grab_weekly_insights()
         
         should_generate = True
@@ -644,23 +870,29 @@ def generate_insights():
                 
                 days_difference = (now - created_at).days
                 
+                logger.info(f"Last insight was generated {days_difference} days ago")
                 print(f"Last insight was {days_difference} days ago")
                 
                 # Only generate if 7 or more days have passed
                 should_generate = days_difference >= 7
                 
             except ValueError as e:
+                logger.warning(f"Could not parse timestamp: {created_at_str}, error: {str(e)}")
                 print(f"Could not parse timestamp: {created_at_str}, error: {e}")
                 should_generate = True
         else:
+            logger.info("No previous insights found or no timestamp available")
             print("No previous insights found or no timestamp")
             should_generate = True
         
         if should_generate:
+            logger.info("Generating new insights (7+ days have passed or no previous insights)")
             print("Generating new insights...")
             ai_manager.generate_weekly_insights()
             data = ai_manager.weekly_insights
+            logger.info("Storing weekly report in database")
             ai_manager.store_weekly_report(data)
+            logger.info("New insights generated and stored successfully")
             
             return jsonify({
                 'success': True, 
@@ -668,6 +900,7 @@ def generate_insights():
                 'generated': True
             })
         else:
+            logger.info(f"Insights are still valid. {7 - days_difference} days remaining")
             return jsonify({
                 'success': True, 
                 'message': 'Recent insights are still valid. New insights will be generated after 7 days.',
@@ -676,6 +909,7 @@ def generate_insights():
             })
     
     except Exception as e:
+        logger.error(f"Error in generate_insights: {str(e)}", exc_info=True)
         print(f"Error in generate_insights: {e}")
         return jsonify({
             'success': False, 
@@ -686,7 +920,14 @@ def generate_insights():
 
 @app.route('/custom_analysis', methods=['POST'])
 def custom_analysis():
+    logger.info("Custom analysis endpoint called")
     try:
+        logger.debug(f"Request method: {request.method}")
+        logger.debug(f"Request files: {dict(request.files)}")
+        logger.debug(f"Request form: {dict(request.form)}")
+        logger.debug(f"Request content type: {request.content_type}")
+        logger.debug(f"Request content length: {request.environ.get('CONTENT_LENGTH', 'Not set')}")
+        
         print("=== CUSTOM ANALYSIS DEBUG START ===")
         print(f"Request method: {request.method}")
         print(f"Request files: {dict(request.files)}")
@@ -696,65 +937,83 @@ def custom_analysis():
         
         # Check for the file in request
         if not request.files:
+            logger.error("request.files is completely empty")
             print("ERROR: request.files is completely empty")
             return jsonify({'error': 'No files received in request'}), 400
         
         # Debug all files in the request
         for key in request.files:
+            logger.debug(f"Found file key: {key}, value: {request.files[key]}")
             print(f"Found file key: {key}, value: {request.files[key]}")
         
         # Check if 'file' key exists
         if 'file' not in request.files:
             available_keys = list(request.files.keys())
+            logger.error(f"'file' key not found. Available keys: {available_keys}")
             print(f"ERROR: 'file' key not found. Available keys: {available_keys}")
             return jsonify({
                 'error': f'No file uploaded with key "file". Available keys: {available_keys}'
             }), 400
         
         file = request.files['file']
+        logger.debug(f"File object: {file}")
+        logger.debug(f"File filename: {file.filename}")
+        logger.debug(f"File content type: {getattr(file, 'content_type', 'Not available')}")
+        
         print(f"File object: {file}")
         print(f"File filename: {file.filename}")
         print(f"File content type: {getattr(file, 'content_type', 'Not available')}")
         
         # Check if file is empty
         if not file.filename:
+            logger.error("File has no filename")
             print("ERROR: File has no filename")
             return jsonify({'error': 'No file selected or file has no name'}), 400
             
         # Rest of your existing code...
         filename = file.filename
+        logger.info(f"Processing file: {filename}")
         print(f"Processing file: {filename}")
         
         # Validate file extension
         allowed_extensions = {'.csv', '.xlsx', '.xls'}
         file_ext = os.path.splitext(filename)[1].lower()
+        logger.debug(f"File extension: {file_ext}")
         print(f"File extension: {file_ext}")
         
         if file_ext not in allowed_extensions:
+            logger.error(f"Invalid file extension: {file_ext}")
             print(f"ERROR: Invalid file extension: {file_ext}")
             return jsonify({'error': f'Invalid file format: {file_ext}. Please upload CSV or Excel files only.'}), 400
         
         # Continue with the rest of your processing...
+        logger.info("Starting file cleaning process")
         print("Starting file cleaning process...")
         uploaded_dataframe = ai_manager.clean_file(file)
         
         if uploaded_dataframe is None:
+            logger.error("clean_file returned None")
             print("ERROR: clean_file returned None")
             return jsonify({'error': 'Failed to process the uploaded file'}), 400
             
         if uploaded_dataframe.empty:
+            logger.error("DataFrame is empty after cleaning")
             print("ERROR: DataFrame is empty after cleaning")
             return jsonify({'error': 'No valid data found in the uploaded file'}), 400
         
+        logger.info(f"DataFrame shape: {uploaded_dataframe.shape}")
         print(f"DataFrame shape: {uploaded_dataframe.shape}")
         
         # Continue with analysis...
+        logger.info("Starting AI analysis of dataframe")
         analysis_result = ai_manager.ai_analyse_df(uploaded_dataframe)
         
         if isinstance(analysis_result, dict) and "error" in analysis_result and len(analysis_result) == 1:
+            logger.warning(f"Analysis returned error: {analysis_result['error']}")
             return jsonify(analysis_result), 400
         
         # Process results...
+        logger.info("Processing analysis results into chart data")
         chart_json = {}
         for chart_key, chart_data in analysis_result.items():
             if isinstance(chart_data, dict) and 'dataframe' in chart_data:
@@ -765,53 +1024,38 @@ def custom_analysis():
                         'metadata': chart_data.get('metadata', {}),
                         'columns': df.columns.tolist()
                     }
+                    logger.debug(f"Processed chart: {chart_key} with {len(df)} rows")
         
         if not chart_json:
+            logger.error("No chart data could be processed")
             return jsonify({'error': 'Failed to process chart data for visualization'}), 500
         
+        logger.info(f"Successfully processed {len(chart_json)} charts")
         print(f"Successfully processed {len(chart_json)} charts")
         return jsonify(chart_json)
     
     except Exception as e:
+        logger.error(f"Unexpected error in custom_analysis: {str(e)}", exc_info=True)
         print(f"UNEXPECTED ERROR: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': f'Analysis failed: {str(e)}'}), 500
 
 
-# Additional debugging function to test file processing independently
-@app.route('/test_file_upload', methods=['POST'])
-def test_file_upload():
-    """Debug route to test just the file upload part"""
-    try:
-        print("=== FILE UPLOAD TEST ===")
-        
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file uploaded'}), 400
-        
-        file = request.files['file']
-        
-        if not file.filename:
-            return jsonify({'error': 'No filename'}), 400
-            
-        # Try to read first few lines
-        file_content = file.read(1000).decode('utf-8')  # Read first 1000 bytes
-        file.seek(0)  # Reset file pointer
-        
-        return jsonify({
-            'filename': file.filename,
-            'content_preview': file_content,
-            'success': True
-        })
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+@app.route('/settings')
+def settings():
+    return render_template(
+        "settings.html"
+    )
 
 
 # Run the app
 if __name__ == "__main__":
+    logger.info("Starting Flask application in debug mode")
     app.run(debug=True)
     products_manager = Products()
+    logger.info("Starting bulk normalization...")
     print("Starting bulk normalization...")
     products_manager.normalize_new_products()
+    logger.info("Bulk normalization completed")
     print("Done!")
