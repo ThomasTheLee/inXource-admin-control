@@ -50,7 +50,7 @@
             border-radius: 8px;
             padding: 24px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-left: 4px solid #dc2626;
+            border-left: 4px solid #000;
         }
 
         .stat-card h3 {
@@ -114,12 +114,12 @@
 
         .search-input:focus {
             outline: none;
-            border-color: #dc2626;
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+            border-color: #000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
         }
 
         .search-btn {
-            background: #dc2626;
+            background: #000;
             color: white;
             border: none;
             padding: 12px 24px;
@@ -130,7 +130,7 @@
         }
 
         .search-btn:hover {
-            background: #b91c1c;
+            background: #333;
         }
 
         .search-btn:disabled {
@@ -202,7 +202,7 @@
             background: #f9fafb;
             border-radius: 8px;
             padding: 24px;
-            border-left: 4px solid #dc2626;
+            border-left: 4px solid #000;
         }
 
         .summary-header {
@@ -241,7 +241,7 @@
         .summary-value {
             font-size: 1.1rem;
             font-weight: 700;
-            color: #dc2626;
+            color: #000;
         }
 
         .no-summary {
@@ -320,7 +320,7 @@
         .metric-value {
             display: block;
             font-weight: 600;
-            color: #dc2626;
+            color: #000;
             font-size: 1.1rem;
         }
 
@@ -393,17 +393,17 @@
             
             <!-- Loading Message -->
             <div class="loading-message" id="loadingMessage">
-                🔍 Searching products...
+                Searching products...
             </div>
             
             <!-- Error Message -->
             <div class="error-message" id="errorMessage">
-                ❌ An error occurred while searching. Please try again.
+                An error occurred while searching. Please try again.
             </div>
             
             <!-- No Results Message -->
             <div class="no-results" id="noResultsMessage">
-                ⚠️ No products found matching your search criteria.
+                No products found matching your search criteria.
             </div>
             
             <!-- Search Results -->
@@ -578,7 +578,6 @@
             }
         }
 
-        // Allow searching by pressing Enter
         document.getElementById('productSearch').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 searchProducts();

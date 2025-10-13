@@ -1,4 +1,5 @@
-from flask import Flask, render_template, flash, redirect, url_for, request, jsonify
+from flask import Flask, request, render_template, redirect, url_for, session, make_response, jsonify, flash
+from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from typing import Dict, Any, cast
 import logging
@@ -15,6 +16,8 @@ import json
 from datetime import datetime, timedelta
 from settings import SettingsManager
 from subscriptions import Subscriptions
+from auth import Auth
+from activites import Activites
 
 from clients import Clients
 
@@ -38,6 +41,8 @@ industry_manager = Industry()
 ai_manager = AnalAI()
 settings_manager = SettingsManager()
 Subscription_manager = Subscriptions()
+auth_manager = Auth()
+activity_manager = Activites()
 
 # Configure logger with environment-based control
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
@@ -71,38 +76,80 @@ logger.info(f"Flask app initialized with secret key: {'Set' if app.secret_key el
 
 
 #routes
-@app.route("/normalize-products", methods=["POST"])
-def normalize_products():
-    """Normalize all products that don't have an ai_name"""
-    logger.info("Normalize products endpoint called")
-    try:
-        # Check if there are any products without ai_name
-        logger.info("Checking for products without ai_name")
-        response = (
-            ai_manager.supabase_client.table("products")
-            .select("id, ai_name")
-            .is_("ai_name", "null")  # Find products where ai_name is NULL
-            .limit(1)
-            .execute()
-        )
+@app.route('/', methods=['POST', 'GET'])
+def auth():
+    # Debug: print current session at start
+    print("Session at start:", dict(session))
 
-        if not response.data:
-            logger.info("All products already normalized")
-            return jsonify({"message": "All products already normalized."}), 200
+    # Check if user is already logged in via session
+    if session.get('logged_in'):
+        print("User already logged in, staff_id:", session.get('staff_id'))
+        return redirect(url_for('index'))
+    
+    # Check if "Remember Me" cookies exist and auto-login
+    if request.cookies.get('user_name') and not session.get('logged_in'):
+        # Restore session from cookies
+        session['user_name'] = request.cookies.get('user_name')
+        session['email'] = request.cookies.get('email')
+        session['role'] = request.cookies.get('role')
+        session['staff_id'] = request.cookies.get('staff_id')
+        session['logged_in'] = True
 
-        # Trigger normalization for all unnormalized products
-        logger.info("Triggering normalization for unnormalized products")
-        products_manager.normalize_new_products()
-        logger.info("Normalization completed successfully")
-        return jsonify({"message": "Normalization triggered for all unnormalized products."}), 200
+        # Debug: print restored session
+        print("Restored session from cookies:", dict(session))
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        remember = request.form.get('remember')
 
-    except Exception as e:
-        logger.error(f"Error in normalize_products: {str(e)}", exc_info=True)
-        print(f"Exception: {e}")
-        return jsonify({"error": str(e)}), 500
+        # Debug: log login attempt
+        print(f"Login attempt for username: {username}")
+
+        user_info = auth_manager.login(user=username, password=password)
+
+        # Debug: print returned user info
+        print("Login returned user_info:", user_info)
+
+        if user_info.get('logged'):
+            session['user_name'] = user_info['user_name']
+            session['email'] = user_info['email']
+            session['role'] = user_info['role']
+            session['staff_id'] = user_info['staff_id']
+            session['logged_in'] = user_info['logged']
+
+            # Debug: print session after login
+            print("Session after login:", dict(session))
+
+            response = make_response(redirect(url_for('index')))
+
+            if remember == 'on':
+                expires = datetime.now() + timedelta(days=30)
+                response.set_cookie('user_name', str(user_info['user_name']), expires=expires, httponly=True, secure=True, samesite='Lax')
+                response.set_cookie('email', str(user_info['email']), expires=expires, httponly=True, secure=True, samesite='Lax')
+                response.set_cookie('role', str(user_info['role']), expires=expires, httponly=True, secure=True, samesite='Lax')
+                response.set_cookie('staff_id', str(user_info['staff_id']), expires=expires, httponly=True, secure=True, samesite='Lax')
+
+                # Debug: print cookies being set
+                print("Cookies set for 'remember me':", {
+                    'user_name': user_info['user_name'],
+                    'email': user_info['email'],
+                    'role': user_info['role'],
+                    'staff_id': user_info['staff_id']
+                })
+
+            return response
+        else:
+            flash('Invalid credentials. Please try again.', 'error')
+            return render_template('auth.html', error="Invalid credentials")
+    
+    # Debug: print session before rendering login page
+    print("Session before rendering login page:", dict(session))
+    return render_template('auth.html')
 
 
-@app.route("/")
+@app.route("/index")
 def index(): 
     """loads the overview dashboard"""
     logger.info("Index page accessed")
@@ -139,6 +186,24 @@ def index():
                 revenue_json[period] = []
                 logger.debug(f"No revenue data for {period}")
 
+        all_activities = activity_manager.get_recent_activities() or []
+        index = session.get('activity_index', 0)
+
+        # Make sure index is within range
+        if index >= len(all_activities):
+            index = 0
+
+        # Show only 4 activities
+        recent_activities = all_activities[index:index+4]
+
+        # Update index for next refresh
+        new_index = index + 4
+        if new_index >= len(all_activities):
+            new_index = 0  # loop back to start
+
+        session['activity_index'] = new_index
+
+
         logger.info("Index page rendered successfully")
         return render_template('index.html',
                                total_users=total_users,
@@ -146,7 +211,8 @@ def index():
                                total_products=total_products,
                                total_pending_withdraws=total_pending_withdraws,
                                revenues=revenues,
-                               revenue_data=revenue_json
+                               revenue_data=revenue_json,
+                               recent_activities = recent_activities
                                )
     except Exception as e:
         logger.error(f"Error loading index page: {str(e)}", exc_info=True)
@@ -156,6 +222,18 @@ def index():
 @app.route('/wallet')
 def wallet():
     """loads the wallet page"""
+    # Check if user is logged in
+    if not session.get('logged_in'):
+        flash("Please login to access this page.", "warning")
+        return redirect(url_for('auth'))
+    
+    # Check user role
+    user_role = session.get('role')
+    if user_role not in ['super', 'admin', 'finance']:
+        flash("You don't have permission to access the wallet page.", "danger")
+        logger.warning(f"Unauthorized access attempt to wallet page by user with role: {user_role}")
+        return redirect(url_for('index'))
+    
     logger.info("Wallet page accessed")
     try:
         total_pending_withdraws = wallet_manager.total_withdrawal_requests()
@@ -181,6 +259,16 @@ def wallet():
 @app.route('/approve_withdrawal_with_proof', methods=['POST'])
 def approve_withdrawal_with_proof():
     """Approve a withdrawal request with proof of payout file upload"""
+    # Check if user is logged in
+    if not session.get('logged_in'):
+        return jsonify({"success": False, "message": "Please login to perform this action"})
+    
+    # Check user role
+    user_role = session.get('role')
+    if user_role not in ['super', 'admin', 'finance']:
+        logger.warning(f"Unauthorized approval attempt by user with role: {user_role}")
+        return jsonify({"success": False, "message": "You don't have permission to approve withdrawals"})
+    
     logger.info("Approve withdrawal with proof endpoint called")
     
     try:
@@ -259,6 +347,18 @@ def approve_withdrawal_with_proof():
 @app.route('/reject_withdrawal', methods=['POST'])
 def reject_withdrawal():
     """Reject a withdrawal request by its ID"""
+    # Check if user is logged in
+    if not session.get('logged_in'):
+        flash("Please login to perform this action.", "warning")
+        return redirect(url_for('auth'))
+    
+    # Check user role
+    user_role = session.get('role')
+    if user_role not in ['super', 'admin', 'finance']:
+        logger.warning(f"Unauthorized rejection attempt by user with role: {user_role}")
+        flash("You don't have permission to reject withdrawals.", "danger")
+        return redirect(url_for('index'))
+    
     withdrawal_id = request.form.get('withdrawal_id')
     logger.info(f"Reject withdrawal endpoint called for ID: {withdrawal_id}")
 
@@ -528,6 +628,17 @@ def search_businesses():
 
 @app.route('/products')
 def products():
+
+    # Check if user is logged in
+    if not session.get('logged_in'):
+        return jsonify({"success": False, "message": "Please login to perform this action"})
+    
+    # Check user role
+    user_role = session.get('role')
+    if user_role not in ['super', 'admin']:
+        logger.warning(f"Unauthorized approval attempt by user with role: {user_role}")
+        return jsonify({"success": False, "message": "You don't have permission to approve withdrawals"})
+    
     logger.info("Products page accessed")
     
     try:
@@ -573,6 +684,17 @@ def products():
 @app.route('/search_product', methods=['GET', 'POST'])
 def search_product():
     """Search for a product and return its summary information"""
+
+    # Check if user is logged in
+    if not session.get('logged_in'):
+        return jsonify({"success": False, "message": "Please login to perform this action"})
+    
+    # Check user role
+    user_role = session.get('role')
+    if user_role not in ['super', 'admin']:
+        logger.warning(f"Unauthorized approval attempt by user with role: {user_role}")
+        return jsonify({"success": False, "message": "You don't have permission to approve withdrawals"})
+
     try:
         # Get the queried product
         if request.method == 'POST':
@@ -612,6 +734,17 @@ def search_product():
 
 @app.route('/industry_analysis')
 def industry_analysis():
+
+    # Check if user is logged in
+    if not session.get('logged_in'):
+        return jsonify({"success": False, "message": "Please login to perform this action"})
+    
+    # Check user role
+    user_role = session.get('role')
+    if user_role not in ['super', 'admin']:
+        logger.warning(f"Unauthorized approval attempt by user with role: {user_role}")
+        return jsonify({"success": False, "message": "You don't have permission to approve withdrawals"})
+
     logger.info("Industry analysis page accessed")
     
     try:
@@ -661,6 +794,17 @@ def industry_analysis():
 
 @app.route('/search_industry', methods=['POST'])
 def search_industry():
+
+    # Check if user is logged in
+    if not session.get('logged_in'):
+        return jsonify({"success": False, "message": "Please login to perform this action"})
+    
+    # Check user role
+    user_role = session.get('role')
+    if user_role not in ['super', 'admin']:
+        logger.warning(f"Unauthorized approval attempt by user with role: {user_role}")
+        return jsonify({"success": False, "message": "You don't have permission to approve withdrawals"})
+    
     # Get the industry from the request - handle both JSON and form data
     industry = None
     
@@ -788,6 +932,17 @@ def search_industry():
 
 @app.route('/analysis', methods=['POST', 'GET'])
 def analysis():
+
+    # Check if user is logged in
+    if not session.get('logged_in'):
+        return jsonify({"success": False, "message": "Please login to perform this action"})
+    
+    # Check user role
+    user_role = session.get('role')
+    if user_role not in ['super', 'admin']:
+        logger.warning(f"Unauthorized approval attempt by user with role: {user_role}")
+        return jsonify({"success": False, "message": "You don't have permission to approve withdrawals"})
+    
     logger.info("Analysis page accessed")
     try:
         # Get the most recent analytics data from database
@@ -842,6 +997,17 @@ def analysis():
     
 @app.route('/generate-insights', methods=['POST'])
 def generate_insights():
+
+    # Check if user is logged in
+    if not session.get('logged_in'):
+        return jsonify({"success": False, "message": "Please login to perform this action"})
+    
+    # Check user role
+    user_role = session.get('role')
+    if user_role not in ['super', 'admin']:
+        logger.warning(f"Unauthorized approval attempt by user with role: {user_role}")
+        return jsonify({"success": False, "message": "You don't have permission to approve withdrawals"})
+    
     logger.info("Generate insights endpoint called")
     try:
         
@@ -920,6 +1086,17 @@ def generate_insights():
 
 @app.route('/custom_analysis', methods=['POST'])
 def custom_analysis():
+
+    # Check if user is logged in
+    if not session.get('logged_in'):
+        return jsonify({"success": False, "message": "Please login to perform this action"})
+    
+    # Check user role
+    user_role = session.get('role')
+    if user_role not in ['super', 'admin']:
+        logger.warning(f"Unauthorized approval attempt by user with role: {user_role}")
+        return jsonify({"success": False, "message": "You don't have permission to approve withdrawals"})
+    
     logger.info("Custom analysis endpoint called")
     try:
         logger.debug(f"Request method: {request.method}")
@@ -1044,9 +1221,270 @@ def custom_analysis():
 
 @app.route('/settings')
 def settings():
+    # Check if user is logged in
+    if not session.get('logged_in'):
+        return redirect(url_for('auth'))
+    
+    # Check user role
+    user_role = session.get('role')
+    if user_role not in ['super', 'admin']:
+        logger.warning(f"Unauthorized access attempt by user with role: {user_role}")
+        return redirect(url_for('index'))
+
+    username = session.get('user_name', '')
+    email = session.get('email', '')
+    staff_id = session.get('staff_id')
+    SUPER_ID = os.getenv('SUPER_ID')
+    
+    # Check if current user is super
+    is_user_super = (staff_id == SUPER_ID)
+    
+    staff = auth_manager.load_staff()
+
     return render_template(
-        "settings.html"
+        "settings.html",
+        username=username,
+        email=email,
+        staff=staff,
+        is_user_super=is_user_super  # Pass this to template
     )
+
+@app.route('/update_profile', methods=["POST","GET"])
+def update_profile():
+    # Check if user is logged in
+    if not session.get('logged_in'):
+        return redirect(url_for('auth'))
+    
+    # Check user role
+    user_role = session.get('role')
+    if user_role not in ['super', 'admin']:
+        logger.warning(f"Unauthorized approval attempt by user with role: {user_role}")
+        return jsonify({"success": False, "message": "You don't have permission to approve withdrawals"})
+
+    staff_id = session['staff_id']
+    username = request.form.get('username')
+    email = request.form.get('email')
+
+    try:
+        response = auth_manager.edit_profile(staff_id, username, email)
+        if response:
+            logger.info(f"Successfully updated staff id {staff_id}")
+
+            # Update session so the placeholders reflect the new values
+            session['user_name'] = response.get('user_name', session['user_name'])
+            session['email'] = response.get('email', session['email'])
+
+    except Exception as e:
+        logger.info(f"Exception: {e}")
+
+    # Pass session values to template
+    return render_template(
+        'settings.html',
+        username=session.get('user_name', ''),
+        email=session.get('email', '')
+    )
+
+@app.route('/update_password', methods=["POST","GET"])
+def update_password():
+    # Check if user is logged in
+    if not session.get('logged_in'):
+        return redirect(url_for('auth'))
+    
+    # Check user role
+    user_role = session.get('role')
+    if user_role not in ['super', 'admin']:
+        logger.warning(f"Unauthorized approval attempt by user with role: {user_role}")
+        return jsonify({"success": False, "message": "You don't have permission to approve withdrawals"})
+    
+    staff_id = session.get('staff_id')
+    if not staff_id:
+        flash("Session expired. Please log in again.", "error")
+        return redirect(url_for('auth'))
+
+    if request.method == "POST":
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        try:
+            # Attempt to update the password
+            response = auth_manager.edit_password(
+                staff_id=staff_id,
+                current_password=current_password,
+                new_password=new_password,
+                confirm_password=confirm_password
+            )
+
+            if response:
+                logger.info(f"Successfully updated password for staff id {staff_id}")
+                flash("Password updated successfully!", "success")
+
+                # Optional: update session or keep session same
+                session['user_name'] = response.get('user_name', session.get('user_name'))
+                session['email'] = response.get('email', session.get('email'))
+
+            else:
+                flash("Password update failed. Check your current password or new passwords.", "error")
+
+        except Exception as e:
+            logger.error(f"Exception while updating password: {e}")
+            flash("An error occurred while updating password.", "error")
+
+    # Pass session values to template
+    return render_template(
+        'settings.html',
+        username=session.get('user_name', ''),
+        email=session.get('email', '')
+    )
+
+@app.route('/add_staff', methods=['POST', 'GET'])
+def add_staff():
+    if not session.get('logged_in'):
+        return redirect(url_for('auth'))
+
+    user_role = session.get('role')
+    if user_role not in ['super', 'admin']:
+        logger.warning(f"Unauthorized approval attempt by user with role: {user_role}")
+        return jsonify({"success": False, "message": "You don't have permission to add staff"}), 403
+
+    staff_id = session.get('staff_id')
+    if not staff_id:
+        flash("Session expired. Please log in again.", "error")
+        return redirect(url_for('auth'))
+
+    if request.method == "POST":
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        nrc = request.form.get('nrc')
+        role = request.form.get('role')
+
+        try:
+            response = auth_manager.add_staff(
+                username=username,
+                email=email,
+                password=password,
+                nrc=nrc,
+                role=role
+            )
+
+            if response:
+                logger.info(f"Successfully added new staff: {username}")
+                flash("New staff added successfully!", "success")
+            else:
+                flash("Failed to add new staff. Please check the details and try again.", "error")
+
+        except Exception as e:
+            logger.error(f"Exception while adding new staff: {e}")
+            flash("An error occurred while adding new staff.", "error")
+
+        # Redirect back to the same page (or staff list)
+        return redirect(url_for('add_staff'))
+
+    # For GET request, render the page
+    return render_template('settings.html')
+
+@app.route('/delete_staff/<staff_id>', methods=['POST'])
+def delete_staff(staff_id):
+    if not session.get('logged_in'):
+        return redirect(url_for('auth'))
+
+    user_role = session.get('role')
+    if user_role != 'super':
+        logger.warning(f"Unauthorized approval attempt by user with role: {user_role}")
+        return jsonify({"success": False, "message": "You don't have permission to delete staff"}), 403
+
+    current_staff_id = session.get('staff_id')
+    if not current_staff_id:
+        flash("Session expired. Please log in again.", "error")
+        return redirect(url_for('auth'))
+
+    try:
+        success = auth_manager.delete_staff(staff_id) 
+        if success:
+            logger.info(f"Successfully deleted staff id: {staff_id}")
+            flash("Staff member deleted successfully!", "success")
+        else:
+            flash("Failed to delete staff member. You might be trying to delete the super admin or an invalid ID.", "error")
+
+    except Exception as e:
+        logger.error(f"Exception while deleting staff id {staff_id}: {e}")
+        flash("An error occurred while deleting staff member.", "error")
+
+    return redirect(url_for('settings'))
+
+
+@app.route('/edit_staff/<staff_id>', methods=['POST'])
+def edit_staff(staff_id):
+    if not session.get('logged_in'):
+        return redirect(url_for('auth'))
+
+    user_role = session.get('role')
+    if user_role != 'super':
+        logger.warning(f"Unauthorized approval attempt by user with role: {user_role}")
+        return jsonify({"success": False, "message": "You don't have permission to edit staff"}), 403
+
+    current_staff_id = session.get('staff_id')
+    if not current_staff_id:
+        flash("Session expired. Please log in again.", "error")
+        return redirect(url_for('auth'))
+
+    username = request.form.get('username')
+    email = request.form.get('email')
+    nrc = request.form.get('nrc')
+    role = request.form.get('role')
+    is_active = request.form.get('is_active')
+    is_active_bool = True if is_active == 'True' else False
+
+    try:
+        response = auth_manager.edit_staff_user(
+            staff_id=staff_id,
+            username=username,
+            email=email,
+            nrc=nrc,
+            role=role,
+            is_active=is_active_bool
+        )
+
+        if response:
+            logger.info(f"Successfully updated staff id {staff_id}")
+            flash("Staff member updated successfully!", "success")
+        else:
+            flash("Failed to update staff member. Please check the details and try again.", "error")
+
+    except Exception as e:
+        logger.error(f"Exception while updating staff id {staff_id}: {e}")
+        flash("An error occurred while updating staff member.", "error")
+
+    return redirect(url_for('settings'))
+
+
+# other routes and methods in between
+#
+#
+#
+#
+#
+# here
+
+
+@app.route('/logout')
+def logout():
+    """
+    Logs the user out by clearing the session and removing relevant cookies.
+    Redirects to the auth page.
+    """
+    # Clear all session data
+    session.clear()
+
+    # Remove cookies if used for login persistence
+    response = make_response(redirect(url_for('auth')))  # redirect to your auth route
+    #response.set_cookie('user_name', '', expires=0)
+    #response.set_cookie('session_id', '', expires=0)  # example if you used a session cookie
+
+    return response
+
+
 
 
 # Run the app

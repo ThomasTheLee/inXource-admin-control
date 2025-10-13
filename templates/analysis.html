@@ -5,25 +5,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 25%, #2d2d2d 75%, #3a3a3a 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
             min-height: 100vh;
             margin: 0;
             padding: 0;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #ffffff;
-            pointer-events: none;
-            z-index: -1;
         }
 
         .analytics-container {
@@ -40,8 +27,8 @@
 
         .page-title {
             font-size: 2.2rem;
-            font-weight: 700;
-            color: #0f0f0f;
+            font-weight: 600;
+            color: #333;
             margin-bottom: 0.5rem;
         }
 
@@ -59,30 +46,30 @@
         }
 
         .time-btn {
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid rgba(230, 0, 0, 0.2);
-            color: #0f0f0f;
+            background: white;
+            border: 2px solid #d1d5db;
+            color: #333;
             padding: 0.8rem 2rem;
-            border-radius: 10px;
+            border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
         .time-btn.active {
-            background: linear-gradient(135deg, #e60000, #b30000);
+            background: #000;
             color: white;
-            border-color: #e60000;
+            border-color: #000;
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(230, 0, 0, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .time-btn:hover:not(.active) {
-            border-color: #e60000;
-            background: rgba(230, 0, 0, 0.05);
+            border-color: #000;
+            background: #f9fafb;
             transform: translateY(-1px);
         }
 
@@ -94,32 +81,19 @@
         }
 
         .insight-card {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(20px);
-            border-radius: 16px;
+            background: white;
+            border-radius: 8px;
             padding: 2rem;
-            box-shadow: 
-                0 6px 20px rgba(0, 0, 0, 0.06),
-                0 0 0 1px rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(230, 0, 0, 0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #000;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
         }
 
-        .insight-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(135deg, #e60000, #b30000);
-        }
-
         .insight-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .card-header {
@@ -132,19 +106,19 @@
         .card-icon {
             width: 50px;
             height: 50px;
-            border-radius: 12px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-size: 1.2rem;
-            background: linear-gradient(135deg, #e60000, #b30000);
+            background: #000;
         }
 
         .card-title {
             font-size: 1.3rem;
-            font-weight: 700;
-            color: #0f0f0f;
+            font-weight: 600;
+            color: #333;
             margin: 0;
         }
 
@@ -163,7 +137,7 @@
         }
 
         .insight-section h4 {
-            color: #e60000;
+            color: #000;
             font-weight: 600;
             margin-bottom: 0.8rem;
             font-size: 1rem;
@@ -173,10 +147,10 @@
         }
 
         .insight-text {
-            background: rgba(230, 0, 0, 0.02);
+            background: #f9fafb;
             padding: 1rem;
-            border-radius: 8px;
-            border-left: 3px solid rgba(230, 0, 0, 0.3);
+            border-radius: 6px;
+            border-left: 3px solid #d1d5db;
             font-size: 0.9rem;
             color: #333;
             line-height: 1.5;
@@ -184,8 +158,8 @@
         }
 
         .recommendation-text {
-            background: rgba(16, 185, 129, 0.05);
-            border-left-color: #10b981;
+            background: #f0fdf4;
+            border-left-color: #059669;
         }
 
         .no-data {
@@ -196,17 +170,17 @@
         }
 
         .error-message {
-            background: rgba(239, 68, 68, 0.05);
-            border-left: 3px solid #ef4444;
+            background: #fee2e2;
+            border-left: 3px solid #dc2626;
             color: #dc2626;
         }
 
         .metric-highlight {
-            background: linear-gradient(135deg, rgba(230, 0, 0, 0.1), rgba(179, 0, 0, 0.05));
+            background: #f3f4f6;
             padding: 0.3rem 0.6rem;
             border-radius: 6px;
             font-weight: 600;
-            color: #b30000;
+            color: #000;
         }
 
         .refresh-section {
@@ -215,15 +189,15 @@
         }
 
         .refresh-btn {
-            background: linear-gradient(135deg, #e60000, #b30000);
+            background: #000;
             color: white;
             border: none;
             padding: 1rem 3rem;
-            border-radius: 12px;
-            font-weight: 700;
+            border-radius: 8px;
+            font-weight: 600;
             font-size: 1.1rem;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
             display: inline-flex;
             align-items: center;
             gap: 0.8rem;
@@ -232,12 +206,14 @@
         }
 
         .refresh-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 30px rgba(230, 0, 0, 0.4);
+            background: #333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .refresh-btn.loading {
             pointer-events: none;
+            background: #666;
         }
 
         .refresh-btn.loading .fa-sync {
@@ -245,13 +221,11 @@
         }
 
         .stats-overview {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(20px);
-            border-radius: 16px;
+            background: white;
+            border-radius: 8px;
             padding: 2rem;
             margin-bottom: 2rem;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-            border: 1px solid rgba(230, 0, 0, 0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .stats-grid {
@@ -264,20 +238,20 @@
         .stat-item {
             text-align: center;
             padding: 1.5rem;
-            background: rgba(230, 0, 0, 0.02);
-            border-radius: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
             transition: all 0.3s ease;
         }
 
         .stat-item:hover {
-            background: rgba(230, 0, 0, 0.05);
+            background: #f3f4f6;
             transform: translateY(-2px);
         }
 
         .stat-number {
             font-size: 2rem;
             font-weight: 700;
-            color: #e60000;
+            color: #000;
             margin-bottom: 0.5rem;
         }
 
@@ -293,7 +267,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(8px);
             display: flex;
             align-items: center;
@@ -313,15 +287,15 @@
             text-align: center;
             background: white;
             padding: 3rem;
-            border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .loading-spinner {
             width: 60px;
             height: 60px;
-            border: 4px solid rgba(230, 0, 0, 0.1);
-            border-left-color: #e60000;
+            border: 4px solid #f3f4f6;
+            border-left-color: #000;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin: 0 auto 1.5rem;
@@ -330,7 +304,7 @@
         .loading-text {
             font-size: 1.1rem;
             font-weight: 600;
-            color: #0f0f0f;
+            color: #333;
             margin-bottom: 0.5rem;
         }
 
@@ -372,8 +346,8 @@
 
         .modal-content {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             max-width: 500px;
             width: 90%;
             max-height: 90vh;
@@ -389,14 +363,14 @@
 
         .modal-header {
             padding: 2rem 2rem 1rem 2rem;
-            border-bottom: 1px solid rgba(230, 0, 0, 0.1);
+            border-bottom: 1px solid #e5e7eb;
             position: relative;
         }
 
         .modal-title {
             font-size: 1.5rem;
-            font-weight: 700;
-            color: #0f0f0f;
+            font-weight: 600;
+            color: #333;
             margin: 0;
             text-align: center;
         }
@@ -420,8 +394,8 @@
         }
 
         .modal-close:hover {
-            background: rgba(230, 0, 0, 0.1);
-            color: #e60000;
+            background: #f3f4f6;
+            color: #000;
         }
 
         .modal-body {
@@ -430,37 +404,37 @@
 
         /* File Upload Styles */
         .upload-area {
-            border: 2px dashed rgba(230, 0, 0, 0.3);
-            border-radius: 12px;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
             padding: 3rem 2rem;
             text-align: center;
-            background: rgba(230, 0, 0, 0.02);
+            background: #f9fafb;
             transition: all 0.3s ease;
             cursor: pointer;
             margin-bottom: 2rem;
         }
 
         .upload-area:hover {
-            border-color: #e60000;
-            background: rgba(230, 0, 0, 0.05);
+            border-color: #000;
+            background: #f3f4f6;
         }
 
         .upload-area.dragover {
-            border-color: #e60000;
-            background: rgba(230, 0, 0, 0.1);
+            border-color: #000;
+            background: #f3f4f6;
             transform: scale(1.02);
         }
 
         .upload-icon {
             font-size: 3rem;
-            color: rgba(230, 0, 0, 0.5);
+            color: #9ca3af;
             margin-bottom: 1rem;
         }
 
         .upload-text {
             font-size: 1.1rem;
             font-weight: 600;
-            color: #0f0f0f;
+            color: #333;
             margin-bottom: 0.5rem;
         }
 
@@ -476,8 +450,8 @@
 
         .file-info {
             display: none;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            background: #f0fdf4;
+            border: 1px solid #86efac;
             border-radius: 8px;
             padding: 1rem;
             margin-bottom: 2rem;
@@ -489,7 +463,7 @@
 
         .file-name {
             font-weight: 600;
-            color: #10b981;
+            color: #059669;
             margin-bottom: 0.5rem;
             display: flex;
             align-items: center;
@@ -502,15 +476,15 @@
         }
 
         .analyze-btn {
-            background: linear-gradient(135deg, #e60000, #b30000);
+            background: #000;
             color: white;
             border: none;
             padding: 1rem 2rem;
-            border-radius: 12px;
-            font-weight: 700;
+            border-radius: 8px;
+            font-weight: 600;
             font-size: 1rem;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             width: 100%;
             display: flex;
             align-items: center;
@@ -519,12 +493,14 @@
         }
 
         .analyze-btn:hover {
+            background: #333;
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(230, 0, 0, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .analyze-btn:disabled {
             opacity: 0.5;
+            background: #9ca3af;
             cursor: not-allowed;
             transform: none;
         }
@@ -532,8 +508,8 @@
         /* Analysis Modal Styles */
         .analysis-modal-content {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             width: 95vw;
             height: 90vh;
             transform: scale(0.8) translateY(20px);
@@ -547,7 +523,7 @@
 
         .analysis-modal-header {
             padding: 1.5rem 2rem;
-            border-bottom: 1px solid rgba(230, 0, 0, 0.1);
+            border-bottom: 1px solid #e5e7eb;
             position: relative;
             display: flex;
             align-items: center;
@@ -556,8 +532,8 @@
 
         .analysis-modal-title {
             font-size: 1.3rem;
-            font-weight: 700;
-            color: #0f0f0f;
+            font-weight: 600;
+            color: #333;
             margin: 0;
         }
 
@@ -565,7 +541,7 @@
             padding: 0;
             height: calc(90vh - 80px);
             background: white;
-            border-radius: 0 0 20px 20px;
+            border-radius: 0 0 8px 8px;
             overflow: auto;
         }
 
@@ -672,7 +648,7 @@
 
         <!-- Stats Overview -->
         <div class="stats-overview">
-            <h3 style="margin-bottom: 1rem; color: #0f0f0f; text-align: center;">
+            <h3 style="margin-bottom: 1rem; color: #333; text-align: center;">
                 Weekly Performance Overview
             </h3>
             <div class="stats-grid">
@@ -1011,8 +987,8 @@
         analyzeBtn.disabled = false;
         
         // Update upload area appearance
-        uploadArea.style.borderColor = '#10b981';
-        uploadArea.style.background = 'rgba(16, 185, 129, 0.05)';
+        uploadArea.style.borderColor = '#059669';
+        uploadArea.style.background = '#f0fdf4';
     }
 }
         // Analysis function
@@ -1077,8 +1053,8 @@
         // Show error in modal
         analysisBody.innerHTML = `
             <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;">
-                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ef4444; margin-bottom: 1rem;"></i>
-                <div style="color: #ef4444; font-size: 1.1rem; margin-bottom: 0.5rem;">Analysis Failed</div>
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #dc2626; margin-bottom: 1rem;"></i>
+                <div style="color: #dc2626; font-size: 1.1rem; margin-bottom: 0.5rem;">Analysis Failed</div>
                 <div style="color: #666; font-size: 0.9rem; text-align: center;">${error.message}</div>
             </div>
         `;
@@ -1119,10 +1095,10 @@
                 chartDiv.id = `chart-${chartKey}`;
                 chartDiv.style.cssText = `
                     background: white;
-                    border: 1px solid rgba(230, 0, 0, 0.1);
-                    border-radius: 12px;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 8px;
                     padding: 1.5rem;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                     min-height: 300px;
                 `;
                 
@@ -1132,7 +1108,7 @@
                     title.textContent = chartInfo.metadata.title;
                     title.style.cssText = `
                         margin: 0 0 1rem 0;
-                        color: #0f0f0f;
+                        color: #333;
                         font-size: 1.2rem;
                         font-weight: 600;
                     `;
@@ -1143,7 +1119,7 @@
                 const chartPlaceholder = document.createElement('div');
                 chartPlaceholder.style.cssText = `
                     height: 250px;
-                    background: rgba(230, 0, 0, 0.02);
+                    background: #f9fafb;
                     border-radius: 8px;
                     display: flex;
                     align-items: center;
@@ -1241,16 +1217,16 @@
             
             switch(type) {
                 case 'success':
-                    bgColor = 'linear-gradient(135deg, #10b981, #059669)';
+                    bgColor = '#059669';
                     break;
                 case 'error':
-                    bgColor = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                    bgColor = '#dc2626';
                     break;
                 case 'info':
-                    bgColor = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
+                    bgColor = '#3b82f6';
                     break;
                 default:
-                    bgColor = 'linear-gradient(135deg, #10b981, #059669)';
+                    bgColor = '#059669';
             }
             
             notification.style.cssText = `
@@ -1261,7 +1237,7 @@
                 color: white;
                 padding: 1rem 2rem;
                 border-radius: 8px;
-                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
                 z-index: 9999;
                 animation: slideInRight 0.3s ease;
                 max-width: 300px;

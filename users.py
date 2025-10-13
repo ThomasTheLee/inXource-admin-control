@@ -147,36 +147,17 @@ class Users(Clients):
     def total_active_users(self):
         """Counts users who own businesses with withdrawals in the last 7 days"""
         try:
-            seven_days_ago = datetime.now() - timedelta(days=7)
-
-            # Step 1: Get withdrawals from the last 7 days and collect unique business IDs
             response = (
-                self.supabase_client.table("withdrawals")
-                .select("business_id")
-                .gte("requested_at", seven_days_ago.isoformat())
+                self.supabase_client.table("users")
+                .select("id")
+                .eq("hasSubscription", True)
                 .execute()
             )
 
             if not response.data:
                 return 0
-
-            business_ids = {w['business_id'] for w in response.data if w.get('business_id')}
-            if not business_ids:
-                return 0
-
-            # Step 2: Get user IDs owning these businesses
-            user_response = (
-                self.supabase_client.table("business_owners")
-                .select("user_id")
-                .in_("business_id", list(business_ids))
-                .execute()
-            )
-
-            if not user_response.data:
-                return 0
-
-            active_user_ids = {b['user_id'] for b in user_response.data if b.get('user_id')}
-            return len(active_user_ids)
+            user_ids = [user['id'] for user in response.data if user.get('id')]
+            return len(user_ids)
 
         except Exception as e:
             print(f"Error calculating active users: {e}")
