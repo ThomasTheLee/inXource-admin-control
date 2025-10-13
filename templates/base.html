@@ -545,15 +545,27 @@
                 </li>
             </ul>
 
-            <div class="user-section">
-                <div class="user-profile">
-                    <div class="user-avatar">A</div>
+            <div class="user-section"> 
+                <div class="user-profile" id="userProfileBtn" style="position: relative; cursor: pointer;">
+                    {% if session.user_name %}
+                        <div class="user-avatar">
+                            {{ session.user_name[0]|upper }}
+                        </div>
+                    {% else %}
+                        <div class="user-avatar">Error</div>
+                    {% endif %}
+
+                    <!-- Dropdown menu -->
+                    <div id="userDropdown" class="user-dropdown" style="display: none; position: absolute; top: 100%; right: 0; background: #fff; border: 1px solid #ccc; border-radius: 6px; min-width: 120px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); z-index: 100;">
+                        <a href="{{ url_for('logout') }}" style="display: block; padding: 10px; text-decoration: none; color: #333;">Logout</a>
+                    </div>
                 </div>
 
                 <button class="mobile-menu-btn" id="mobileMenuBtn">
                     <i class="fas fa-bars"></i>
                 </button>
             </div>
+
         </div>
     </nav>
 

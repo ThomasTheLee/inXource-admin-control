@@ -578,18 +578,14 @@
                         </div>
                         <h3 class="card-title">Edit Profile</h3>
                     </div>
-                    <form>
+                    <form method="POST" action="{{ url_for('update_profile') }}">
                         <div class="form-group">
                             <label class="form-label">Username</label>
-                            <input type="text" name="username" class="form-input" value="john_admin" required>
+                            <input type="text" name="username" class="form-input" value="{{ username }}">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Email</label>
-                            <input type="email" name="email" class="form-input" value="john@inxource.com" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Full Name</label>
-                            <input type="text" name="full_name" class="form-input" value="John Doe" placeholder="Enter your full name">
+                            <input type="email" name="email" class="form-input" value="{{ email }}">
                         </div>
                         <button type="submit" class="btn-primary">
                             <i class="fas fa-save"></i>
@@ -605,7 +601,7 @@
                         </div>
                         <h3 class="card-title">Change Password</h3>
                     </div>
-                    <form>
+                    <form method="POST" action="{{ url_for('update_password') }}">
                         <div class="form-group">
                             <label class="form-label">Current Password</label>
                             <input type="password" name="current_password" class="form-input" required>
@@ -636,7 +632,7 @@
                     </div>
                     <h3 class="card-title">Add Staff Member</h3>
                 </div>
-                <form>
+                <form method="POST" action="{{url_for('add_staff')}}">
                     <div class="settings-grid">
                         <div>
                             <div class="form-group">
@@ -650,8 +646,8 @@
                         </div>
                         <div>
                             <div class="form-group">
-                                <label class="form-label">Full Name</label>
-                                <input type="text" name="full_name" class="form-input" placeholder="Enter full name" required>
+                                <label class="form-label">NRC</label>
+                                <input type="text" name="nrc" class="form-input" placeholder="Enter nrc or passport id" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Default Password</label>
@@ -662,8 +658,10 @@
                     <div class="form-group">
                         <label class="form-label">Role</label>
                         <select name="role" class="form-input" required>
-                            <option value="staff">Staff Member</option>
-                            <option value="admin">Administrator</option>
+                            <option value="finance">finance</option>
+                            <option value="admin">admin</option>
+                            <option value="dev">dev</option>
+                            <option value="marketing">marketing</option>
                         </select>
                     </div>
                     <button type="submit" class="btn-primary">
@@ -674,92 +672,48 @@
             </div>
 
             <div class="settings-card" style="margin-top: 1.5rem;">
-                <div class="card-header">
-                    <div class="card-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <h3 class="card-title">Current Staff Members</h3>
-                </div>
-                <table class="staff-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th>Added</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Jane Smith</strong></td>
-                            <td>jane@inxource.com</td>
-                            <td>
-                                <span class="badge badge-admin">Admin</span>
-                            </td>
-                            <td>
-                                <span class="badge badge-active">Active</span>
-                            </td>
-                            <td>Jan 15, 2024</td>
-                            <td>
-                                <div class="action-btns">
-                                    <button class="btn-icon" onclick="editStaff(1)" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn-icon danger" onclick="deleteStaff(1)" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>Mike Johnson</strong></td>
-                            <td>mike@inxource.com</td>
-                            <td>
-                                <span class="badge badge-staff">Staff</span>
-                            </td>
-                            <td>
-                                <span class="badge badge-active">Active</span>
-                            </td>
-                            <td>Feb 20, 2024</td>
-                            <td>
-                                <div class="action-btns">
-                                    <button class="btn-icon" onclick="editStaff(2)" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn-icon danger" onclick="deleteStaff(2)" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>Sarah Williams</strong></td>
-                            <td>sarah@inxource.com</td>
-                            <td>
-                                <span class="badge badge-staff">Staff</span>
-                            </td>
-                            <td>
-                                <span class="badge badge-inactive">Inactive</span>
-                            </td>
-                            <td>Mar 10, 2024</td>
-                            <td>
-                                <div class="action-btns">
-                                    <button class="btn-icon" onclick="editStaff(3)" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn-icon danger" onclick="deleteStaff(3)" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+    <div class="card-header">
+        <div class="card-icon">
+            <i class="fas fa-users"></i>
         </div>
-
+        <h3 class="card-title">Current Staff Members</h3>
+    </div>
+    <table class="staff-table">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>NRC Number</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in staff %}
+            <tr data-user-id="{{ user.id }}">
+                <td><strong>{{ user.user_name }}</strong></td>
+                <td>{{ user.email }}</td>
+                <td>
+                    <span class="badge badge-{{ user.role }}">{{ user.role|upper }}</span>
+                </td>
+                <td>{{ user.nrc_number or 'N/A' }}</td>
+                <td>{{ user.created_at }}</td>
+                <td>
+                    <div class="action-btns">
+                        <button class="btn-icon" onclick="editStaff('{{ user.id }}')" title="Edit" type="button">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon danger" onclick="deleteStaff('{{ user.id }}')" title="Delete" type="button">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
         <!-- Platform Settings Tab -->
         <div class="tab-content" id="platform">
             <div class="settings-grid">
@@ -770,7 +724,7 @@
                         </div>
                         <h3 class="card-title">Commission Settings</h3>
                     </div>
-                    <form>
+                    <form method="POST" action="/settings/update-commission">
                         <div class="form-group">
                             <label class="form-label">Platform Commission (%)</label>
                             <input type="number" name="commission_rate" class="form-input" value="15.00" step="0.01" min="0" max="100" required>
@@ -793,36 +747,42 @@
                         </div>
                         <h3 class="card-title">Platform Features</h3>
                     </div>
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <h4>New Vendor Registration</h4>
-                            <p>Allow new vendors to register on the platform</p>
+                    <form method="POST" action="/settings/update-features">
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>New Vendor Registration</h4>
+                                <p>Allow new vendors to register on the platform</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="vendor_registration" value="1" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
                         </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <h4>Product Approval Required</h4>
-                            <p>Require admin approval for new products</p>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Product Approval Required</h4>
+                                <p>Require admin approval for new products</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="product_approval" value="1" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
                         </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <h4>Maintenance Mode</h4>
-                            <p>Put the platform in maintenance mode</p>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Maintenance Mode</h4>
+                                <p>Put the platform in maintenance mode</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="maintenance_mode" value="1">
+                                <span class="toggle-slider"></span>
+                            </label>
                         </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
+                        <button type="submit" class="btn-primary" style="margin-top: 1rem;">
+                            <i class="fas fa-save"></i>
+                            Save Features
+                        </button>
+                    </form>
                 </div>
             </div>
 
@@ -833,7 +793,7 @@
                     </div>
                     <h3 class="card-title">Email Configuration</h3>
                 </div>
-                <form>
+                <form method="POST" action="/settings/update-email">
                     <div class="settings-grid">
                         <div>
                             <div class="form-group">
@@ -873,56 +833,52 @@
                     </div>
                     <h3 class="card-title">Email Notifications</h3>
                 </div>
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <h4>New User Registration</h4>
-                        <p>Receive emails when new users register</p>
+                <form method="POST" action="/settings/update-notifications">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Withdrawal Requests</h4>
+                            <p>Get notified about new withdrawal requests</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="notify_withdrawal" value="1" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <h4>Withdrawal Requests</h4>
-                        <p>Get notified about new withdrawal requests</p>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>New Business Registration</h4>
+                            <p>Email alerts for new business signups</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="notify_new_business" value="1" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <h4>New Business Registration</h4>
-                        <p>Email alerts for new business signups</p>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Product Submissions</h4>
+                            <p>Notifications for new product listings</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="notify_product" value="1">
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-<div class="setting-item">
-                    <div class="setting-info">
-                        <h4>Product Submissions</h4>
-                        <p>Notifications for new product listings</p>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Daily Summary Report</h4>
+                            <p>Receive daily platform activity summary</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="notify_daily_summary" value="1" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <h4>Daily Summary Report</h4>
-                        <p>Receive daily platform activity summary</p>
-                    </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
+                    <button type="submit" class="btn-primary" style="margin-top: 1rem;">
+                        <i class="fas fa-save"></i>
+                        Save Notification Settings
+                    </button>
+                </form>
             </div>
         </div>
 
@@ -936,36 +892,42 @@
                         </div>
                         <h3 class="card-title">Security Settings</h3>
                     </div>
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <h4>Two-Factor Authentication</h4>
-                            <p>Add an extra layer of security to your account</p>
+                    <form method="POST" action="/settings/update-security">
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Two-Factor Authentication</h4>
+                                <p>Add an extra layer of security to your account</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="two_factor_auth" value="1">
+                                <span class="toggle-slider"></span>
+                            </label>
                         </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <h4>Login Alerts</h4>
-                            <p>Get notified of new login attempts</p>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Login Alerts</h4>
+                                <p>Get notified of new login attempts</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="login_alerts" value="1" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
                         </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <h4>Session Timeout</h4>
-                            <p>Auto-logout after 30 minutes of inactivity</p>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Session Timeout</h4>
+                                <p>Auto-logout after 30 minutes of inactivity</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="session_timeout" value="1" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
                         </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
+                        <button type="submit" class="btn-primary" style="margin-top: 1rem;">
+                            <i class="fas fa-save"></i>
+                            Save Security Settings
+                        </button>
+                    </form>
                 </div>
 
                 <div class="settings-card">
@@ -1000,10 +962,12 @@
                         </div>
                         <div class="activity-time">3 days ago</div>
                     </div>
-                    <button class="btn-secondary" style="margin-top: 1rem; width: 100%;">
-                        <i class="fas fa-list"></i>
-                        View Full History
-                    </button>
+                    <form method="GET" action="/settings/login-history">
+                        <button type="submit" class="btn-secondary" style="margin-top: 1rem; width: 100%;">
+                            <i class="fas fa-list"></i>
+                            View Full History
+                        </button>
+                    </form>
                 </div>
             </div>
 
@@ -1023,30 +987,36 @@
                         <h4>Clear All Activity Logs</h4>
                         <p>Remove all platform activity and audit logs</p>
                     </div>
-                    <button class="btn-danger">
-                        <i class="fas fa-trash"></i>
-                        Clear Logs
-                    </button>
+                    <form method="POST" action="/settings/clear-logs" style="display: inline;">
+                        <button type="submit" class="btn-danger" onclick="return confirm('Are you sure you want to clear all activity logs? This action cannot be undone.');">
+                            <i class="fas fa-trash"></i>
+                            Clear Logs
+                        </button>
+                    </form>
                 </div>
                 <div class="setting-item">
                     <div class="setting-info">
                         <h4>Reset Platform Statistics</h4>
                         <p>Reset all analytics and statistics data</p>
                     </div>
-                    <button class="btn-danger">
-                        <i class="fas fa-redo"></i>
-                        Reset Stats
-                    </button>
+                    <form method="POST" action="/settings/reset-stats" style="display: inline;">
+                        <button type="submit" class="btn-danger" onclick="return confirm('Are you sure you want to reset all platform statistics? This action cannot be undone.');">
+                            <i class="fas fa-redo"></i>
+                            Reset Stats
+                        </button>
+                    </form>
                 </div>
                 <div class="setting-item">
                     <div class="setting-info">
                         <h4>Export Platform Data</h4>
                         <p>Download all platform data as CSV</p>
                     </div>
-                    <button class="btn-secondary">
-                        <i class="fas fa-download"></i>
-                        Export Data
-                    </button>
+                    <form method="GET" action="/settings/export-data" style="display: inline;">
+                        <button type="submit" class="btn-secondary">
+                            <i class="fas fa-download"></i>
+                            Export Data
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -1057,9 +1027,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Edit Staff Member</h3>
-                <button class="btn-close" onclick="closeModal('editStaffModal')">&times;</button>
+                <button class="btn-close" onclick="closeModal('editStaffModal')" type="button">&times;</button>
             </div>
-            <form>
+            <form method="POST" action="/settings/edit-staff">
                 <input type="hidden" name="staff_id" id="edit_staff_id">
                 <div class="form-group">
                     <label class="form-label">Username</label>
@@ -1070,21 +1040,23 @@
                     <input type="email" name="email" id="edit_email" class="form-input" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Full Name</label>
-                    <input type="text" name="full_name" id="edit_full_name" class="form-input" required>
-                </div>
-                <div class="form-group">
                     <label class="form-label">Role</label>
                     <select name="role" id="edit_role" class="form-input" required>
-                        <option value="staff">Staff Member</option>
-                        <option value="admin">Administrator</option>
+                        <option value="admin">admin</option>
+                        <option value="finance">finance</option>
+                        <option value="dev">dev</option>
+                        <option value="marketing">marketing</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">NRC</label>
+                    <input type="" name="nrc" id="edit_nrc" class="form-input" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Status</label>
                     <select name="is_active" id="edit_is_active" class="form-input" required>
-                        <option value="1">Active</option>
-                        <option value="0">Inactive</option>
+                        <option value="True">Active</option>
+                        <option value="False">Inactive</option>
                     </select>
                 </div>
                 <div style="display: flex; gap: 0.8rem; margin-top: 1.5rem;">
@@ -1105,10 +1077,10 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Confirm Deletion</h3>
-                <button class="btn-close" onclick="closeModal('deleteStaffModal')">&times;</button>
+                <button class="btn-close" onclick="closeModal('deleteStaffModal')" type="button">&times;</button>
             </div>
             <p style="color: #666; margin-bottom: 1.5rem;">Are you sure you want to delete this staff member? This action cannot be undone.</p>
-            <form>
+            <form method="POST" action="/settings/delete-staff">
                 <input type="hidden" name="staff_id" id="delete_staff_id">
                 <div style="display: flex; gap: 0.8rem;">
                     <button type="submit" class="btn-danger" style="flex: 1;">
@@ -1143,7 +1115,7 @@
                 });
             });
 
-            // Toggle switches
+            // Toggle switches - visual feedback only
             const toggleSwitches = document.querySelectorAll('.toggle-switch input');
             toggleSwitches.forEach(toggle => {
                 toggle.addEventListener('change', function() {
@@ -1158,15 +1130,14 @@
             });
         });
 
-        // Modal functions
+        // Modal functions - only for UI control
         function editStaff(staffId) {
             document.getElementById('editStaffModal').classList.add('active');
             document.getElementById('edit_staff_id').value = staffId;
             
-            // Example: Pre-fill form with data
+            // Example: Pre-fill form with data (in real app, this would come from server)
             document.getElementById('edit_username').value = 'staff_user';
             document.getElementById('edit_email').value = 'staff@inxource.com';
-            document.getElementById('edit_full_name').value = 'Staff Member';
             document.getElementById('edit_role').value = 'staff';
             document.getElementById('edit_is_active').value = '1';
         }
@@ -1187,27 +1158,6 @@
             }
         });
 
-        // Form validation feedback
-        const forms = document.querySelectorAll('form');
-        forms.forEach(form => {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault(); // Prevent actual submission for demo
-                const submitBtn = this.querySelector('button[type="submit"]');
-                if (submitBtn) {
-                    const originalHTML = submitBtn.innerHTML;
-                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-                    submitBtn.disabled = true;
-                    
-                    // Simulate processing
-                    setTimeout(() => {
-                        submitBtn.innerHTML = originalHTML;
-                        submitBtn.disabled = false;
-                        alert('Settings saved successfully!');
-                    }, 1500);
-                }
-            });
-        });
-
         // Add animation to cards on hover
         const settingsCards = document.querySelectorAll('.settings-card');
         settingsCards.forEach(card => {
@@ -1220,17 +1170,6 @@
             });
         });
 
-        // Confirm dangerous actions
-        document.querySelectorAll('.btn-danger').forEach(btn => {
-            if (!btn.closest('.modal')) {
-                btn.addEventListener('click', function(e) {
-                    if (!confirm('Are you sure you want to perform this action? This cannot be undone.')) {
-                        e.preventDefault();
-                    }
-                });
-            }
-        });
-
         // Auto-hide success alerts after 5 seconds
         setTimeout(() => {
             const alerts = document.querySelectorAll('.alert-success');
@@ -1240,6 +1179,63 @@
                 setTimeout(() => alert.remove(), 500);
             });
         }, 5000);
+
+        // Check if current user is super and show/hide action buttons
+        function initializeStaffPermissions(currentUserIdsSuper) {
+            const actionButtons = document.querySelectorAll('.action-btns');
+            
+            // If user is not super, hide all action buttons
+            if (!currentUserIdsSuper) {
+                actionButtons.forEach(button => {
+                    button.style.display = 'none';
+                });
+                return;
+            }
+            
+            // If user is super, check each row and hide buttons for super role accounts
+            const staffRows = document.querySelectorAll('tbody tr');
+            staffRows.forEach((row, index) => {
+                const roleCell = row.querySelector('td:nth-child(3)'); // Role is in 3rd column
+                const actionCell = row.querySelector('.action-btns');
+                
+                if (roleCell && actionCell) {
+                    const roleText = roleCell.textContent.trim().toUpperCase();
+                    
+                    // Hide buttons if the staff member's role is "SUPER"
+                    if (roleText === 'SUPER') {
+                        actionCell.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        // Call this function when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // This will be passed from your Flask template
+            initializeStaffPermissions(currentUserIdsSuper);
+        });
+
+        function deleteStaff(userId) {
+            if (confirm('Are you sure you want to delete this staff member?')) {
+                fetch(`/delete_staff/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        // Flask redirected us (success or error)
+                        window.location.href = response.url;
+                    }
+                    return response.json();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting the staff member.');
+                });
+            }
+        }
     </script>
 </body>
 </html>

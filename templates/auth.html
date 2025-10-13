@@ -203,6 +203,7 @@
             color: #999;
             font-size: 1rem;
             transition: all 0.3s ease;
+            pointer-events: none;
         }
 
         .form-input {
@@ -222,7 +223,7 @@
             background: white;
         }
 
-        .form-input:focus + .input-icon {
+        .form-input:focus ~ .input-icon {
             color: #000;
         }
 
@@ -309,11 +310,6 @@
 
         .btn-login:active {
             transform: translateY(0);
-        }
-
-        .btn-login.loading {
-            opacity: 0.7;
-            cursor: not-allowed;
         }
 
         .divider {
@@ -479,26 +475,16 @@
                 <p>Sign in to access your dashboard</p>
             </div>
 
-            <!-- Alert Messages (Hidden by default) -->
-            <div class="alert alert-error" id="errorAlert" style="display: none;">
-                <i class="fas fa-exclamation-circle"></i>
-                <span id="errorMessage">Invalid credentials. Please try again.</span>
-            </div>
-
-            <div class="alert alert-success" id="successAlert" style="display: none;">
-                <i class="fas fa-check-circle"></i>
-                <span id="successMessage">Login successful! Redirecting...</span>
-            </div>
-
             <!-- Login Form -->
-            <form id="loginForm">
+            <form id="loginForm" action="{{ url_for('auth') }}" method="POST">
                 <div class="form-group">
                     <label class="form-label">Email or Username</label>
                     <div class="input-wrapper">
                         <input 
                             type="text" 
                             class="form-input" 
-                            id="username" 
+                            id="username"
+                            name="username"
                             placeholder="Enter your email or username" 
                             required
                             autocomplete="username"
@@ -513,7 +499,8 @@
                         <input 
                             type="password" 
                             class="form-input" 
-                            id="password" 
+                            id="password"
+                            name="password"
                             placeholder="Enter your password" 
                             required
                             autocomplete="current-password"
@@ -527,13 +514,13 @@
 
                 <div class="form-options">
                     <div class="remember-me">
-                        <input type="checkbox" id="rememberMe">
+                        <input type="checkbox" id="rememberMe" name="remember">
                         <label for="rememberMe">Remember me</label>
                     </div>
                     <a href="#" class="forgot-password">Forgot Password?</a>
                 </div>
 
-                <button type="submit" class="btn-login" id="loginBtn">
+                <button type="submit" class="btn-login">
                     <span>Sign In</span>
                     <i class="fas fa-arrow-right"></i>
                 </button>
@@ -544,7 +531,7 @@
                 <span>Or continue with</span>
             </div>
 
-            <!-- Social Login -->
+            <!-- Social Login 
             <div class="social-login">
                 <button class="btn-social btn-google">
                     <i class="fab fa-google"></i>
@@ -555,7 +542,7 @@
                     <span>Microsoft</span>
                 </button>
             </div>
-
+            -->
             <!-- Footer -->
             <div class="footer-text">
                 <p>&copy; 2024 inXource. All rights reserved.</p>
@@ -567,7 +554,7 @@
     </div>
 
     <script>
-        // Password toggle
+        // Password toggle functionality
         const togglePassword = document.getElementById('togglePassword');
         const passwordInput = document.getElementById('password');
         const toggleIcon = togglePassword.querySelector('i');
@@ -585,60 +572,6 @@
             }
         });
 
-        // Form submission
-        const loginForm = document.getElementById('loginForm');
-        const loginBtn = document.getElementById('loginBtn');
-        const errorAlert = document.getElementById('errorAlert');
-        const successAlert = document.getElementById('successAlert');
-
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-
-            // Hide alerts
-            errorAlert.style.display = 'none';
-            successAlert.style.display = 'none';
-
-            // Show loading state
-            loginBtn.classList.add('loading');
-            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Signing in...</span>';
-
-            // Simulate login process
-            setTimeout(() => {
-                // Demo: Accept any credentials for demonstration
-                // In production, this would be an actual API call
-                if (username && password) {
-                    // Success
-                    successAlert.style.display = 'flex';
-                    loginBtn.innerHTML = '<i class="fas fa-check"></i> <span>Success!</span>';
-                    
-                    setTimeout(() => {
-                        // Redirect to dashboard (in production)
-                        console.log('Redirecting to dashboard...');
-                        window.location.href = 'settings.html'; // Change to your dashboard URL
-                    }, 1500);
-                } else {
-                    // Error
-                    errorAlert.style.display = 'flex';
-                    loginBtn.classList.remove('loading');
-                    loginBtn.innerHTML = '<span>Sign In</span> <i class="fas fa-arrow-right"></i>';
-                }
-            }, 1500);
-        });
-
-        // Social login buttons
-        const socialBtns = document.querySelectorAll('.btn-social');
-        socialBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const provider = this.querySelector('span').textContent;
-                console.log(`Authenticating with ${provider}...`);
-                // In production, this would trigger OAuth flow
-                alert(`${provider} authentication would be triggered here`);
-            });
-        });
-
         // Input focus animation
         const inputs = document.querySelectorAll('.form-input');
         inputs.forEach(input => {
@@ -648,6 +581,16 @@
 
             input.addEventListener('blur', function() {
                 this.parentElement.style.transform = 'scale(1)';
+            });
+        });
+
+        // Social login buttons
+        const socialBtns = document.querySelectorAll('.btn-social');
+        socialBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const provider = this.querySelector('span').textContent;
+                console.log(`Authenticating with ${provider}...`);
+                alert(`${provider} authentication would be triggered here`);
             });
         });
 

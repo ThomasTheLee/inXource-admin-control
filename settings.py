@@ -27,4 +27,6 @@ class SettingsManager:
         self.open_ai_modal = 'gpt-5-nano'
         self.low_stock_count = 3
         self.product_performance_by = 'volume'
+        self.summariy_activity_days = 2
+        self.summary_activity_tables = ['users', 'businesses', 'withdrawals']
         

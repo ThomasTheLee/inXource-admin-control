@@ -540,54 +540,28 @@
             <div class="recent-activities">
                 <div class="activities-header">
                     <h3 class="activities-title">Recent Activities</h3>
-                    <!--<button class="view-all-btn">View All</button>-->
-                </div>
-                
-                <div class="activity-item">
-                    <div class="activity-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
-                        <i class="fas fa-user-plus"></i>
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-title">New User Registration</div>
-                        <div class="activity-desc">John Doe created an account</div>
-                    </div>
-                    <div class="activity-time">2 min ago</div>
+                    <form method="get" action="{{ url_for('index') }}" style="display:inline;">
+                        <button type="submit" class="view-all-btn">🔄 Refresh</button>
+                    </form>
                 </div>
 
-                <div class="activity-item">
-                    <div class="activity-icon" style="background: linear-gradient(135deg, #000, #333);">
-                        <i class="fas fa-credit-card"></i>
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-title">Withdrawal Request</div>
-                        <div class="activity-desc">$1,250 withdrawal pending</div>
-                    </div>
-                    <div class="activity-time">15 min ago</div>
-                </div>
-
-                <div class="activity-item">
-                    <div class="activity-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
-                        <i class="fas fa-briefcase"></i>
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-title">New Business</div>
-                        <div class="activity-desc">Tech Solutions LLC registered</div>
-                    </div>
-                    <div class="activity-time">1 hour ago</div>
-                </div>
-
-                <div class="activity-item">
-                    <div class="activity-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-                        <i class="fas fa-plus-circle"></i>
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-title">Product Added</div>
-                        <div class="activity-desc">Premium Software Package</div>
-                    </div>
-                    <div class="activity-time">3 hours ago</div>
-                </div>
+                {% if recent_activities %}
+                    {% for activity in recent_activities %}
+                        <div class="activity-item">
+                            <div class="activity-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">Recent Activity</div>
+                                <div class="activity-desc">{{ activity }}</div>
+                            </div>
+                            <div class="activity-time">Just now</div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: #999; padding: 10px;">No recent activities found.</p>
+                {% endif %}
             </div>
-        </div>
 
         <!-- Quick Actions -->
         <div class="quick-actions">

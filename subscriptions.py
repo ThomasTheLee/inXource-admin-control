@@ -113,10 +113,10 @@ class Subscriptions(Clients):
         # Convert to DataFrame
         df = pd.DataFrame(response.data)
 
-        # Convert created_at to datetime
-        df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce")
+        # Convert created_at to datetime and remove timezone info
+        df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce").dt.tz_localize(None)
 
-        # Define time thresholds
+        # Define time thresholds using timezone-naive datetime
         now = datetime.now()
         seven_days_ago = now - timedelta(days=7)
         one_month_ago = now - timedelta(days=30)
@@ -136,5 +136,4 @@ class Subscriptions(Clients):
             "past_quarter": df_quarter.reset_index(drop=True),
             "past_year": df_year.reset_index(drop=True),
         }
-
         

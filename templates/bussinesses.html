@@ -50,7 +50,7 @@
             border-radius: 8px;
             padding: 24px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-left: 4px solid #dc2626;
+            border-left: 4px solid #000;
         }
 
         .stat-card h3 {
@@ -114,12 +114,12 @@
 
         .search-input:focus {
             outline: none;
-            border-color: #dc2626;
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+            border-color: #000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
         }
 
         .search-btn {
-            background: #dc2626;
+            background: #000;
             color: white;
             border: none;
             padding: 12px 24px;
@@ -130,7 +130,7 @@
         }
 
         .search-btn:hover {
-            background: #b91c1c;
+            background: #333;
         }
 
         .search-btn:disabled {
@@ -320,14 +320,14 @@
 
         .category-fill {
             height: 100%;
-            background: #dc2626;
+            background: #000;
             transition: width 0.3s ease;
-            width: 75%; /* Example width */
+            width: 75%;
         }
 
         .category-number {
             font-weight: 600;
-            color: #dc2626;
+            color: #000;
             min-width: 50px;
             text-align: right;
         }
@@ -442,60 +442,19 @@
                 <button class="search-btn" id="searchBtn" onclick="searchBusiness()">Search Business</button>
             </div>
             
-            <!-- Loading Message -->
             <div class="loading-message" id="loadingMessage">
                 Searching businesses...
             </div>
             
-            <!-- Error Message -->
             <div class="error-message" id="errorMessage">
                 An error occurred while searching. Please try again.
             </div>
             
-            <!-- No Results Message -->
             <div class="no-results" id="noResultsMessage">
                 No businesses found matching your search query.
             </div>
             
-            <!-- Search Results -->
             <div class="search-results" id="searchResults">
-                <!-- Example result - this will be populated by backend -->
-                <div class="business-result">
-                    <div class="business-info">
-                        <div class="business-field">
-                            <label>Business ID</label>
-                            <span>BIZ001</span>
-                        </div>
-                        <div class="business-field">
-                            <label>Business Name</label>
-                            <span>Acme Restaurant</span>
-                        </div>
-                        <div class="business-field">
-                            <label>Owner</label>
-                            <span>John Doe</span>
-                        </div>
-                        <div class="business-field">
-                            <label>Category</label>
-                            <span>Restaurant</span>
-                        </div>
-                        <div class="business-field">
-                            <label>Location</label>
-                            <span>Downtown, City Center</span>
-                        </div>
-                        <div class="business-field">
-                            <label>Registration Date</label>
-                            <span>15/03/2024</span>
-                        </div>
-                        <div class="business-field">
-                            <label>Status</label>
-                            <span class="status-badge status-active">Active</span>
-                        </div>
-                        <div class="business-field">
-                            <label>Phone</label>
-                            <span>+260 123 456 789</span>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -582,7 +541,6 @@
             </div>
             <ul class="activity-list">
                 {% if business_activity %}
-                    <!-- New User Registrations -->
                     {% if business_activity['new_registrations'] > 0 %}
                     <li class="activity-item">
                         <div class="activity-content">
@@ -593,7 +551,6 @@
                     </li>
                     {% endif %}
                     
-                    <!-- New Business Registrations -->
                     {% if business_activity['new_business_registrations'] > 0 %}
                     <li class="activity-item">
                         <div class="activity-content">
@@ -604,7 +561,6 @@
                     </li>
                     {% endif %}
                     
-                    <!-- Deactivated Businesses -->
                     {% if business_activity['deactivated_businesses'] > 0 %}
                     <li class="activity-item">
                         <div class="activity-content">
@@ -623,7 +579,6 @@
                     </li>
                     {% endif %}
                     
-                    <!-- Summary Activity -->
                     <li class="activity-item">
                         <div class="activity-content">
                             <div class="activity-title">Platform Activity Summary</div>
@@ -637,7 +592,6 @@
                         <div class="activity-time">Last {{ business_activity['period_days'] }} days</div>
                     </li>
                 {% else %}
-                    <!-- Fallback when no activity data is available -->
                     <li class="activity-item">
                         <div class="activity-content">
                             <div class="activity-title">No Recent Activity</div>
@@ -657,7 +611,6 @@
         // Business Growth Chart
         const monthlyBusinessTrendData = {{ monthly_business_trend_data | tojson | safe }};
 
-        // Create the business growth chart
         const businessCtx = document.getElementById('businessGrowthChart').getContext('2d');
         const businessGrowthChart = new Chart(businessCtx, {
             type: 'line',
@@ -666,17 +619,17 @@
                 datasets: [{
                     label: 'New Businesses',
                     data: monthlyBusinessTrendData.data,
-                    borderColor: '#dc2626',
-                    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                    borderColor: '#000',
+                    backgroundColor: 'rgba(0, 0, 0, 0.1)',
                     borderWidth: 3,
                     fill: true,
                     tension: 0.4,
-                    pointBackgroundColor: '#dc2626',
+                    pointBackgroundColor: '#000',
                     pointBorderColor: '#ffffff',
                     pointBorderWidth: 2,
                     pointRadius: 5,
                     pointHoverRadius: 7,
-                    pointHoverBackgroundColor: '#b91c1c',
+                    pointHoverBackgroundColor: '#333',
                     pointHoverBorderColor: '#ffffff',
                     pointHoverBorderWidth: 2
                 }]
@@ -692,7 +645,7 @@
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
                         titleColor: '#ffffff',
                         bodyColor: '#ffffff',
-                        borderColor: '#dc2626',
+                        borderColor: '#000',
                         borderWidth: 1,
                         cornerRadius: 6,
                         displayColors: false,
@@ -718,7 +671,6 @@
                                 size: 12
                             },
                             callback: function(value, index, values) {
-                                // Format the month labels (e.g., "2024-01" -> "Jan 24")
                                 const label = this.getLabelForValue(value);
                                 if (label) {
                                     const [year, month] = label.split('-');
@@ -763,16 +715,13 @@
             }
         });
 
-        // Animation on load
         window.addEventListener('load', function() {
             businessGrowthChart.update('show');
         });
 
-
         // Industries Bar Chart
         const industriesChartData = {{ industries_chart_data | tojson | safe }};
 
-        // Create the industries performance chart
         const industriesCtx = document.getElementById('industriesChart').getContext('2d');
         const industriesChart = new Chart(industriesCtx, {
             type: 'bar',
@@ -782,30 +731,30 @@
                     label: 'Revenue (K)',
                     data: industriesChartData.data,
                     backgroundColor: [
-                        'rgba(220, 38, 38, 0.8)',
-                        'rgba(220, 38, 38, 0.7)',
-                        'rgba(220, 38, 38, 0.6)',
-                        'rgba(220, 38, 38, 0.5)',
-                        'rgba(220, 38, 38, 0.4)'
+                        'rgba(0, 0, 0, 0.8)',
+                        'rgba(0, 0, 0, 0.7)',
+                        'rgba(0, 0, 0, 0.6)',
+                        'rgba(0, 0, 0, 0.5)',
+                        'rgba(0, 0, 0, 0.4)'
                     ],
                     borderColor: [
-                        '#dc2626',
-                        '#dc2626',
-                        '#dc2626',
-                        '#dc2626',
-                        '#dc2626'
+                        '#000',
+                        '#000',
+                        '#000',
+                        '#000',
+                        '#000'
                     ],
                     borderWidth: 2,
                     borderRadius: 6,
                     borderSkipped: false,
                     hoverBackgroundColor: [
-                        'rgba(185, 28, 28, 0.9)',
-                        'rgba(185, 28, 28, 0.8)',
-                        'rgba(185, 28, 28, 0.7)',
-                        'rgba(185, 28, 28, 0.6)',
-                        'rgba(185, 28, 28, 0.5)'
+                        'rgba(0, 0, 0, 0.9)',
+                        'rgba(0, 0, 0, 0.8)',
+                        'rgba(0, 0, 0, 0.7)',
+                        'rgba(0, 0, 0, 0.6)',
+                        'rgba(0, 0, 0, 0.5)'
                     ],
-                    hoverBorderColor: '#b91c1c',
+                    hoverBorderColor: '#000',
                     hoverBorderWidth: 2
                 }]
             },
@@ -820,7 +769,7 @@
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
                         titleColor: '#ffffff',
                         bodyColor: '#ffffff',
-                        borderColor: '#dc2626',
+                        borderColor: '#000',
                         borderWidth: 1,
                         cornerRadius: 6,
                         displayColors: false,
@@ -882,12 +831,10 @@
             }
         });
 
-        // Animation on load for industries chart
         window.addEventListener('load', function() {
             industriesChart.update('show');
         });
 
-        // Business Search Functionality
         function formatDate(dateString) {
             if (!dateString) return 'Not provided';
             const date = new Date(dateString);
@@ -1005,7 +952,6 @@
                 return;
             }
 
-            // Show loading state
             showLoading();
             searchBtn.disabled = true;
             searchBtn.textContent = 'Searching...';
@@ -1034,18 +980,16 @@
                 console.error('Search error:', error);
                 showError();
             } finally {
-                // Reset button state
                 searchBtn.disabled = false;
                 searchBtn.textContent = 'Search Business';
             }
         }
 
-        // Allow searching by pressing Enter
         document.getElementById('businessSearch').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 searchBusiness();
             }
         });
     </script>
-
+</body>
 {% endblock %}
