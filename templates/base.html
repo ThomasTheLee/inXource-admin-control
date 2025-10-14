@@ -374,6 +374,40 @@
         display: inline-block;
     }
 
+    .user-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        min-width: 120px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        z-index: 100;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-5px);
+        transition: all 0.2s ease;
+    }
+
+    .user-dropdown.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    .user-dropdown a {
+        display: block;
+        padding: 10px 15px;
+        text-decoration: none;
+        color: #333;
+        transition: background 0.2s;
+    }
+
+    .user-dropdown a:hover {
+        background: #f5f5f5;
+    }
+
     /* Mobile responsiveness */
     @media (max-width: 768px) {
         .nav-container {
@@ -556,7 +590,7 @@
                     {% endif %}
 
                     <!-- Dropdown menu -->
-                    <div id="userDropdown" class="user-dropdown" style="display: none; position: absolute; top: 100%; right: 0; background: #fff; border: 1px solid #ccc; border-radius: 6px; min-width: 120px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); z-index: 100;">
+                    <div id="userDropdown" class="user-dropdown" >
                         <a href="{{ url_for('logout') }}" style="display: block; padding: 10px; text-decoration: none; color: #333;">Logout</a>
                     </div>
                 </div>
@@ -707,6 +741,34 @@
                 setTimeout(() => {
                     this.style.transform = '';
                 }, 200);
+            });
+        }
+
+
+        // User profile dropdown toggle
+        const userProfileBtn = document.getElementById('userProfileBtn');
+        const userDropdown = document.getElementById('userDropdown');
+
+        if (userProfileBtn && userDropdown) {
+            userProfileBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                userDropdown.classList.toggle('active');
+                
+                // Position dropdown properly on mobile
+                if (window.innerWidth <= 768) {
+                    const rect = userProfileBtn.getBoundingClientRect();
+                    userDropdown.style.position = 'fixed';
+                    userDropdown.style.top = (rect.bottom + 8) + 'px';
+                    userDropdown.style.right = (window.innerWidth - rect.right) + 'px';
+                    userDropdown.style.left = 'auto';
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!userProfileBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+                    userDropdown.classList.remove('active');
+                }
             });
         }
     </script>
