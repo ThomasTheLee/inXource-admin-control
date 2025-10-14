@@ -264,5 +264,3 @@ class Auth(Clients):
         
     
         
-test = Auth()
-print(test.load_staff())
