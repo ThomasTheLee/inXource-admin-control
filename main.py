@@ -100,9 +100,10 @@ def auth():
         return redirect(url_for('index'))
     
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        remember = request.form.get('remember')
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        remember = request.form.get('remember', '').strip()
+
 
         # Debug: log login attempt
         print(f"Login attempt for username: {username}")
@@ -945,54 +946,83 @@ def analysis():
     
     logger.info("Analysis page accessed")
     try:
-        # Get the most recent analytics data from database
-        logger.info("Fetching latest weekly insights from database")
-        latest_insight_record = ai_manager.grab_weekly_insights()
+        # Get the most recent weekly and monthly analytics data from database
+        logger.info("Fetching latest weekly and monthly insights from database")
+        latest_weekly_record = ai_manager.grab_weekly_insights()
+        latest_monthly_record = ai_manager.grab_monthly_insights()
         
-        # Initialize variables
+        # Initialize variables for weekly
         weekly_data = None
-        insights_count = 0
-        tables_analyzed = 0
-        last_updated = 'Never'
+        weekly_insights_count = 0
+        weekly_tables_analyzed = 0
+        weekly_last_updated = 'Never'
         
-        if latest_insight_record:
-            logger.info("Latest insight record found")
-            # Parse the JSON data
+        # Initialize variables for monthly
+        monthly_data = None
+        monthly_insights_count = 0
+        monthly_tables_analyzed = 0
+        monthly_last_updated = 'Never'
+        
+        # Process weekly data
+        if latest_weekly_record:
+            logger.info("Latest weekly insight record found")
             try:
-                weekly_data = json.loads(latest_insight_record['insight'])
-                insights_count = len(weekly_data) if weekly_data else 0
-                tables_analyzed = len([k for k, v in weekly_data.items() if v]) if weekly_data else 0
-                logger.debug(f"Insights parsed - Count: {insights_count}, Tables: {tables_analyzed}")
+                weekly_data = json.loads(latest_weekly_record['insight'])
+                weekly_insights_count = len(weekly_data) if weekly_data else 0
+                weekly_tables_analyzed = len([k for k, v in weekly_data.items() if v]) if weekly_data else 0
                 
-                # Format the timestamp if available
-                if 'created_at' in latest_insight_record:
-                    last_updated = datetime.fromisoformat(latest_insight_record['created_at']).date().isoformat()
-                    logger.debug(f"Last updated: {last_updated}")
+                if 'created_at' in latest_weekly_record:
+                    weekly_last_updated = datetime.fromisoformat(latest_weekly_record['created_at']).date().isoformat()
                 else:
-                    last_updated = 'Recently'
-                
+                    weekly_last_updated = 'Recently'
+                    
             except (json.JSONDecodeError, KeyError) as e:
-                logger.error(f"Error parsing insights JSON: {str(e)}", exc_info=True)
-                print(f"Error parsing insights JSON: {e}")
+                logger.error(f"Error parsing weekly insights JSON: {str(e)}", exc_info=True)
                 weekly_data = None
         else:
-            logger.info("No previous insights found in database")
+            logger.info("No previous weekly insights found in database")
+        
+        # Process monthly data
+        if latest_monthly_record:
+            logger.info("Latest monthly insight record found")
+            try:
+                monthly_data = json.loads(latest_monthly_record['insight'])
+                monthly_insights_count = len(monthly_data) if monthly_data else 0
+                monthly_tables_analyzed = len([k for k, v in monthly_data.items() if v]) if monthly_data else 0
+                
+                if 'created_at' in latest_monthly_record:
+                    monthly_last_updated = datetime.fromisoformat(latest_monthly_record['created_at']).date().isoformat()
+                else:
+                    monthly_last_updated = 'Recently'
+                    
+            except (json.JSONDecodeError, KeyError) as e:
+                logger.error(f"Error parsing monthly insights JSON: {str(e)}", exc_info=True)
+                monthly_data = None
+        else:
+            logger.info("No previous monthly insights found in database")
         
         logger.info("Analysis page rendered successfully")
         return render_template('analysis.html', 
                              weekly_data=weekly_data,
-                             insights_count=insights_count,
-                             tables_analyzed=tables_analyzed,
-                             last_updated=last_updated)
+                             weekly_insights_count=weekly_insights_count,
+                             weekly_tables_analyzed=weekly_tables_analyzed,
+                             weekly_last_updated=weekly_last_updated,
+                             monthly_data=monthly_data,
+                             monthly_insights_count=monthly_insights_count,
+                             monthly_tables_analyzed=monthly_tables_analyzed,
+                             monthly_last_updated=monthly_last_updated)
     
     except Exception as e:
         logger.error(f"Error in analysis route: {str(e)}", exc_info=True)
-        print(f"Error in analysis route: {e}")
         return render_template('analysis.html', 
                              weekly_data=None,
-                             insights_count=0,
-                             tables_analyzed=0,
-                             last_updated='Error')
+                             weekly_insights_count=0,
+                             weekly_tables_analyzed=0,
+                             weekly_last_updated='Error',
+                             monthly_data=None,
+                             monthly_insights_count=0,
+                             monthly_tables_analyzed=0,
+                             monthly_last_updated='Error')
     
     
 @app.route('/generate-insights', methods=['POST'])
@@ -1010,73 +1040,24 @@ def generate_insights():
     
     logger.info("Generate insights endpoint called")
     try:
+        # Get the period from request (default to weekly)
+        period = 'weekly'
+        if request.is_json and request.json:
+            period = request.json.get('period', 'weekly')
         
-        # Get the most recent insight from database
-        logger.info("Checking for existing insights")
-        latest_record = ai_manager.grab_weekly_insights()
-        
-        should_generate = True
-        days_difference = 0
-        
-        if latest_record and 'created_at' in latest_record:
-            # Parse the timestamp
-            created_at_str = latest_record['created_at']
-            
-            try:
-                # Handle different timestamp formats
-                if 'T' in created_at_str:
-                    created_at = datetime.fromisoformat(created_at_str.replace('Z', '+00:00'))
-                else:
-                    created_at = datetime.strptime(created_at_str, '%Y-%m-%d %H:%M:%S')
-                
-                # Calculate days difference
-                now = datetime.utcnow()
-                if created_at.tzinfo is None:
-                    now = now.replace(tzinfo=None)
-                
-                days_difference = (now - created_at).days
-                
-                logger.info(f"Last insight was generated {days_difference} days ago")
-                print(f"Last insight was {days_difference} days ago")
-                
-                # Only generate if 7 or more days have passed
-                should_generate = days_difference >= 7
-                
-            except ValueError as e:
-                logger.warning(f"Could not parse timestamp: {created_at_str}, error: {str(e)}")
-                print(f"Could not parse timestamp: {created_at_str}, error: {e}")
-                should_generate = True
+        if period == 'weekly':
+            return generate_weekly_insights()
+        elif period == 'monthly':
+            return generate_monthly_insights()
         else:
-            logger.info("No previous insights found or no timestamp available")
-            print("No previous insights found or no timestamp")
-            should_generate = True
-        
-        if should_generate:
-            logger.info("Generating new insights (7+ days have passed or no previous insights)")
-            print("Generating new insights...")
-            ai_manager.generate_weekly_insights()
-            data = ai_manager.weekly_insights
-            logger.info("Storing weekly report in database")
-            ai_manager.store_weekly_report(data)
-            logger.info("New insights generated and stored successfully")
-            
             return jsonify({
-                'success': True, 
-                'message': 'New insights generated successfully',
-                'generated': True
-            })
-        else:
-            logger.info(f"Insights are still valid. {7 - days_difference} days remaining")
-            return jsonify({
-                'success': True, 
-                'message': 'Recent insights are still valid. New insights will be generated after 7 days.',
-                'generated': False,
-                'days_remaining': 7 - days_difference
+                'success': False,
+                'message': 'Invalid period. Use "weekly" or "monthly".',
+                'generated': False
             })
     
     except Exception as e:
         logger.error(f"Error in generate_insights: {str(e)}", exc_info=True)
-        print(f"Error in generate_insights: {e}")
         return jsonify({
             'success': False, 
             'message': f'Error: {str(e)}',
@@ -1084,136 +1065,287 @@ def generate_insights():
         })
     
 
+def generate_weekly_insights():
+    """Generate weekly insights if 7+ days have passed"""
+    
+    # Get the most recent weekly insight from database
+    logger.info("Checking for existing weekly insights")
+    latest_record = ai_manager.grab_weekly_insights()
+    
+    should_generate = True
+    days_difference = 0
+    
+    if latest_record and 'created_at' in latest_record:
+        created_at_str = latest_record['created_at']
+        
+        try:
+            if 'T' in created_at_str:
+                created_at = datetime.fromisoformat(created_at_str.replace('Z', '+00:00'))
+            else:
+                created_at = datetime.strptime(created_at_str, '%Y-%m-%d %H:%M:%S')
+            
+            now = datetime.utcnow()
+            if created_at.tzinfo is None:
+                now = now.replace(tzinfo=None)
+            
+            days_difference = (now - created_at).days
+            
+            logger.info(f"Last weekly insight was generated {days_difference} days ago")
+            should_generate = days_difference >= 7
+            
+        except ValueError as e:
+            logger.warning(f"Could not parse timestamp: {created_at_str}, error: {str(e)}")
+            should_generate = True
+    else:
+        logger.info("No previous weekly insights found or no timestamp available")
+        should_generate = True
+    
+    if should_generate:
+        logger.info("Generating new weekly insights (7+ days have passed or no previous insights)")
+        ai_manager.generate_weekly_insights()
+        data = ai_manager.weekly_insights
+        logger.info("Storing weekly report in database")
+        ai_manager.store_weekly_report(data)
+        logger.info("New weekly insights generated and stored successfully")
+        
+        return jsonify({
+            'success': True, 
+            'message': 'New weekly insights generated successfully',
+            'generated': True
+        })
+    else:
+        logger.info(f"Weekly insights are still valid. {7 - days_difference} days remaining")
+        return jsonify({
+            'success': True, 
+            'message': 'Recent weekly insights are still valid. New insights will be generated after 7 days.',
+            'generated': False,
+            'days_remaining': 7 - days_difference
+        })
+
+
+def generate_monthly_insights():
+    """Generate monthly insights if 30 days have passed since the 1st of the month"""
+    
+    # Get the most recent monthly insight from database
+    logger.info("Checking for existing monthly insights")
+    latest_record = ai_manager.grab_monthly_insights()
+    
+    should_generate = True
+    days_difference = 0
+    
+    if latest_record and 'created_at' in latest_record:
+        created_at_str = latest_record['created_at']
+        
+        try:
+            if 'T' in created_at_str:
+                created_at = datetime.fromisoformat(created_at_str.replace('Z', '+00:00'))
+            else:
+                created_at = datetime.strptime(created_at_str, '%Y-%m-%d %H:%M:%S')
+            
+            now = datetime.utcnow()
+            if created_at.tzinfo is None:
+                now = now.replace(tzinfo=None)
+            
+            # Calculate days difference
+            days_difference = (now - created_at).days
+            
+            # Check if we should generate based on 30-day cycle from creation date
+            should_generate = days_difference >= 30
+            
+            logger.info(f"Last monthly insight was generated {days_difference} days ago")
+            
+        except ValueError as e:
+            logger.warning(f"Could not parse timestamp: {created_at_str}, error: {str(e)}")
+            should_generate = True
+    else:
+        logger.info("No previous monthly insights found or no timestamp available")
+        should_generate = True
+    
+    if should_generate:
+        logger.info("Generating new monthly insights (30+ days have passed or no previous insights)")
+        ai_manager.generate_monthly_insights()
+        data = ai_manager.monthly_insights
+        logger.info("Storing monthly report in database")
+        ai_manager.store_monthly_report(data)
+        logger.info("New monthly insights generated and stored successfully")
+        
+        return jsonify({
+            'success': True, 
+            'message': 'New monthly insights generated successfully',
+            'generated': True
+        })
+    else:
+        logger.info(f"Monthly insights are still valid. {30 - days_difference} days remaining")
+        return jsonify({
+            'success': True, 
+            'message': 'Recent monthly insights are still valid. New insights will be generated after 30 days.',
+            'generated': False,
+            'days_remaining': 30 - days_difference
+        })
+    
+
 @app.route('/custom_analysis', methods=['POST'])
 def custom_analysis():
+    import time
+    start_time = time.time()
+    
+    print("\n" + "="*50)
+    print("CUSTOM ANALYSIS STARTED")
+    print("="*50)
 
     # Check if user is logged in
     if not session.get('logged_in'):
+        print("ERROR: User not logged in")
         return jsonify({"success": False, "message": "Please login to perform this action"})
     
     # Check user role
     user_role = session.get('role')
     if user_role not in ['super', 'admin']:
+        print(f"ERROR: Unauthorized role: {user_role}")
         logger.warning(f"Unauthorized approval attempt by user with role: {user_role}")
         return jsonify({"success": False, "message": "You don't have permission to approve withdrawals"})
     
+    print(f"✓ User authenticated - Role: {user_role}")
     logger.info("Custom analysis endpoint called")
+    
     try:
-        logger.debug(f"Request method: {request.method}")
-        logger.debug(f"Request files: {dict(request.files)}")
-        logger.debug(f"Request form: {dict(request.form)}")
-        logger.debug(f"Request content type: {request.content_type}")
-        logger.debug(f"Request content length: {request.environ.get('CONTENT_LENGTH', 'Not set')}")
-        
-        print("=== CUSTOM ANALYSIS DEBUG START ===")
-        print(f"Request method: {request.method}")
-        print(f"Request files: {dict(request.files)}")
-        print(f"Request form: {dict(request.form)}")
-        print(f"Request content type: {request.content_type}")
-        print(f"Request content length: {request.environ.get('CONTENT_LENGTH', 'Not set')}")
+        print(f"\n1. REQUEST DETAILS:")
+        print(f"   - Method: {request.method}")
+        print(f"   - Content-Type: {request.content_type}")
+        print(f"   - Content-Length: {request.environ.get('CONTENT_LENGTH', 'Not set')}")
+        print(f"   - Files keys: {list(request.files.keys())}")
+        print(f"   - Form keys: {list(request.form.keys())}")
         
         # Check for the file in request
         if not request.files:
-            logger.error("request.files is completely empty")
-            print("ERROR: request.files is completely empty")
+            print("ERROR: request.files is empty")
             return jsonify({'error': 'No files received in request'}), 400
-        
-        # Debug all files in the request
-        for key in request.files:
-            logger.debug(f"Found file key: {key}, value: {request.files[key]}")
-            print(f"Found file key: {key}, value: {request.files[key]}")
         
         # Check if 'file' key exists
         if 'file' not in request.files:
             available_keys = list(request.files.keys())
-            logger.error(f"'file' key not found. Available keys: {available_keys}")
             print(f"ERROR: 'file' key not found. Available keys: {available_keys}")
             return jsonify({
                 'error': f'No file uploaded with key "file". Available keys: {available_keys}'
             }), 400
         
         file = request.files['file']
-        logger.debug(f"File object: {file}")
-        logger.debug(f"File filename: {file.filename}")
-        logger.debug(f"File content type: {getattr(file, 'content_type', 'Not available')}")
-        
-        print(f"File object: {file}")
-        print(f"File filename: {file.filename}")
-        print(f"File content type: {getattr(file, 'content_type', 'Not available')}")
+        print(f"✓ File received: {file.filename}")
         
         # Check if file is empty
         if not file.filename:
-            logger.error("File has no filename")
             print("ERROR: File has no filename")
             return jsonify({'error': 'No file selected or file has no name'}), 400
-            
-        # Rest of your existing code...
+        
         filename = file.filename
-        logger.info(f"Processing file: {filename}")
-        print(f"Processing file: {filename}")
+        file_ext = os.path.splitext(filename)[1].lower()
+        print(f"   - Filename: {filename}")
+        print(f"   - Extension: {file_ext}")
         
         # Validate file extension
         allowed_extensions = {'.csv', '.xlsx', '.xls'}
-        file_ext = os.path.splitext(filename)[1].lower()
-        logger.debug(f"File extension: {file_ext}")
-        print(f"File extension: {file_ext}")
-        
         if file_ext not in allowed_extensions:
-            logger.error(f"Invalid file extension: {file_ext}")
             print(f"ERROR: Invalid file extension: {file_ext}")
             return jsonify({'error': f'Invalid file format: {file_ext}. Please upload CSV or Excel files only.'}), 400
         
-        # Continue with the rest of your processing...
-        logger.info("Starting file cleaning process")
-        print("Starting file cleaning process...")
-        uploaded_dataframe = ai_manager.clean_file(file)
+        print(f"✓ File extension valid")
+        
+        # Start file cleaning process
+        print(f"\n2. CLEANING FILE...")
+        clean_start = time.time()
+        
+        try:
+            uploaded_dataframe = ai_manager.clean_file(file)
+            clean_time = time.time() - clean_start
+            print(f"✓ File cleaned in {clean_time:.2f}s")
+        except Exception as e:
+            print(f"ERROR during clean_file: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({'error': f'Failed to clean file: {str(e)}'}), 400
         
         if uploaded_dataframe is None:
-            logger.error("clean_file returned None")
             print("ERROR: clean_file returned None")
             return jsonify({'error': 'Failed to process the uploaded file'}), 400
             
         if uploaded_dataframe.empty:
-            logger.error("DataFrame is empty after cleaning")
             print("ERROR: DataFrame is empty after cleaning")
             return jsonify({'error': 'No valid data found in the uploaded file'}), 400
         
-        logger.info(f"DataFrame shape: {uploaded_dataframe.shape}")
-        print(f"DataFrame shape: {uploaded_dataframe.shape}")
+        print(f"   - DataFrame shape: {uploaded_dataframe.shape}")
+        print(f"   - Columns: {list(uploaded_dataframe.columns)[:5]}...")  # First 5 columns
+        print(f"   - Data types: {uploaded_dataframe.dtypes.to_dict()}")
         
-        # Continue with analysis...
-        logger.info("Starting AI analysis of dataframe")
-        analysis_result = ai_manager.ai_analyse_df(uploaded_dataframe)
+        # Start AI analysis
+        print(f"\n3. STARTING AI ANALYSIS...")
+        analysis_start = time.time()
         
+        try:
+            analysis_result = ai_manager.ai_analyse_df(uploaded_dataframe)
+            analysis_time = time.time() - analysis_start
+            print(f"✓ AI analysis completed in {analysis_time:.2f}s")
+        except Exception as e:
+            print(f"ERROR during ai_analyse_df: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({'error': f'Analysis failed: {str(e)}'}), 500
+        
+        # Check if analysis returned an error
         if isinstance(analysis_result, dict) and "error" in analysis_result and len(analysis_result) == 1:
-            logger.warning(f"Analysis returned error: {analysis_result['error']}")
+            print(f"WARNING: Analysis returned error: {analysis_result['error']}")
             return jsonify(analysis_result), 400
         
-        # Process results...
-        logger.info("Processing analysis results into chart data")
+        print(f"   - Number of charts generated: {len(analysis_result)}")
+        print(f"   - Chart keys: {list(analysis_result.keys())}")
+        
+        # Process results into JSON
+        print(f"\n4. PROCESSING RESULTS...")
+        process_start = time.time()
+        
         chart_json = {}
         for chart_key, chart_data in analysis_result.items():
+            print(f"   Processing {chart_key}...")
+            
             if isinstance(chart_data, dict) and 'dataframe' in chart_data:
                 df = chart_data['dataframe']
+                
                 if df is not None and not df.empty:
+                    print(f"     - DataFrame shape: {df.shape}")
+                    print(f"     - Columns: {list(df.columns)}")
+                    
                     chart_json[chart_key] = {
                         'data': df.to_dict('records'),
                         'metadata': chart_data.get('metadata', {}),
                         'columns': df.columns.tolist()
                     }
-                    logger.debug(f"Processed chart: {chart_key} with {len(df)} rows")
+                    print(f"     ✓ Chart data prepared ({len(df)} rows)")
+                else:
+                    print(f"     ⚠ Empty or None dataframe for {chart_key}")
+            else:
+                print(f"     ⚠ Invalid chart_data structure for {chart_key}")
+        
+        process_time = time.time() - process_start
+        print(f"✓ Results processed in {process_time:.2f}s")
         
         if not chart_json:
-            logger.error("No chart data could be processed")
+            print("ERROR: No chart data could be processed")
             return jsonify({'error': 'Failed to process chart data for visualization'}), 500
         
-        logger.info(f"Successfully processed {len(chart_json)} charts")
-        print(f"Successfully processed {len(chart_json)} charts")
+        total_time = time.time() - start_time
+        print(f"\n{'='*50}")
+        print(f"SUCCESS - Total time: {total_time:.2f}s")
+        print(f"{'='*50}\n")
+        
         return jsonify(chart_json)
     
     except Exception as e:
+        error_time = time.time() - start_time
+        print(f"\n{'='*50}")
+        print(f"UNEXPECTED ERROR after {error_time:.2f}s")
+        print(f"Error: {str(e)}")
+        print(f"{'='*50}")
+        
         logger.error(f"Unexpected error in custom_analysis: {str(e)}", exc_info=True)
-        print(f"UNEXPECTED ERROR: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': f'Analysis failed: {str(e)}'}), 500

@@ -36,6 +36,7 @@ class AnalAI(FileCleaner):
     Note: Removed @singleton decorator to fix the TypeError.
     """
     
+    
     def __init__(self):
         super().__init__()
         self.tables = [
@@ -46,11 +47,10 @@ class AnalAI(FileCleaner):
             'industry_trucking',
             'business_owners',
             'business_settings',
-            'sunhistory',  # Added subscription history table
+            'sunhistory',
         ]
         self.weekly_insights = {}
-
-        self.store_weekly_report(self.weekly_insights)
+        self.monthly_insights = {}
 
     def generate_haiku(self):
         """Generate a haiku using OpenAI."""
@@ -309,6 +309,270 @@ class AnalAI(FileCleaner):
 
         return self.weekly_insights
 
+    def generate_monthly_insights(self):
+        """
+        Sends monthly prompts to GPT for all tables and stores the insights in structured format.
+        Monthly insights provide deeper analysis over a longer period.
+        """
+        self.monthly_insights = {}
+        prompts = self.generate_monthly_prompts()
+
+        for table_name, prompt in prompts.items():
+            try:
+                response = self.open_ai_client.chat.completions.create(
+                    model="gpt-3.5-turbo",  
+                    messages=[
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+                
+                raw_response = response.choices[0].message.content
+                parsed_response = self.parse_ai_response(raw_response)
+                self.monthly_insights[table_name] = parsed_response
+
+            except Exception as e:
+                self.monthly_insights[table_name] = {
+                    'concern': f"Error generating insight: {str(e)}",
+                    'recommendation': "Unable to generate recommendations due to error"
+                }
+
+        return self.monthly_insights
+
+
+    def generate_monthly_prompts(self):
+        """
+        Generates GPT prompts for monthly insights for all tables.
+        Uses extract_tables() internally and loops through each table.
+        Monthly analysis looks at 30-day data instead of 7-day data.
+        """
+        # Extract last 30 days of data
+        dataframe_data = self.extract_monthly_tables()
+        prompts = {}
+
+        for table_name, main_df in dataframe_data.items():
+            # Convert main table to string (top 15 rows for context)
+            if not main_df.empty:
+                main_table_str = main_df.head(15).to_dict(orient='records')
+            else:
+                main_table_str = "No data available."
+
+            # Include related tables for correlations
+            related_tables_str = ""
+            if table_name == "withdrawals":
+                related_df = dataframe_data.get("orders", pd.DataFrame())
+                if not related_df.empty:
+                    related_tables_str = f"Related table: orders\n{related_df.head(15).to_dict(orient='records')}\n"
+                related_df2 = dataframe_data.get("users", pd.DataFrame())
+                if not related_df2.empty:
+                    related_tables_str += f"Related table: users\n{related_df2.head(15).to_dict(orient='records')}\n"
+            elif table_name == "orders":
+                related_df = dataframe_data.get("users", pd.DataFrame())
+                if not related_df.empty:
+                    related_tables_str = f"Related table: users\n{related_df.head(15).to_dict(orient='records')}\n"
+                related_df2 = dataframe_data.get("businesses", pd.DataFrame())
+                if not related_df2.empty:
+                    related_tables_str += f"Related table: businesses\n{related_df2.head(15).to_dict(orient='records')}\n"
+            elif table_name == "users":
+                related_df = dataframe_data.get("businesses", pd.DataFrame())
+                if not related_df.empty:
+                    related_tables_str = f"Related table: businesses\n{related_df.head(15).to_dict(orient='records')}\n"
+            elif table_name == "sunhistory":
+                related_df = dataframe_data.get("users", pd.DataFrame())
+                if not related_df.empty:
+                    related_tables_str = f"Related table: users\n{related_df.head(15).to_dict(orient='records')}\n"
+                related_df2 = dataframe_data.get("businesses", pd.DataFrame())
+                if not related_df2.empty:
+                    related_tables_str += f"Related table: businesses\n{related_df2.head(15).to_dict(orient='records')}\n"
+                related_df3 = dataframe_data.get("orders", pd.DataFrame())
+                if not related_df3.empty:
+                    related_tables_str += f"Related table: orders\n{related_df3.head(15).to_dict(orient='records')}\n"
+
+            # Build the monthly prompt with deeper analysis
+            if table_name == "sunhistory":
+                prompt = f"""
+                You are a senior business analyst for inXource, a platform for vendors.
+
+                Your task is to provide MONTHLY subscription analysis with strategic insights.
+                This is a deeper, trend-focused analysis covering the past month.
+
+                Main table for analysis: {table_name}
+                Data:
+                {main_table_str}
+
+                {related_tables_str}
+
+                Guidelines for Monthly Subscription Analysis:
+                1. Analyze monthly subscription revenue trends and growth patterns
+                2. Identify subscription retention rates and churn patterns over the month
+                3. Correlate subscription performance with user activity and business growth
+                4. Segment subscribers by value and identify trends in each segment
+                5. Analyze month-over-month changes (compare with previous periods if possible)
+                6. Identify critical metrics and KPIs for subscription health
+                7. Predict potential churn risks for the next month
+                8. Provide strategic recommendations for:
+                - Monthly revenue optimization
+                - Churn prevention strategies
+                - Customer lifetime value improvements
+                - Scaling subscription programs
+                - Market expansion opportunities
+
+                IMPORTANT: Structure your response as follows:
+                CONCERNS:
+                [List your main concerns and strategic issues identified in the monthly subscription data, including:
+                - Revenue trends and growth rate
+                - Churn patterns and retention metrics
+                - Customer segment performance
+                - Seasonal or cyclical patterns
+                - Risk factors for next month]
+
+                RECOMMENDATIONS:
+                [List your strategic recommendations based on the concerns, including:
+                - Revenue acceleration strategies
+                - Retention and loyalty programs
+                - Pricing or tier adjustments
+                - Market or segment focus areas
+                - Long-term growth initiatives]
+
+                Keep each section clear and separate.
+                """
+            else:
+                prompt = f"""
+                You are a senior business analyst for inXource, a platform for vendors.
+
+                Your task is to provide MONTHLY strategic insights based on the past 30 days of data.
+                This is a deeper analysis than weekly reports - focus on trends, patterns, and strategic opportunities.
+
+                Main table for analysis: {table_name}
+                Data:
+                {main_table_str}
+
+                {related_tables_str}
+
+                Guidelines for Monthly Analysis:
+                1. Identify major trends and patterns over the past month
+                2. Analyze growth rates, changes, and momentum
+                3. Correlate the main table data with related tables to find deeper insights
+                4. Highlight significant anomalies or unexpected behaviors
+                5. Identify key performance indicators and their trends
+                6. Segment data by meaningful categories (if applicable)
+                7. Predict potential issues or opportunities for the next month
+                8. Provide strategic recommendations for:
+                - Month-over-month growth strategies
+                - Process improvements
+                - Platform feature priorities
+                - User/customer focus areas
+                - Revenue or engagement optimization
+
+                IMPORTANT: Structure your response as follows:
+                CONCERNS:
+                [List your main strategic concerns and insights identified in the monthly data]
+
+                RECOMMENDATIONS:
+                [List your strategic recommendations based on the concerns]
+
+                Keep each section clear and separate. Focus on actionable strategy, not just data description.
+                """
+            prompts[table_name] = prompt
+
+        return prompts
+
+
+    def extract_monthly_tables(self):
+        """
+        Extracts the tables defined in self.tables as pandas DataFrames for the past 30 days.
+        - If 'created_at' exists, gets records from the past 30 days.
+        - Otherwise, gets the most recent 50 records.
+        """
+        dataframe_data = {}
+        thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).isoformat()
+
+        for table in self.tables:
+            try:
+                # First, fetch column info to check for 'created_at'
+                columns_resp = self.supabase_client.table(table).select('*').limit(1).execute()
+                df_columns = pd.DataFrame(columns_resp.data)
+
+                if 'created_at' in df_columns.columns:
+                    # Table has 'created_at', filter last 30 days
+                    response = (
+                        self.supabase_client.table(table)
+                        .select('*')
+                        .gte('created_at', thirty_days_ago)
+                        .order('created_at', desc=True)
+                        .execute()
+                    )
+                else:
+                    response = (
+                        self.supabase_client.table(table)
+                        .select('*')
+                        .order('id', desc=True)
+                        .limit(50)
+                        .execute()
+                    )
+
+                dataframe_data[table] = pd.DataFrame(response.data)
+                
+            except Exception as e:
+                print(f"Error extracting table {table}: {str(e)}")
+                dataframe_data[table] = pd.DataFrame()
+
+        return dataframe_data
+
+
+    def store_monthly_report(self, data):
+        """Stores the monthly report in the database. Only one report per 30-day cycle."""
+
+        # Fetch the most recent monthly report
+        latest = (
+            self.supabase_client.table('admin_insights')
+            .select('created_at')
+            .eq('type', 'monthly')
+            .order('created_at', desc=True)
+            .limit(1)
+            .execute()
+        )
+
+        # Check if there is a record
+        if latest.data and len(latest.data) > 0:
+            last_created_at_str = latest.data[0]['created_at']
+            last_created_at = datetime.fromisoformat(last_created_at_str.replace('Z', '+00:00'))
+            thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+
+            if last_created_at > thirty_days_ago:
+                # Less than 30 days since last report
+                return {"error": "Monthly report already uploaded within the last 30 days."}
+
+        # Turn data into JSON
+        processed_data = json.dumps(data)
+
+        # Insert the new report
+        response = (
+            self.supabase_client.table('admin_insights')
+            .insert({
+                "insight": processed_data,
+                "type": "monthly"
+            })
+            .execute()
+        )
+
+        return response
+    
+
+    def grab_monthly_insights(self):
+        """Returns the most recent monthly insight from the admin_insights table"""
+
+        response = (
+            self.supabase_client.table('admin_insights')
+            .select('insight, created_at')
+            .eq('type', 'monthly')
+            .order('created_at', desc=True)
+            .limit(1)
+            .execute()
+        )
+
+        insight = response.data[0] if response.data else None
+        return insight
+
 
     def store_weekly_report(self, data):
         """Stores the weekly report in the database only if 7 days have passed since the last upload"""
@@ -355,6 +619,7 @@ class AnalAI(FileCleaner):
         response = (
             self.supabase_client.table('admin_insights')
             .select('insight, created_at')
+            .eq('type', 'weekly')  # Add this line
             .order('created_at', desc=True)
             .limit(1)
             .execute()
@@ -364,6 +629,7 @@ class AnalAI(FileCleaner):
         return insight
 
 
+    
     def clean_file(self, file):
         """
         Returns a cleaned DataFrame from an uploaded file.
@@ -412,17 +678,34 @@ class AnalAI(FileCleaner):
         :param df: pandas DataFrame to analyze
         :return: dict containing chart_data and metadata for visualization
         """
+        import time
+        start_time = time.time()
+        
+        print("\n" + "-"*50)
+        print("AI_ANALYSE_DF STARTED")
+        print("-"*50)
+        
         if df is None or not hasattr(df, 'empty'):
+            print("ERROR: No DataFrame provided")
             return {"error": "No DataFrame provided for analysis"}
         
         if df.empty:
+            print("ERROR: DataFrame is empty")
             return {"error": "DataFrame is empty"}
+        
+        print(f"✓ DataFrame validation passed")
+        print(f"  Shape: {df.shape}")
+        print(f"  Columns: {list(df.columns)}")
         
         try:
             # Prepare DataFrame summary for AI analysis
+            print("\n1. Preparing DataFrame summary...")
+            summary_start = time.time()
             df_info = self._prepare_dataframe_summary(df)
+            print(f"✓ Summary prepared in {time.time() - summary_start:.2f}s")
             
             # Create prompt for AI analysis
+            print("\n2. Creating AI prompt...")
             prompt = f"""
     You are a data analyst. Analyze the following dataset and identify meaningful patterns and relationships that can be visualized in charts.
 
@@ -467,32 +750,63 @@ class AnalAI(FileCleaner):
     Think creatively about calculated columns that could reveal hidden insights.
     Ensure each analysis can be implemented with the available columns or calculated columns.
     """
+            print(f"✓ Prompt created ({len(prompt)} characters)")
 
             # Get AI analysis
-            response = self.open_ai_client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.3
-            )
+            print("\n3. Calling OpenAI API...")
+            api_start = time.time()
+            
+            try:
+                response = self.open_ai_client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.3
+                )
+                api_time = time.time() - api_start
+                print(f"✓ OpenAI responded in {api_time:.2f}s")
+            except Exception as e:
+                print(f"ERROR calling OpenAI: {str(e)}")
+                raise
             
             ai_response = response.choices[0].message.content
             
-            # Parse AI response (try to extract JSON)
+            if not ai_response:
+                print("ERROR: OpenAI returned empty response")
+                return {"error": "OpenAI returned empty response"}
+            
+            print(f"  Response length: {len(ai_response)} characters")
+            print(f"  First 200 chars: {ai_response[:200]}...")
+            
+            # Parse AI response
+            print("\n4. Parsing AI response...")
+            parse_start = time.time()
             analyses = self._parse_ai_analysis_response(ai_response)
+            print(f"✓ Parsed in {time.time() - parse_start:.2f}s")
+            print(f"  Found {len(analyses.get('analyses', []))} analyses")
             
             # Generate actual DataFrames based on AI recommendations
+            print("\n5. Creating chart DataFrames...")
             chart_dataframes = {}
             
             for i, analysis in enumerate(analyses.get('analyses', [])):
+                print(f"\n  Chart {i+1}:")
+                print(f"    Title: {analysis.get('title', 'N/A')}")
+                print(f"    Type: {analysis.get('chart_type', 'N/A')}")
+                
                 try:
                     # Create calculated column if specified
-                    analysis_df = df.copy()  # Work with a copy
+                    analysis_df = df.copy()
                     if 'calculated_column' in analysis and analysis['calculated_column']:
+                        calc_col = analysis['calculated_column']
+                        calc_name = calc_col.get('name', 'N/A') if isinstance(calc_col, dict) else 'N/A'
+                        print(f"    Adding calculated column: {calc_name}")
                         analysis_df = self._add_calculated_column(analysis_df, analysis['calculated_column'])
                     
+                    print(f"    Creating chart dataframe...")
                     chart_df = self._create_chart_dataframe(analysis_df, analysis)
+                    
                     if not chart_df.empty:
                         chart_key = f"chart_{i+1}_{analysis['chart_type']}"
                         chart_dataframes[chart_key] = {
@@ -506,14 +820,33 @@ class AnalAI(FileCleaner):
                                 'calculated_column': analysis.get('calculated_column')
                             }
                         }
+                        print(f"    ✓ Chart created ({len(chart_df)} rows)")
+                    else:
+                        print(f"    ⚠ Empty dataframe, skipping")
+                        
                 except Exception as e:
-                    print(f"Error creating chart dataframe for analysis {i+1}: {str(e)}")
+                    print(f"    ERROR: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
                     continue
+            
+            total_time = time.time() - start_time
+            print(f"\n{'-'*50}")
+            print(f"AI_ANALYSE_DF COMPLETED in {total_time:.2f}s")
+            print(f"Generated {len(chart_dataframes)} charts")
+            print(f"{'-'*50}\n")
             
             return chart_dataframes
             
         except Exception as e:
-            print(f"Error in ai_analyse_df: {str(e)}")
+            error_time = time.time() - start_time
+            print(f"\n{'-'*50}")
+            print(f"AI_ANALYSE_DF ERROR after {error_time:.2f}s")
+            print(f"Error: {str(e)}")
+            print(f"{'-'*50}\n")
+            
+            import traceback
+            traceback.print_exc()
             return {"error": f"Analysis failed: {str(e)}"}
 
     def _add_calculated_column(self, df, calc_config):
@@ -799,3 +1132,7 @@ class AnalAI(FileCleaner):
         })
         
         return histogram_df
+
+
+# test = AnalAI()
+# print(test.ai_analyse_df(pd.DataFrame('messy_sales_data.csv')))
