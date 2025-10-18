@@ -1,0 +1,36 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  # 1. Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t',
+      'europe-west4-docker.pkg.dev/trybae-457418/cloud-run-source-deploy/inxource-admin-panel:latest',
+      '-f',
+      'Dockerfile',
+      '.'
+    ]
+
+  # 2. Push Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'push',
+      'europe-west4-docker.pkg.dev/trybae-457418/cloud-run-source-deploy/inxource-admin-panel:latest'
+    ]
+
+  # 3. Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud run deploy inxource-admin-panel \
+          --image europe-west4-docker.pkg.dev/trybae-457418/cloud-run-source-deploy/inxource-admin-panel:latest \
+          --platform managed \
+          --region europe-west4 \
+          --allow-unauthenticated
+
+images:
+  - 'europe-west4-docker.pkg.dev/trybae-457418/cloud-run-source-deploy/inxource-admin-panel:latest'
