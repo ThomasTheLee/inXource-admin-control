@@ -1,5 +1,6 @@
 Flask==3.1.2
 gunicorn==23.0.0
+selenium==4.26.1
 pandas==2.3.2
 numpy==2.3.2
 openai==1.72.0

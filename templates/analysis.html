@@ -3,6 +3,7 @@
 {% block content %}
 <head>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -43,6 +44,7 @@
             justify-content: center;
             gap: 1rem;
             margin-bottom: 3rem;
+            flex-wrap: wrap;
         }
 
         .time-btn {
@@ -169,12 +171,6 @@
             padding: 2rem;
         }
 
-        .error-message {
-            background: #fee2e2;
-            border-left: 3px solid #dc2626;
-            color: #dc2626;
-        }
-
         .metric-highlight {
             background: #f3f4f6;
             padding: 0.3rem 0.6rem;
@@ -203,6 +199,7 @@
             gap: 0.8rem;
             position: relative;
             overflow: hidden;
+            margin: 0.5rem;
         }
 
         .refresh-btn:hover {
@@ -321,7 +318,6 @@
             display: block;
         }
 
-        /* Modal Styles */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -402,7 +398,6 @@
             padding: 2rem;
         }
 
-        /* File Upload Styles */
         .upload-area {
             border: 2px dashed #d1d5db;
             border-radius: 8px;
@@ -505,7 +500,6 @@
             transform: none;
         }
 
-        /* Analysis Modal Styles */
         .analysis-modal-content {
             background: white;
             border-radius: 8px;
@@ -555,7 +549,6 @@
             text-align: center;
         }
 
-        /* Animations */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -572,7 +565,16 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Mobile Responsiveness */
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
         @media (max-width: 768px) {
             .analytics-container {
                 padding: 1rem;
@@ -636,36 +638,61 @@
         <!-- Time Period Selector -->
         <div class="time-selector">
             <button class="time-btn active" data-period="weekly" id="weeklyBtn">
-                Weekly Insights
+                <i class="fas fa-calendar-week"></i> Weekly Insights
             </button>
             <button class="time-btn" data-period="monthly" id="monthlyBtn">
-                Monthly Insights
+                <i class="fas fa-calendar-alt"></i> Monthly Insights
             </button>
             <button class="time-btn" data-period="custom" id="customBtn">
-                Custom Data
+                <i class="fas fa-upload"></i> Custom Data
             </button>
         </div>
 
-        <!-- Stats Overview -->
-        <div class="stats-overview">
+        <!-- Weekly Stats Overview -->
+        <div class="stats-overview" id="weeklyStats">
             <h3 style="margin-bottom: 1rem; color: #333; text-align: center;">
-                Weekly Performance Overview
+                <i class="fas fa-calendar-week"></i> Weekly Performance Overview
             </h3>
             <div class="stats-grid">
                 <div class="stat-item">
-                    <div class="stat-number">{{ insights_count if insights_count else '0' }}</div>
+                    <div class="stat-number">{{ weekly_insights_count if weekly_insights_count else '0' }}</div>
                     <div class="stat-label">AI Insights Generated</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">{{ tables_analyzed if tables_analyzed else '0' }}</div>
+                    <div class="stat-number">{{ weekly_tables_analyzed if weekly_tables_analyzed else '0' }}</div>
                     <div class="stat-label">Tables Analyzed</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">{{ last_updated if last_updated else 'Never' }}</div>
+                    <div class="stat-number">{{ weekly_last_updated if weekly_last_updated else 'Never' }}</div>
                     <div class="stat-label">Last Updated</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-number">{{ 'Active' if weekly_data else 'No Data' }}</div>
+                    <div class="stat-label">System Status</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Stats Overview -->
+        <div class="stats-overview" id="monthlyStats" style="display: none;">
+            <h3 style="margin-bottom: 1rem; color: #333; text-align: center;">
+                <i class="fas fa-calendar-alt"></i> Monthly Performance Overview
+            </h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number">{{ monthly_insights_count if monthly_insights_count else '0' }}</div>
+                    <div class="stat-label">AI Insights Generated</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ monthly_tables_analyzed if monthly_tables_analyzed else '0' }}</div>
+                    <div class="stat-label">Tables Analyzed</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ monthly_last_updated if monthly_last_updated else 'Never' }}</div>
+                    <div class="stat-label">Last Updated</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ 'Active' if monthly_data else 'No Data' }}</div>
                     <div class="stat-label">System Status</div>
                 </div>
             </div>
@@ -693,13 +720,15 @@
                                         <i class="fas fa-cog"></i>
                                     {% elif table_name == 'industry_trucking' %}
                                         <i class="fas fa-truck"></i>
+                                    {% elif table_name == 'sunhistory' %}
+                                        <i class="fas fa-sun"></i>
                                     {% else %}
                                         <i class="fas fa-chart-bar"></i>
                                     {% endif %}
                                 </div>
                                 <div>
-                                    <h3 class="card-title">{{ table_name.replace('_', ' ').title() }} Analysis</h3>
-                                    <p class="card-subtitle">AI-generated insights for {{ table_name }}</p>
+                                    <h3 class="card-title">{{ table_name.replace('_', ' ').title() }}</h3>
+                                    <p class="card-subtitle">Weekly analysis - Last 7 days</p>
                                 </div>
                             </div>
                             <div class="insights-content">
@@ -732,13 +761,13 @@
                                 <i class="fas fa-info-circle"></i>
                             </div>
                             <div>
-                                <h3 class="card-title">No Data Available</h3>
+                                <h3 class="card-title">No Weekly Data Available</h3>
                                 <p class="card-subtitle">Generate insights to see analytics</p>
                             </div>
                         </div>
                         <div class="insights-content">
                             <div class="no-data">
-                                <p>No weekly insights available. Click "Refresh Analytics" to generate new insights.</p>
+                                <p>No weekly insights available. Click "Generate Insights" to generate new insights.</p>
                             </div>
                         </div>
                     </div>
@@ -749,22 +778,77 @@
         <!-- Monthly Content -->
         <div class="time-content" id="monthlyContent">
             <div class="analytics-grid">
-                <div class="insight-card">
-                    <div class="card-header">
-                        <div class="card-icon">
-                            <i class="fas fa-calendar-alt"></i>
+                {% if monthly_data %}
+                    {% for table_name, insights in monthly_data.items() %}
+                        <div class="insight-card">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    {% if table_name == 'withdrawals' %}
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    {% elif table_name == 'orders' %}
+                                        <i class="fas fa-shopping-cart"></i>
+                                    {% elif table_name == 'users' %}
+                                        <i class="fas fa-users"></i>
+                                    {% elif table_name == 'businesses' %}
+                                        <i class="fas fa-building"></i>
+                                    {% elif table_name == 'business_owners' %}
+                                        <i class="fas fa-user-tie"></i>
+                                    {% elif table_name == 'business_settings' %}
+                                        <i class="fas fa-cog"></i>
+                                    {% elif table_name == 'industry_trucking' %}
+                                        <i class="fas fa-truck"></i>
+                                    {% elif table_name == 'sunhistory' %}
+                                        <i class="fas fa-sun"></i>
+                                    {% else %}
+                                        <i class="fas fa-chart-bar"></i>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h3 class="card-title">{{ table_name.replace('_', ' ').title() }}</h3>
+                                    <p class="card-subtitle">Monthly analysis - Last 30 days</p>
+                                </div>
+                            </div>
+                            <div class="insights-content">
+                                {% if insights and insights is mapping %}
+                                    {% if insights.concern %}
+                                        <div class="insight-section">
+                                            <h4><i class="fas fa-exclamation-triangle"></i> Strategic Concerns</h4>
+                                            <div class="insight-text">{{ insights.concern }}</div>
+                                        </div>
+                                    {% endif %}
+                                    {% if insights.recommendation %}
+                                        <div class="insight-section">
+                                            <h4><i class="fas fa-lightbulb"></i> Strategic Recommendations</h4>
+                                            <div class="insight-text recommendation-text">{{ insights.recommendation }}</div>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="insight-section">
+                                        <h4><i class="fas fa-info-circle"></i> Raw Insight</h4>
+                                        <div class="insight-text">{{ insights if insights else 'No insights available for this table.' }}</div>
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="card-title">Monthly Analytics</h3>
-                            <p class="card-subtitle">Coming Soon</p>
+                    {% endfor %}
+                {% else %}
+                    <div class="insight-card">
+                        <div class="card-header">
+                            <div class="card-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div>
+                                <h3 class="card-title">No Monthly Data Available</h3>
+                                <p class="card-subtitle">Generate insights to see analytics</p>
+                            </div>
+                        </div>
+                        <div class="insights-content">
+                            <div class="no-data">
+                                <p>No monthly insights available. Click "Generate Insights" to generate new insights.</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="insights-content">
-                        <div class="no-data">
-                            <p>Monthly analytics feature will be available soon. Currently showing weekly data only.</p>
-                        </div>
-                    </div>
-                </div>
+                {% endif %}
             </div>
         </div>
 
@@ -792,9 +876,13 @@
 
         <!-- Refresh Section -->
         <div class="refresh-section">
-            <button class="refresh-btn" id="refreshBtn" onclick="refreshAnalytics()">
+            <button class="refresh-btn" id="refreshWeeklyBtn" onclick="refreshAnalytics('weekly')">
                 <i class="fas fa-sync"></i>
-                Refresh Analytics
+                Generate Weekly Insights
+            </button>
+            <button class="refresh-btn" id="refreshMonthlyBtn" onclick="refreshAnalytics('monthly')">
+                <i class="fas fa-sync"></i>
+                Generate Monthly Insights
             </button>
         </div>
     </div>
@@ -866,11 +954,10 @@
     </div>
 
     <script>
-        // Store the weekly data from Flask
+        // Store the data from Flask
         const weeklyData = {{ weekly_data|tojson if weekly_data else '{}' }};
+        const monthlyData = {{ monthly_data|tojson if monthly_data else '{}' }};
         let uploadedFile = null;
-        
-        console.log('Weekly Data:', weeklyData);
 
         // DOM Elements
         const weeklyBtn = document.getElementById('weeklyBtn');
@@ -879,7 +966,10 @@
         const weeklyContent = document.getElementById('weeklyContent');
         const monthlyContent = document.getElementById('monthlyContent');
         const customContent = document.getElementById('customContent');
-        const refreshBtn = document.getElementById('refreshBtn');
+        const weeklyStats = document.getElementById('weeklyStats');
+        const monthlyStats = document.getElementById('monthlyStats');
+        const refreshWeeklyBtn = document.getElementById('refreshWeeklyBtn');
+        const refreshMonthlyBtn = document.getElementById('refreshMonthlyBtn');
         const loadingOverlay = document.getElementById('loadingOverlay');
         const uploadModal = document.getElementById('uploadModal');
         const analysisModal = document.getElementById('analysisModal');
@@ -896,24 +986,26 @@
         customBtn.addEventListener('click', () => switchPeriod('custom'));
 
         function switchPeriod(period) {
-            // Remove active class from all buttons and content
             weeklyBtn.classList.remove('active');
             monthlyBtn.classList.remove('active');
             customBtn.classList.remove('active');
             weeklyContent.classList.remove('active');
             monthlyContent.classList.remove('active');
             customContent.classList.remove('active');
+            weeklyStats.style.display = 'none';
+            monthlyStats.style.display = 'none';
             
             if (period === 'weekly') {
                 weeklyBtn.classList.add('active');
                 weeklyContent.classList.add('active');
+                weeklyStats.style.display = 'block';
             } else if (period === 'monthly') {
                 monthlyBtn.classList.add('active');
                 monthlyContent.classList.add('active');
+                monthlyStats.style.display = 'block';
             } else if (period === 'custom') {
                 customBtn.classList.add('active');
                 customContent.classList.add('active');
-                // Open upload modal when custom data is selected
                 setTimeout(() => openUploadModal(), 300);
             }
         }
@@ -927,7 +1019,6 @@
         function closeUploadModal() {
             uploadModal.classList.remove('active');
             document.body.style.overflow = 'auto';
-            // Reset form
             resetUploadForm();
         }
 
@@ -952,116 +1043,84 @@
         fileInput.addEventListener('change', handleFileSelect);
 
         function handleFileSelect(event) {
-    const file = event.target.files[0];
-    console.log('File selected:', file);
-    
-    if (file) {
-        // Validate file type
-        const validTypes = ['.csv', '.xlsx', '.xls'];
-        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-        
-        console.log('File extension:', fileExtension);
-        
-        if (!validTypes.includes(fileExtension)) {
-            showNotification('Please select a CSV or Excel file only.', 'error');
-            resetUploadForm();
-            return;
+            const file = event.target.files[0];
+            
+            if (file) {
+                const validTypes = ['.csv', '.xlsx', '.xls'];
+                const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+                
+                if (!validTypes.includes(fileExtension)) {
+                    showNotification('Please select a CSV or Excel file only.', 'error');
+                    resetUploadForm();
+                    return;
+                }
+                
+                const maxSize = 10 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    showNotification('File size must be less than 10MB.', 'error');
+                    resetUploadForm();
+                    return;
+                }
+                
+                uploadedFile = file;
+                fileName.querySelector('span').textContent = file.name;
+                fileSize.textContent = `Size: ${formatFileSize(file.size)}`;
+                fileInfo.classList.add('active');
+                analyzeBtn.disabled = false;
+                uploadArea.style.borderColor = '#059669';
+                uploadArea.style.background = '#f0fdf4';
+            }
         }
-        
-        // Validate file size (10MB max)
-        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
-        if (file.size > maxSize) {
-            showNotification('File size must be less than 10MB.', 'error');
-            resetUploadForm();
-            return;
-        }
-        
-        // Store the actual File object
-        uploadedFile = file;
-        console.log('Uploaded file stored:', uploadedFile);
-        
-        // Show file info
-        fileName.querySelector('span').textContent = file.name;
-        fileSize.textContent = `Size: ${formatFileSize(file.size)}`;
-        fileInfo.classList.add('active');
-        analyzeBtn.disabled = false;
-        
-        // Update upload area appearance
-        uploadArea.style.borderColor = '#059669';
-        uploadArea.style.background = '#f0fdf4';
-    }
-}
-        // Analysis function
+
         function startAnalysis() {
-    if (!uploadedFile) {
-        showNotification('Please select a file first.', 'error');
-        return;
-    }
-    
-    console.log('Starting analysis with file:', uploadedFile.name, uploadedFile.size, uploadedFile.type);
-    
-    // Close upload modal and open analysis modal
-    closeUploadModal();
-    openAnalysisModal();
-    
-    // Show loading in analysis modal
-    const analysisBody = document.getElementById('analysisModalBody');
-    analysisBody.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;">
-            <div class="loading-spinner" style="margin-bottom: 1rem;"></div>
-            <div style="color: #666; font-size: 1.1rem;">Analyzing your data...</div>
-            <div style="color: #999; font-size: 0.9rem; margin-top: 0.5rem;">This may take a few moments</div>
-        </div>
-    `;
-    
-    // Create FormData correctly
-    const formData = new FormData();
-    formData.append('file', uploadedFile, uploadedFile.name); // Include filename
-    
-    // Debug: Log FormData contents
-    console.log('FormData entries:');
-    for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-    }
-    
-    // Send file to Flask backend with proper error handling
-    fetch('/custom_analysis', {
-        method: 'POST',
-        body: formData
-        // Don't set Content-Type header - let browser set it automatically
-    })
-    .then(response => {
-        console.log('Response status:', response.status);
-        console.log('Response headers:', response.headers);
-        
-        // Check if response is ok
-        if (!response.ok) {
-            return response.json().then(errorData => {
-                throw new Error(`HTTP ${response.status}: ${errorData.error || 'Unknown error'}`);
+            if (!uploadedFile) {
+                showNotification('Please select a file first.', 'error');
+                return;
+            }
+            
+            closeUploadModal();
+            openAnalysisModal();
+            
+            const analysisBody = document.getElementById('analysisModalBody');
+            analysisBody.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;">
+                    <div class="loading-spinner" style="margin-bottom: 1rem;"></div>
+                    <div style="color: #666; font-size: 1.1rem;">Analyzing your data...</div>
+                    <div style="color: #999; font-size: 0.9rem; margin-top: 0.5rem;">This may take a few moments</div>
+                </div>
+            `;
+            
+            const formData = new FormData();
+            formData.append('file', uploadedFile, uploadedFile.name);
+            
+            fetch('/custom_analysis', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(`HTTP ${response.status}: ${errorData.error || 'Unknown error'}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                displayAnalysisResults(data);
+            })
+            .catch(error => {
+                console.error('Error during analysis:', error);
+                showNotification('Error analyzing file: ' + error.message, 'error');
+                analysisBody.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #dc2626; margin-bottom: 1rem;"></i>
+                        <div style="color: #dc2626; font-size: 1.1rem; margin-bottom: 0.5rem;">Analysis Failed</div>
+                        <div style="color: #666; font-size: 0.9rem; text-align: center;">${error.message}</div>
+                    </div>
+                `;
             });
         }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Analysis results:', data);
-        displayAnalysisResults(data);
-    })
-    .catch(error => {
-        console.error('Error during analysis:', error);
-        showNotification('Error analyzing file: ' + error.message, 'error');
-        
-        // Show error in modal
-        analysisBody.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;">
-                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #dc2626; margin-bottom: 1rem;"></i>
-                <div style="color: #dc2626; font-size: 1.1rem; margin-bottom: 0.5rem;">Analysis Failed</div>
-                <div style="color: #666; font-size: 0.9rem; text-align: center;">${error.message}</div>
-            </div>
-        `;
-    });
-}
 
-        // Function to display analysis results
         function displayAnalysisResults(chartData) {
             const analysisBody = document.getElementById('analysisModalBody');
             
@@ -1076,38 +1135,34 @@
                 return;
             }
             
-            // Clear the loading state
             analysisBody.innerHTML = '';
             
-            // Create a container for charts
             const chartsContainer = document.createElement('div');
             chartsContainer.style.cssText = `
                 padding: 2rem;
                 display: grid;
                 gap: 2rem;
-                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
                 min-height: 100%;
             `;
             
-            // Process each chart from the AI analysis
             Object.entries(chartData).forEach(([chartKey, chartInfo], index) => {
                 const chartDiv = document.createElement('div');
-                chartDiv.id = `chart-${chartKey}`;
                 chartDiv.style.cssText = `
                     background: white;
                     border: 1px solid #e5e7eb;
                     border-radius: 8px;
                     padding: 1.5rem;
                     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                    min-height: 300px;
+                    min-height: 400px;
                 `;
                 
-                // Add chart title if metadata exists
+                // Add title if available
                 if (chartInfo.metadata && chartInfo.metadata.title) {
                     const title = document.createElement('h3');
                     title.textContent = chartInfo.metadata.title;
                     title.style.cssText = `
-                        margin: 0 0 1rem 0;
+                        margin: 0 0 0.5rem 0;
                         color: #333;
                         font-size: 1.2rem;
                         font-weight: 600;
@@ -1115,31 +1170,307 @@
                     chartDiv.appendChild(title);
                 }
                 
-                // Add placeholder for chart (your AI will replace this)
-                const chartPlaceholder = document.createElement('div');
-                chartPlaceholder.style.cssText = `
-                    height: 250px;
-                    background: #f9fafb;
-                    border-radius: 8px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: #666;
-                    font-style: italic;
+                // Add description if available
+                if (chartInfo.metadata && chartInfo.metadata.description) {
+                    const description = document.createElement('p');
+                    description.textContent = chartInfo.metadata.description;
+                    description.style.cssText = `
+                        margin: 0 0 1rem 0;
+                        color: #666;
+                        font-size: 0.9rem;
+                    `;
+                    chartDiv.appendChild(description);
+                }
+                
+                // Add calculated column info if available
+                if (chartInfo.metadata && chartInfo.metadata.calculated_column) {
+                    const calcInfo = document.createElement('div');
+                    calcInfo.style.cssText = `
+                        background: #f0fdf4;
+                        border-left: 3px solid #059669;
+                        padding: 0.75rem;
+                        margin-bottom: 1rem;
+                        border-radius: 4px;
+                        font-size: 0.85rem;
+                    `;
+                    calcInfo.innerHTML = `
+                        <strong style="color: #059669;">📊 Calculated Column:</strong> 
+                        <span style="color: #333;">${chartInfo.metadata.calculated_column.name}</span>
+                        <br>
+                        <span style="color: #666;">${chartInfo.metadata.calculated_column.formula}</span>
+                    `;
+                    chartDiv.appendChild(calcInfo);
+                }
+                
+                // Create canvas for chart
+                const canvas = document.createElement('canvas');
+                canvas.id = `chart-canvas-${chartKey}`;
+                canvas.style.cssText = `
+                    max-height: 350px;
                 `;
-                chartPlaceholder.textContent = `Chart for ${chartKey} will be rendered here`;
-                chartDiv.appendChild(chartPlaceholder);
+                chartDiv.appendChild(canvas);
                 
                 chartsContainer.appendChild(chartDiv);
                 
-                // Log the data for debugging
-                console.log(`Chart ${chartKey}:`, chartInfo);
+                // Render chart after DOM is updated
+                setTimeout(() => {
+                    renderChart(canvas.id, chartInfo);
+                }, 100);
             });
             
             analysisBody.appendChild(chartsContainer);
-            
-            // Show success notification
             showNotification('Analysis completed successfully!', 'success');
+        }
+
+        function renderChart(canvasId, chartInfo) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) {
+                console.error('Canvas not found:', canvasId);
+                return;
+            }
+            
+            const chartType = chartInfo.metadata.chart_type || 'bar';
+            const data = chartInfo.data || [];
+            
+            if (data.length === 0) {
+                ctx.parentElement.innerHTML += '<p style="text-align: center; color: #666; margin-top: 1rem;">No data available for this chart</p>';
+                return;
+            }
+            
+            // Prepare chart data based on type
+            let chartData, chartOptions;
+            
+            switch(chartType) {
+                case 'pie':
+                    chartData = preparePieChartData(data, chartInfo.metadata);
+                    chartOptions = getPieChartOptions(chartInfo.metadata);
+                    break;
+                case 'line':
+                    chartData = prepareLineChartData(data, chartInfo.metadata);
+                    chartOptions = getLineChartOptions(chartInfo.metadata);
+                    break;
+                case 'scatter':
+                    chartData = prepareScatterChartData(data, chartInfo.metadata);
+                    chartOptions = getScatterChartOptions(chartInfo.metadata);
+                    break;
+                case 'histogram':
+                case 'bar':
+                default:
+                    chartData = prepareBarChartData(data, chartInfo.metadata);
+                    chartOptions = getBarChartOptions(chartInfo.metadata);
+                    break;
+            }
+            
+            // Create the chart
+            new Chart(ctx, {
+                type: chartType === 'histogram' ? 'bar' : chartType,
+                data: chartData,
+                options: chartOptions
+            });
+        }
+
+        function preparePieChartData(data, metadata) {
+            const labels = data.map(item => item.category || item.x || Object.values(item)[0]);
+            const values = data.map(item => item.value || item.y || Object.values(item)[1]);
+            
+            return {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: generateColors(values.length),
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            };
+        }
+
+        function prepareBarChartData(data, metadata) {
+            const labels = data.map(item => item.category || item.x || Object.values(item)[0]);
+            const values = data.map(item => item.value || item.y || Object.values(item)[1]);
+            
+            return {
+                labels: labels,
+                datasets: [{
+                    label: metadata.y_label || 'Value',
+                    data: values,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    borderColor: 'rgba(0, 0, 0, 1)',
+                    borderWidth: 1
+                }]
+            };
+        }
+
+        function prepareLineChartData(data, metadata) {
+            const labels = data.map(item => item.x || Object.values(item)[0]);
+            const values = data.map(item => item.y || Object.values(item)[1]);
+            
+            return {
+                labels: labels,
+                datasets: [{
+                    label: metadata.y_label || 'Value',
+                    data: values,
+                    borderColor: 'rgba(0, 0, 0, 1)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            };
+        }
+
+        function prepareScatterChartData(data, metadata) {
+            const points = data.map(item => ({
+                x: item.x || Object.values(item)[0],
+                y: item.y || Object.values(item)[1]
+            }));
+            
+            return {
+                datasets: [{
+                    label: metadata.title || 'Data Points',
+                    data: points,
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    borderColor: 'rgba(0, 0, 0, 1)',
+                    borderWidth: 1,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            };
+        }
+
+        function getPieChartOptions(metadata) {
+            return {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 15,
+                            padding: 15,
+                            font: {
+                                size: 11
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        function getBarChartOptions(metadata) {
+            return {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: metadata.y_label || 'Value'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: metadata.x_label || 'Category'
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            };
+        }
+
+        function getLineChartOptions(metadata) {
+            return {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: metadata.y_label || 'Value'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: metadata.x_label || 'Category'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                }
+            };
+        }
+
+        function getScatterChartOptions(metadata) {
+            return {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: metadata.y_label || 'Y Axis'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: metadata.x_label || 'X Axis'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                }
+            };
+        }
+
+        function generateColors(count) {
+            const colors = [
+                'rgba(0, 0, 0, 0.8)',
+                'rgba(59, 130, 246, 0.8)',
+                'rgba(5, 150, 105, 0.8)',
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(139, 92, 246, 0.8)',
+                'rgba(236, 72, 153, 0.8)',
+                'rgba(20, 184, 166, 0.8)',
+                'rgba(251, 146, 60, 0.8)',
+                'rgba(124, 58, 237, 0.8)'
+            ];
+            
+            const result = [];
+            for (let i = 0; i < count; i++) {
+                result.push(colors[i % colors.length]);
+            }
+            return result;
         }
 
         // Utility Functions
@@ -1176,8 +1507,9 @@
         });
 
         // Refresh functionality
-        function refreshAnalytics() {
-            refreshBtn.classList.add('loading');
+        function refreshAnalytics(period = 'weekly') {
+            const btn = period === 'weekly' ? refreshWeeklyBtn : refreshMonthlyBtn;
+            btn.classList.add('loading');
             loadingOverlay.classList.add('active');
 
             fetch('/generate-insights', {
@@ -1185,27 +1517,29 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                body: JSON.stringify({ period: period })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     if (data.generated) {
-                        showNotification('New insights generated successfully!', 'success');
+                        showNotification(`New ${period} insights generated successfully!`, 'success');
                         setTimeout(() => window.location.reload(), 1500);
                     } else {
                         const daysRemaining = data.days_remaining || 'a few';
-                        showNotification(`Recent insights are still valid. New insights will be generated in ${daysRemaining} days.`, 'info');
+                        const timeUnit = period === 'weekly' ? 'days' : 'days';
+                        showNotification(`Recent ${period} insights are still valid. New insights will be generated in ${daysRemaining} ${timeUnit}.`, 'info');
                     }
                 } else {
-                    throw new Error(data.message || 'Failed to generate insights');
+                    throw new Error(data.message || `Failed to generate ${period} insights`);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showNotification('Error generating insights: ' + error.message, 'error');
+                showNotification(`Error generating ${period} insights: ` + error.message, 'error');
             })
             .finally(() => {
-                refreshBtn.classList.remove('loading');
+                btn.classList.remove('loading');
                 loadingOverlay.classList.remove('active');
             });
         }
@@ -1251,32 +1585,16 @@
             }, 5000);
         }
 
-        // Add CSS for notifications
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideInRight {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            @keyframes slideOutRight {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
             const cards = document.querySelectorAll('.insight-card');
             cards.forEach((card, index) => {
                 card.style.animationDelay = `${index * 0.1}s`;
-                card.classList.add('fade-in');
             });
         });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
-            // Only trigger if not typing in an input field
             if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
                 if (e.key.toLowerCase() === 'w' && !e.ctrlKey && !e.altKey) {
                     switchPeriod('weekly');
@@ -1284,8 +1602,6 @@
                     switchPeriod('monthly');
                 } else if (e.key.toLowerCase() === 'c' && !e.ctrlKey && !e.altKey) {
                     switchPeriod('custom');
-                } else if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.altKey) {
-                    refreshAnalytics();
                 }
             }
         });
