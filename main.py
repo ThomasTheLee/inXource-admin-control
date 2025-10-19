@@ -166,6 +166,10 @@ def forgot_password():
         except Exception as e:
             logger.error(f"Exception while sending password to email {email}: {e}")
             flash("An error occurred while sending password to your email.", "error")
+        
+        # Redirect after flashing the message
+        return redirect(url_for('forgot_password'))
+    
     return render_template('auth.html')
 
 @app.route("/index")
