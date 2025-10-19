@@ -149,6 +149,24 @@ def auth():
     print("Session before rendering login page:", dict(session))
     return render_template('auth.html')
 
+@app.route('/forgot_password', methods=['POST', 'GET'])
+def forgot_password():
+    # get email from form
+    if request.method == "POST":
+        email = request.form.get('email')
+
+        try:
+            response = auth_manager.forgot_password(email=email)
+
+            if response:
+                logger.info(f"Password sent to email: {email}")
+                flash("Password has been sent to your email!", "success")
+            else:
+                flash("Failed to send password. Please check the email and try again.", "error")
+        except Exception as e:
+            logger.error(f"Exception while sending password to email {email}: {e}")
+            flash("An error occurred while sending password to your email.", "error")
+    return render_template('auth.html')
 
 @app.route("/index")
 def index(): 
