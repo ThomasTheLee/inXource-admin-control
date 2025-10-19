@@ -1,22 +1,23 @@
-# Use official Python 3.11 slim image
+# Use lightweight Python 3.11 image
 FROM python:3.11-slim
 
-# Set working directory
+# Set working directory inside the container
 WORKDIR /app
 
-# Copy requirements and install dependencies
+# Copy dependencies file first (if you have one)
 COPY requirements.txt .
+
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the app code
+# Copy the rest of the app into the container
 COPY . .
 
-# Set environment variables
+# Set the port for Cloud Run
 ENV PORT=8080
-ENV PYTHONUNBUFFERED=1
 
-# Expose port 8080 for Cloud Run
+# Expose the port
 EXPOSE 8080
 
-# Run the app using gunicorn
+# Command to run the app using Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "main:app"]

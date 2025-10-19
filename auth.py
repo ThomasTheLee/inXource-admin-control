@@ -7,6 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from clients import Clients
+import smtplib
+from email.message import EmailMessage
+
 
 load_dotenv()  # loads the .env file
 
@@ -27,6 +30,13 @@ class Auth(Clients):
 
     def __init__(self):
         super().__init__()
+        self.smtp_user = os.getenv('EMAIL_USER')
+        self.smtp_password = os.getenv('EMAIL_KEY')
+        self.smtp_server = 'smtp.gmail.com'
+        self.smtp_port = 465  # For SSL
+
+        if not self.smtp_user or not self.smtp_password:
+            raise ValueError("SMTP user and password must be provided (or set as env vars).")
 
     def login(self, user, password):
         """Returns the user information after an attempt to login"""
@@ -149,6 +159,65 @@ class Auth(Clients):
         except Exception as e:
             print(f'Exception: {e}')
             return {}
+
+
+    def forgot_password(self, email):
+        """handles forgot password requests by retrieving and sending the password to the user's email"""
+        try:
+            response = (
+                self.supabase_client.table('staff')
+                .select('password, email')
+                .eq('email', email)
+                .execute()
+            )
+
+            data = response.data
+
+            if not data:
+                print("Email not found")
+                return False
+
+            user_details = data[0]
+            user_password = user_details['password']
+            user_email = user_details['email']
+
+            
+            # send password to email
+            result = self.send_password_reset(user_email, user_password)
+            if not result:
+                print("Failed to send password reset email")
+                return False
+            
+            print(f"Password for {user_email} is {user_password}")
+            return True
+
+        except Exception as e:
+            print(f"Error in forgot password: {e}")
+            return False
+
+    def send_password_reset(self, email, user_password):
+        """sends the passwrod to the users email address using smtplib"""
+        try:
+            msg = EmailMessage()
+            msg.set_content(f"Your password is: {user_password}")
+            msg['Subject'] = 'Password Reset Request'
+            msg['From'] = self.smtp_user
+            msg['To'] = email
+
+            with smtplib.SMTP_SSL(self.smtp_server, self.smtp_port) as server:
+                if self.smtp_user and self.smtp_password:
+                    server.login(self.smtp_user, self.smtp_password)
+                    server.send_message(msg)
+                else:
+                    raise ValueError("SMTP user and password must be set to send emails.")
+
+            print(f"Password reset email sent to {email}")
+            return True
+
+        except Exception as e:
+            print(f"Failed to send email: {e}")
+            return False
+
 
     def add_staff(self, username, email, password, role, nrc):
         """Adds a new staff member to the database"""
