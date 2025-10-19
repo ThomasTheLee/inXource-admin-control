@@ -278,6 +278,9 @@
             text-decoration: none;
             font-weight: 600;
             transition: all 0.3s ease;
+            background: none;
+            border: none;
+            cursor: pointer;
         }
 
         .forgot-password:hover {
@@ -434,6 +437,192 @@
             text-decoration: underline;
         }
 
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal:target {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #111;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #999;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: #000;
+            transform: rotate(90deg);
+        }
+
+        .modal-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .modal-input-wrapper {
+            position: relative;
+        }
+
+        .modal-input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .modal-form-input {
+            width: 100%;
+            padding: 0.9rem 1rem 0.9rem 3rem;
+            border: 2px solid rgba(0, 0, 0, 0.08);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .modal-form-input:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.05);
+            background: white;
+        }
+
+        .modal-form-input:focus ~ .modal-input-icon {
+            color: #000;
+        }
+
+        .btn-reset {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #000, #333);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+        }
+
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-reset:active {
+            transform: translateY(0);
+        }
+
+        .modal-footer {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        .modal-footer p {
+            font-size: 0.85rem;
+            color: #999;
+        }
+
+        .modal-footer a {
+            color: #000;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .modal-footer a:hover {
+            text-decoration: underline;
+        }
+
         @media (max-width: 480px) {
             .login-card {
                 padding: 2rem 1.5rem;
@@ -450,10 +639,22 @@
             .social-login {
                 grid-template-columns: 1fr;
             }
+
+            .modal-content {
+                margin: 1rem;
+                padding: 2rem 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
     <div class="bg-decoration"></div>
     <div class="bg-decoration"></div>
     <div class="bg-decoration"></div>
@@ -517,7 +718,7 @@
                         <input type="checkbox" id="rememberMe" name="remember">
                         <label for="rememberMe">Remember me</label>
                     </div>
-                    <a href="#" class="forgot-password">Forgot Password?</a>
+                    <a href="#forgotPasswordModal" class="forgot-password">Forgot Password?</a>
                 </div>
 
                 <button type="submit" class="btn-login">
@@ -547,8 +748,48 @@
             <div class="footer-text">
                 <p>&copy; 2024 inXource. All rights reserved.</p>
                 <p style="margin-top: 0.5rem;">
-                    <a href="#">Privacy Policy</a> • <a href="#">Terms of Service</a>
+                    <a href="#">Privacy Policy</a> â€¢ <a href="#">Terms of Service</a>
                 </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Reset Password</h2>
+                <a href="#" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+
+            <p class="modal-description">Enter your email address and we'll send you a link to reset your password.</p>
+
+            <form action="{{ url_for('forgot_password') }}" method="POST">
+                <div class="modal-form-group">
+                    <label class="modal-form-label">Email Address</label>
+                    <div class="modal-input-wrapper">
+                        <input 
+                            type="email" 
+                            class="modal-form-input" 
+                            name="email"
+                            placeholder="Enter your email address" 
+                            required
+                            autocomplete="email"
+                        >
+                        <i class="fas fa-envelope modal-input-icon"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-reset">
+                    <span>Send Password</span>
+                    <i class="fas fa-envelope"></i>
+                </button>
+            </form>
+
+            <div class="modal-footer">
+                <p>Remember your password? <a href="#">Sign In</a></p>
             </div>
         </div>
     </div>
@@ -584,20 +825,16 @@
             });
         });
 
-        // Social login buttons
-        const socialBtns = document.querySelectorAll('.btn-social');
-        socialBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const provider = this.querySelector('span').textContent;
-                console.log(`Authenticating with ${provider}...`);
-                alert(`${provider} authentication would be triggered here`);
+        // Modal input focus animation
+        const modalInputs = document.querySelectorAll('.modal-form-input');
+        modalInputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'scale(1.02)';
             });
-        });
 
-        // Forgot password link
-        document.querySelector('.forgot-password').addEventListener('click', function(e) {
-            e.preventDefault();
-            alert('Password reset functionality would be triggered here. In production, this would open a password reset modal or redirect to a reset page.');
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'scale(1)';
+            });
         });
     </script>
 </body>
