@@ -56,7 +56,7 @@ class AnalAI(FileCleaner):
         """Generate a haiku using OpenAI."""
         try:
             response = self.open_ai_client.chat.completions.create(
-                model="gpt-3.5-turbo",  # Fixed model name
+                model="gpt-3.5-turbo",  
                 messages=[
                     {"role": "user", "content": "write a haiku about AI"}
                 ]
@@ -75,42 +75,48 @@ class AnalAI(FileCleaner):
         """
         if df.empty:
             return df
-        
+
         try:
             original_count = len(df)
-            
-            # Filter based on table structure
+
+            # USERS table → exclude admin user
             if table_name == 'users' and 'id' in df.columns:
-                # Filter out admin user
                 if self.admin_user_id:
                     df = df[df['id'] != self.admin_user_id]
-            
+
+            # BUSINESSES table → exclude admin businesses
             elif table_name == 'businesses' and 'id' in df.columns:
-                # Filter out admin businesses
                 if self.admin_business_ids:
                     df = df[~df['id'].isin(self.admin_business_ids)]
-            
+
+            # BUSINESS_OWNERS table → exclude admin user and their businesses
             elif table_name == 'business_owners':
-                # Filter out admin user and their businesses
                 if 'user_id' in df.columns and self.admin_user_id:
                     df = df[df['user_id'] != self.admin_user_id]
                 if 'business_id' in df.columns and self.admin_business_ids:
                     df = df[~df['business_id'].isin(self.admin_business_ids)]
-            
-            elif table_name in ['withdrawals', 'orders', 'sunhistory', 'business_settings', 'industry_trucking']:
-                # These tables have business_id - filter out admin businesses
+
+            # OTHER TABLES (withdrawals, orders, business_settings, industry_trucking)
+            elif table_name in ['withdrawals', 'orders', 'business_settings', 'industry_trucking']:
                 if 'business_id' in df.columns and self.admin_business_ids:
                     df = df[~df['business_id'].isin(self.admin_business_ids)]
-            
+
+            # Special handling for sunhistory (it uses 'userid' instead of business_id)
+            elif table_name == 'sunhistory':
+                if 'userid' in df.columns and self.admin_user_id:
+                    df = df[df['userid'] != self.admin_user_id]
+
             filtered_count = original_count - len(df)
             if filtered_count > 0:
                 print(f"[INFO] Filtered {filtered_count} admin records from {table_name}")
-            
+
             return df
-            
+
         except Exception as e:
             print(f"[WARNING] Error filtering admin data from {table_name}: {e}")
             return df
+
+
 
     def extract_tables(self):
         """

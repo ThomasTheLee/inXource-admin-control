@@ -128,7 +128,7 @@ class Wallet(Clients):
             if withdrawal['business_id'] in self.admin_business_ids:
                 continue
                 
-            business_details = business_manager.get_business_deatils(withdrawal['business_id'])
+            business_details = business_manager.get_business_details(withdrawal['business_id'])
             if business_details:
                 # add withdrawal-specific fields
                 business_details['withdrawal_id'] = withdrawal['id']
