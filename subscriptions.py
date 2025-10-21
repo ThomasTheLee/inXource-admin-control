@@ -35,7 +35,7 @@ def singleton(cls):
 
 @singleton
 class Subscriptions(Clients):
-    """Manages the users data in the inXource platform"""
+    """Manages the subscription data in the inXource platform"""
 
     def __init__(self):
         super().__init__()
@@ -43,17 +43,23 @@ class Subscriptions(Clients):
     
 
     def total_revenue(self):
-        """Returns a dictionary of total revenue for all time, this year, and this month."""
+        """Returns a dictionary of total revenue for all time, this year, and this month (excluding admin)."""
         # Get all subscription records
         response = (
             self.supabase_client
             .table('sunhistory')
-            .select("amount, created_at")
+            .select("amount, created_at, business_id")
             .execute()
         )
 
         if not response.data:
             return {"all_time": 0, "this_year": 0, "this_month": 0}
+
+        # Filter out admin business subscriptions
+        filtered_data = [
+            record for record in response.data
+            if record.get("business_id") not in self.admin_business_ids
+        ]
 
         total_all_time = 0
         total_this_year = 0
@@ -63,7 +69,7 @@ class Subscriptions(Clients):
         current_year = now.year
         current_month = now.month
 
-        for record in response.data:
+        for record in filtered_data:
             price = record.get("amount", 0)
             created_at = record.get("created_at")
 
@@ -90,19 +96,19 @@ class Subscriptions(Clients):
 
 
     def revenue_period_data(self):
-        """Returns four pandas DataFrames for revenue in the past 7 days, month, quarter, and year."""
+        """Returns four pandas DataFrames for revenue in the past 7 days, month, quarter, and year (excluding admin)."""
 
         # Fetch all data
         response = (
             self.supabase_client
             .table("sunhistory")
-            .select("amount, created_at")
+            .select("amount, created_at, business_id")
             .execute()
         )
 
         if not response.data:
             # Return empty DataFrames if no data
-            empty_df = pd.DataFrame(columns=["amount", "created_at"])
+            empty_df = pd.DataFrame(columns=["amount", "created_at", "business_id"])
             return {
                 "past_7_days": empty_df,
                 "past_month": empty_df,
@@ -110,8 +116,14 @@ class Subscriptions(Clients):
                 "past_year": empty_df,
             }
 
+        # Filter out admin business subscriptions
+        filtered_data = [
+            record for record in response.data
+            if record.get("business_id") not in self.admin_business_ids
+        ]
+
         # Convert to DataFrame
-        df = pd.DataFrame(response.data)
+        df = pd.DataFrame(filtered_data)
 
         # Convert created_at to datetime and remove timezone info
         df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce").dt.tz_localize(None)
@@ -136,4 +148,3 @@ class Subscriptions(Clients):
             "past_quarter": df_quarter.reset_index(drop=True),
             "past_year": df_year.reset_index(drop=True),
         }
-        

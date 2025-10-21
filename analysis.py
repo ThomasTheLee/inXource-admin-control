@@ -68,11 +68,56 @@ class AnalAI(FileCleaner):
             print(f"Error generating haiku: {str(e)}")
             return None
 
+    def _filter_admin_data(self, df, table_name):
+        """
+        Filter out admin user data from a DataFrame based on the table type.
+        Uses self.admin_user_id and self.admin_business_ids inherited from Clients.
+        """
+        if df.empty:
+            return df
+        
+        try:
+            original_count = len(df)
+            
+            # Filter based on table structure
+            if table_name == 'users' and 'id' in df.columns:
+                # Filter out admin user
+                if self.admin_user_id:
+                    df = df[df['id'] != self.admin_user_id]
+            
+            elif table_name == 'businesses' and 'id' in df.columns:
+                # Filter out admin businesses
+                if self.admin_business_ids:
+                    df = df[~df['id'].isin(self.admin_business_ids)]
+            
+            elif table_name == 'business_owners':
+                # Filter out admin user and their businesses
+                if 'user_id' in df.columns and self.admin_user_id:
+                    df = df[df['user_id'] != self.admin_user_id]
+                if 'business_id' in df.columns and self.admin_business_ids:
+                    df = df[~df['business_id'].isin(self.admin_business_ids)]
+            
+            elif table_name in ['withdrawals', 'orders', 'sunhistory', 'business_settings', 'industry_trucking']:
+                # These tables have business_id - filter out admin businesses
+                if 'business_id' in df.columns and self.admin_business_ids:
+                    df = df[~df['business_id'].isin(self.admin_business_ids)]
+            
+            filtered_count = original_count - len(df)
+            if filtered_count > 0:
+                print(f"[INFO] Filtered {filtered_count} admin records from {table_name}")
+            
+            return df
+            
+        except Exception as e:
+            print(f"[WARNING] Error filtering admin data from {table_name}: {e}")
+            return df
+
     def extract_tables(self):
         """
         Extracts the tables defined in self.tables as pandas DataFrames.
         - If 'created_at' exists, gets records from the past 7 days.
         - Otherwise, gets the most recent 14 records.
+        - Filters out admin user data from all tables.
         """
         dataframe_data = {}
         seven_days_ago = (datetime.utcnow() - timedelta(days=7)).isoformat()
@@ -102,7 +147,12 @@ class AnalAI(FileCleaner):
                         .execute()
                     )
 
-                dataframe_data[table] = pd.DataFrame(response.data)
+                df = pd.DataFrame(response.data)
+                
+                # Filter out admin data
+                df = self._filter_admin_data(df, table)
+                
+                dataframe_data[table] = df
                 
             except Exception as e:
                 print(f"Error extracting table {table}: {str(e)}")
@@ -164,7 +214,9 @@ class AnalAI(FileCleaner):
                 You are a business analyst for inXource, a platform for vendors.
 
                 Your task is to analyze the SUBSCRIPTION DATA (sunhistory table) and provide actionable insights.
-                This table contains information about users who have subscribed to use inXource, including subscription amounts, dates, and payment status.
+                This table contains information about REAL USERS who have subscribed to use inXource, including subscription amounts, dates, and payment status.
+
+                IMPORTANT: All test accounts and admin data have been filtered out. This is REAL USER DATA ONLY.
 
                 Main table for analysis: {table_name}
                 Data:
@@ -173,7 +225,7 @@ class AnalAI(FileCleaner):
                 {related_tables_str}
 
                 Guidelines for Subscription Analysis:
-                1. Analyze subscription revenue trends and patterns over time
+                1. Analyze subscription revenue trends and patterns over time (real users only)
                 2. Identify subscription renewal rates and churn indicators
                 3. Correlate subscription data with user activity (orders, business performance)
                 4. Identify high-value subscribers and their characteristics
@@ -203,7 +255,7 @@ class AnalAI(FileCleaner):
                  - Marketing initiatives to attract new subscribers
                  - Improvements to subscription value proposition]
 
-                Keep each section clear and separate.
+                Keep each section clear and separate. Focus only on real user behavior and patterns.
                 """
             else:
                 prompt = f"""
@@ -212,6 +264,8 @@ class AnalAI(FileCleaner):
                 Your task is to provide actionable insights, not just raw numbers.
                 Focus on patterns, correlations, anomalies, and opportunities.
 
+                IMPORTANT: All test accounts and admin data have been filtered out. This is REAL USER DATA ONLY.
+
                 Main table for analysis: {table_name}
                 Data:
                 {main_table_str}
@@ -219,7 +273,7 @@ class AnalAI(FileCleaner):
                 {related_tables_str}
 
                 Guidelines:
-                1. Identify patterns and trends in the main table.
+                1. Identify patterns and trends in the main table (real users only).
                 2. Correlate the main table data with related tables (if any).
                 3. Highlight anomalies, opportunities, or unusual behaviors.
                 4. Provide actionable recommendations for marketing, platform improvements, or user engagement.
@@ -232,7 +286,7 @@ class AnalAI(FileCleaner):
                 RECOMMENDATIONS:
                 [List your actionable recommendations based on the concerns]
 
-                Keep each section clear and separate.
+                Keep each section clear and separate. Focus only on real user behavior and patterns.
                 """
             prompts[table_name] = prompt
 
@@ -395,6 +449,8 @@ class AnalAI(FileCleaner):
                 Your task is to provide MONTHLY subscription analysis with strategic insights.
                 This is a deeper, trend-focused analysis covering the past month.
 
+                IMPORTANT: All test accounts and admin data have been filtered out. This is REAL USER DATA ONLY.
+
                 Main table for analysis: {table_name}
                 Data:
                 {main_table_str}
@@ -402,7 +458,7 @@ class AnalAI(FileCleaner):
                 {related_tables_str}
 
                 Guidelines for Monthly Subscription Analysis:
-                1. Analyze monthly subscription revenue trends and growth patterns
+                1. Analyze monthly subscription revenue trends and growth patterns (real users only)
                 2. Identify subscription retention rates and churn patterns over the month
                 3. Correlate subscription performance with user activity and business growth
                 4. Segment subscribers by value and identify trends in each segment
@@ -433,7 +489,7 @@ class AnalAI(FileCleaner):
                 - Market or segment focus areas
                 - Long-term growth initiatives]
 
-                Keep each section clear and separate.
+                Keep each section clear and separate. Focus only on real user behavior and patterns.
                 """
             else:
                 prompt = f"""
@@ -442,6 +498,8 @@ class AnalAI(FileCleaner):
                 Your task is to provide MONTHLY strategic insights based on the past 30 days of data.
                 This is a deeper analysis than weekly reports - focus on trends, patterns, and strategic opportunities.
 
+                IMPORTANT: All test accounts and admin data have been filtered out. This is REAL USER DATA ONLY.
+
                 Main table for analysis: {table_name}
                 Data:
                 {main_table_str}
@@ -449,7 +507,7 @@ class AnalAI(FileCleaner):
                 {related_tables_str}
 
                 Guidelines for Monthly Analysis:
-                1. Identify major trends and patterns over the past month
+                1. Identify major trends and patterns over the past month (real users only)
                 2. Analyze growth rates, changes, and momentum
                 3. Correlate the main table data with related tables to find deeper insights
                 4. Highlight significant anomalies or unexpected behaviors
@@ -471,6 +529,7 @@ class AnalAI(FileCleaner):
                 [List your strategic recommendations based on the concerns]
 
                 Keep each section clear and separate. Focus on actionable strategy, not just data description.
+                Focus only on real user behavior and patterns.
                 """
             prompts[table_name] = prompt
 
@@ -482,6 +541,7 @@ class AnalAI(FileCleaner):
         Extracts the tables defined in self.tables as pandas DataFrames for the past 30 days.
         - If 'created_at' exists, gets records from the past 30 days.
         - Otherwise, gets the most recent 50 records.
+        - Filters out admin user data from all tables.
         """
         dataframe_data = {}
         thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).isoformat()
@@ -510,7 +570,12 @@ class AnalAI(FileCleaner):
                         .execute()
                     )
 
-                dataframe_data[table] = pd.DataFrame(response.data)
+                df = pd.DataFrame(response.data)
+                
+                # Filter out admin data
+                df = self._filter_admin_data(df, table)
+                
+                dataframe_data[table] = df
                 
             except Exception as e:
                 print(f"Error extracting table {table}: {str(e)}")

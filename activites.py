@@ -68,6 +68,20 @@ class Activites(Clients):
                     continue
 
                 for record in response.data:
+                    # Filter out admin user activities
+                    if table == 'users':
+                        # Skip if this is the admin user registration
+                        if record.get('id') == self.admin_user_id:
+                            continue
+                    elif table == 'businesses':
+                        # Skip if this business belongs to admin
+                        if record.get('id') in self.admin_business_ids:
+                            continue
+                    elif table == 'withdrawals':
+                        # Skip if withdrawal is from an admin business
+                        if record.get('business_id') in self.admin_business_ids:
+                            continue
+                    
                     raw_date = record.get(date_field)
                     if not raw_date:
                         continue
@@ -99,8 +113,8 @@ class Activites(Clients):
                 print(f"Exception while processing table '{table}': {e}")
                 continue
 
+        return recent_activities
 
 
-
-test = Activites()
-print(test.get_recent_activities())
+# test = Activites()
+# print(test.get_recent_activities())

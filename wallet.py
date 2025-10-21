@@ -29,46 +29,59 @@ class Wallet(Clients):
         super().__init__()
 
     def total_withdrawal_requests(self):
-        """returns a total of pending withdrawal requests"""
+        """returns a total of pending withdrawal requests (excluding admin businesses)"""
 
         try:
             response = (
                 self.supabase_client.table('withdrawals')
-                .select('*')
+                .select('business_id')
                 .eq('status', 'pending')
                 .execute()
             )
 
-            return len(response.data or [])
+            # Filter out admin businesses
+            withdrawals = [w for w in (response.data or []) 
+                          if w['business_id'] not in self.admin_business_ids]
 
+            return len(withdrawals)
 
         except Exception as e:
             print(f"Exception: {e}")
+            return 0
 
     def total_inhouse_money(self):
-        """Returns the total amount of money that is in inXource"""
+        """Returns the total amount of money that is in inXource (excluding admin businesses)"""
 
         # get the total of all completed orders
         try:
             response = (
                 self.supabase_client.table('orders')
-                .select('partialAmountTotal')
+                .select('partialAmountTotal, business_id')
                 .eq('order_payment_status', 'completed')
                 .execute()
             )
 
-            # Sum the 'partialAmountTotal' from each row
-            total_amount_ordered = sum(item.get('partialAmountTotal', 0) for item in response.data)
+            # Filter out admin businesses and sum the 'partialAmountTotal'
+            total_amount_ordered = sum(
+                item.get('partialAmountTotal', 0) 
+                for item in response.data 
+                if item.get('business_id') not in self.admin_business_ids
+            )
             
             # get the total of all withdrawals that have been approved
             withdrawal_response = (
                 self.supabase_client.table('withdrawals')
-                .select('amount')
+                .select('amount, business_id')
                 .eq('status', 'approved')
                 .execute()
             )
 
-            total_amount_withdrawn = sum(item.get('amount', 0) for item in withdrawal_response.data)
+            # Filter out admin businesses and sum withdrawals
+            total_amount_withdrawn = sum(
+                item.get('amount', 0) 
+                for item in withdrawal_response.data 
+                if item.get('business_id') not in self.admin_business_ids
+            )
 
             # inhouse money is total orders - total withdrawals
             inhouse_money = total_amount_ordered - total_amount_withdrawn
@@ -79,7 +92,7 @@ class Wallet(Clients):
             return 0    
 
     def get_withdrawal_ids(self):
-        """Returns a list of withdrawal records with business_id, id, and status"""
+        """Returns a list of withdrawal records with business_id, id, and status (excluding admin businesses)"""
 
         try:
             withdrawal_response = (
@@ -89,10 +102,14 @@ class Wallet(Clients):
             )
 
             if not withdrawal_response.data:
-                print("No pending withdrawal requests found.")
+                print("No withdrawal requests found.")
                 return []
 
-            return withdrawal_response.data  # return list of dicts
+            # Filter out admin businesses
+            withdrawals = [w for w in withdrawal_response.data 
+                          if w['business_id'] not in self.admin_business_ids]
+
+            return withdrawals  # return list of dicts
 
         except Exception as e:
             print(f"Exception: {e}")
@@ -100,13 +117,17 @@ class Wallet(Clients):
 
 
     def load_pending_withdrawals(self):
-        """Loads all pending withdrawal requests with business and owner details"""
+        """Loads all pending withdrawal requests with business and owner details (excluding admin businesses)"""
 
         withdrawals = self.get_withdrawal_ids()
         business_manager = Businesses()
 
         withdrawal_details = [] 
         for withdrawal in withdrawals:
+            # Skip admin businesses (double check even though get_withdrawal_ids filters)
+            if withdrawal['business_id'] in self.admin_business_ids:
+                continue
+                
             business_details = business_manager.get_business_deatils(withdrawal['business_id'])
             if business_details:
                 # add withdrawal-specific fields
@@ -281,9 +302,3 @@ class Wallet(Clients):
 """
 test = Wallet()
 """
-
-
-
-
-
-

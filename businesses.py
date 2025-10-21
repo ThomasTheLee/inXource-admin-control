@@ -1,4 +1,3 @@
-# %%
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
@@ -95,23 +94,31 @@ class Businesses(Clients):
    
 
     def total_businesses(self):
-        """Returns the total number of users on the platform"""
+        """Returns the total number of businesses on the platform (excluding admin)"""
         try:
             response = self.supabase_client.table("businesses").select("*").execute()
             if response.data:
-                return len(response.data or []) 
+                # Filter out admin businesses
+                filtered_businesses = [
+                    b for b in response.data 
+                    if b.get('id') not in self.admin_business_ids
+                ]
+                return len(filtered_businesses)
             return 0
         except Exception as e:
-            print(f"Error fetching users: {e}")
+            print(f"Error fetching businesses: {e}")
             return 0
         
 
     def total_businesses_growth_rate(self):
-        """Returns the growth rate of businesses on the platform."""
+        """Returns the growth rate of businesses on the platform (excluding admin)."""
         try:
             # Fetch all businesses once
             response = self.supabase_client.table("businesses").select("*").execute()
             businesses = response.data or []
+            
+            # Filter out admin businesses
+            businesses = [b for b in businesses if b.get('id') not in self.admin_business_ids]
 
             # Current total
             current_total = len(businesses)
@@ -144,14 +151,16 @@ class Businesses(Clients):
             return 0.0
         
     def new_businesses_registrations(self, days=30):
-        """Returns the number of new businesses registered in the last 'days' days."""
+        """Returns the number of new businesses registered in the last 'days' days (excluding admin)."""
         try:
             cutoff_date = datetime.now() - timedelta(days=days)
             response = self.supabase_client.table("businesses").select("*").execute()
             if response.data:
                 new_businesses = [
                     biz for biz in response.data
-                    if biz.get("created_at") and datetime.fromisoformat(biz["created_at"]) >= cutoff_date
+                    if biz.get("created_at") 
+                    and datetime.fromisoformat(biz["created_at"]) >= cutoff_date
+                    and biz.get('id') not in self.admin_business_ids
                 ]
                 return len(new_businesses)
             return 0
@@ -161,7 +170,7 @@ class Businesses(Clients):
 
 
     def new_businesses_registrations_rate(self, days=30):
-        """Returns the growth rate of new business registrations over the last 'days' days."""
+        """Returns the growth rate of new business registrations over the last 'days' days (excluding admin)."""
         try:
             # Current period
             current_period_count = self.new_businesses_registrations(days)
@@ -182,14 +191,16 @@ class Businesses(Clients):
             return 0.0
         
     def total_active_businesses(self, days=30):
-        """returns the total active businesses based on the number on the withdraws i the last 30 days"""
+        """Returns the total active businesses based on withdrawals in the last 30 days (excluding admin)"""
         try:
             cutoff_date = datetime.now() - timedelta(days=days)
             response = self.supabase_client.table("withdrawals").select("business_id, requested_at").execute()
             if response.data:
                 active_business_ids = {
                     wd["business_id"] for wd in response.data
-                    if wd.get("requested_at") and datetime.fromisoformat(wd["requested_at"]) >= cutoff_date
+                    if wd.get("requested_at") 
+                    and datetime.fromisoformat(wd["requested_at"]) >= cutoff_date
+                    and wd["business_id"] not in self.admin_business_ids
                 }
                 return len(active_business_ids)
             return 0
@@ -199,7 +210,7 @@ class Businesses(Clients):
         
     
     def total_active_businesses_growth_rate(self, days=30):
-        """Returns the growth rate of active businesses over the last 'days' days."""
+        """Returns the growth rate of active businesses over the last 'days' days (excluding admin)."""
         try:
             # Current period
             current_period_count = self.total_active_businesses(days)
@@ -224,31 +235,27 @@ class Businesses(Clients):
         try:
             print(f"\n[DEBUG] Starting business info retrieval for query: {query}")
 
-            # 1. Search directly in businesses
+            # 1. Search directly in businesses (exclude admin businesses)
             business_response = (
                 self.supabase_client.table("businesses")
                 .select("*")
                 .or_(f"business_name.ilike.%{query}%,industry.ilike.%{query}%,company_alias.ilike.%{query}%")
                 .execute()
             )
-            #print(f"[DEBUG] Business response raw: {business_response}")
-            results = business_response.data or []
-            #print(f"[DEBUG] Businesses found directly: {len(results)}")
+            results = [b for b in (business_response.data or []) if b.get('id') not in self.admin_business_ids]
 
-            # 2. Search for matching users (owners)
+            # 2. Search for matching users (owners) - exclude admin user
             user_response = (
                 self.supabase_client.table("users")
                 .select("id")
                 .or_(f"name.ilike.%{query}%,email.ilike.%{query}%,phone.ilike.%{query}%")
+                .neq("id", self.admin_user_id)
                 .execute()
             )
-            #print(f"[DEBUG] User response raw: {user_response}")
             users = user_response.data or []
-            #print(f"[DEBUG] Users matched: {len(users)}")
 
             if users:
                 user_ids = [u["id"] for u in users]
-                #print(f"[DEBUG] User IDs: {user_ids}")
 
                 # 3. Get businesses owned by those users
                 owner_response = (
@@ -257,9 +264,10 @@ class Businesses(Clients):
                     .in_("user_id", user_ids)
                     .execute()
                 )
-                #print(f"[DEBUG] Owner response raw: {owner_response}")
-                business_ids = [o["business_id"] for o in (owner_response.data or [])]
-                #print(f"[DEBUG] Business IDs from owners: {business_ids}")
+                business_ids = [
+                    o["business_id"] for o in (owner_response.data or [])
+                    if o["business_id"] not in self.admin_business_ids
+                ]
 
                 if business_ids:
                     owner_businesses = (
@@ -268,11 +276,8 @@ class Businesses(Clients):
                         .in_("id", business_ids)
                         .execute()
                     )
-                    print(f"[DEBUG] Owner businesses raw: {owner_businesses}")
                     results.extend(owner_businesses.data or [])
-                    print(f"[DEBUG] Total results after merging owner businesses: {len(results)}")
 
-           #print(f"[DEBUG] Final results count: {len(results)}")
             return results
 
         except Exception as e:
@@ -281,29 +286,29 @@ class Businesses(Clients):
 
      
     def top_performing_categories(self, limit=5):
-        """Returns the top performing business categories based on total approved withdrawals."""
+        """Returns the top performing business categories based on total approved withdrawals (excluding admin)."""
         try:
             print(f"[DEBUG] Fetching top performing categories with limit={limit}")
 
-            # Step 1: Fetch withdrawals
+            # Step 1: Fetch withdrawals (exclude admin businesses)
             response = (
                 self.supabase_client.table("withdrawals")
                 .select("business_id, amount")
                 .eq("status", "approved")
                 .execute()
             )
-            withdrawals = response.data or []
-            #print(f"[DEBUG] Retrieved {len(withdrawals)} withdrawals")
+            withdrawals = [
+                w for w in (response.data or [])
+                if w["business_id"] not in self.admin_business_ids
+            ]
 
             # Step 2: Sum per business_id
             sums = defaultdict(float)
             for w in withdrawals:
                 sums[w["business_id"]] += w["amount"]
-            #print(f"[DEBUG] Summed withdrawals by business_id: {dict(sums)}")
 
             # Step 3: Sort by total amount
             sorted_sums = sorted(sums.items(), key=lambda x: x[1], reverse=True)
-            #print(f"[DEBUG] Sorted businesses by total amount: {sorted_sums}")
 
             # Step 4: Top business ids
             top_businesses = [bid for bid, _ in sorted_sums[:limit]]
@@ -317,7 +322,6 @@ class Businesses(Clients):
                 .execute()
             )
             industries = industries_response.data or []
-            #print(f"[DEBUG] Retrieved industries: {industries}")
 
             # Build final list
             result = [
@@ -325,13 +329,12 @@ class Businesses(Clients):
                     "business_id": bid,
                     "total": total,
                     "industry": next(
-                        (i["industry"] for i in industries if i["id"] == bid),  # <-- fixed lookup
+                        (i["industry"] for i in industries if i["id"] == bid),
                         None,
                     ),
                 }
                 for bid, total in sorted_sums[:limit]
             ]
-            #print(f"[DEBUG] Top businesses with industries: {result}")
 
             # Add "Others"
             if len(sorted_sums) > limit:
@@ -339,7 +342,6 @@ class Businesses(Clients):
                 result.append({"business_id": "Others", "total": others_total, "industry": "Others"})
                 print(f"[DEBUG] Added 'Others' category with total={others_total}")
 
-            #print(f"[DEBUG] Final result: {result}")
             return result
 
         except Exception as e:
@@ -348,7 +350,7 @@ class Businesses(Clients):
 
 
     def load_business_activity(self, days=settings_manager.business_activity_days):
-        """returns information of business activity in the last 'days' days"""
+        """Returns information of business activity in the last 'days' days (excluding admin)"""
         
         # Initialize business_activity with all expected keys
         business_activity = {
@@ -363,11 +365,12 @@ class Businesses(Clients):
         try:
             cutoff_date = datetime.now() - timedelta(days=days)
             
-            # Get user registrations in the last 'days' days
+            # Get user registrations in the last 'days' days (exclude admin user)
             users_reg_response = (
                 self.supabase_client.table("users")
                 .select("*")
                 .gte("created_at", cutoff_date.isoformat())
+                .neq("id", self.admin_user_id)
                 .execute()
             )
 
@@ -378,7 +381,7 @@ class Businesses(Clients):
             else:
                 print(f"[DEBUG] No new user registrations in the last {days} days.")
 
-            # Get new business registrations in the last 'days' days that are active and not deleted
+            # Get new business registrations in the last 'days' days (exclude admin businesses)
             businesses_reg_response = (
                 self.supabase_client.table("businesses")
                 .select("*")
@@ -389,30 +392,38 @@ class Businesses(Clients):
             )
             
             if businesses_reg_response.data:
-                new_business_registration_number = len(businesses_reg_response.data)
+                filtered_businesses = [
+                    b for b in businesses_reg_response.data
+                    if b.get('id') not in self.admin_business_ids
+                ]
+                new_business_registration_number = len(filtered_businesses)
                 business_activity['new_business_registrations'] = new_business_registration_number
                 print(f"[DEBUG] New business registrations in last {days} days: {new_business_registration_number}")
             else:
                 print(f"[DEBUG] No new business registrations in the last {days} days.")
 
-            # Get businesses that are deactivated in the last 'days' days
+            # Get businesses that are deactivated in the last 'days' days (exclude admin)
             deactivated_businesses_response = (
                 self.supabase_client.table("businesses")
                 .select("*")
-                .gte("created_at", cutoff_date.isoformat())  # when the updated at field is made change to updated at
+                .gte("created_at", cutoff_date.isoformat())
                 .eq("is_active", False)
                 .eq("is_deleted", False)
                 .execute()
             )
 
             if deactivated_businesses_response.data:
-                deactivated_business_number = len(deactivated_businesses_response.data)
+                filtered_deactivated = [
+                    b for b in deactivated_businesses_response.data
+                    if b.get('id') not in self.admin_business_ids
+                ]
+                deactivated_business_number = len(filtered_deactivated)
                 business_activity['deactivated_businesses'] = deactivated_business_number
                 print(f"[DEBUG] Deactivated businesses in last {days} days: {deactivated_business_number}")
             else:
                 print(f"[DEBUG] No deactivated businesses in the last {days} days.")
 
-            # Get businesses that are deleted in the last 'days' days
+            # Get businesses that are deleted in the last 'days' days (exclude admin)
             deleted_businesses_response = (
                 self.supabase_client.table("businesses")
                 .select("*")
@@ -422,13 +433,17 @@ class Businesses(Clients):
             )
             
             if deleted_businesses_response.data:
-                deleted_business_number = len(deleted_businesses_response.data)
+                filtered_deleted = [
+                    b for b in deleted_businesses_response.data
+                    if b.get('id') not in self.admin_business_ids
+                ]
+                deleted_business_number = len(filtered_deleted)
                 business_activity['deleted_businesses'] = deleted_business_number
                 print(f"[DEBUG] Deleted businesses in last {days} days: {deleted_business_number}")
             else:
                 print(f"[DEBUG] No deleted businesses in the last {days} days.")
 
-            # Get withdraws made according to the days input
+            # Get withdrawals made according to the days input (exclude admin)
             withdraws_response = (
                 self.supabase_client.table("withdrawals")
                 .select("*")
@@ -437,7 +452,11 @@ class Businesses(Clients):
             )
 
             if withdraws_response.data:
-                total_withdraws_number = len(withdraws_response.data)
+                filtered_withdraws = [
+                    w for w in withdraws_response.data
+                    if w.get('business_id') not in self.admin_business_ids
+                ]
+                total_withdraws_number = len(filtered_withdraws)
                 business_activity['total_withdraws'] = total_withdraws_number
                 print(f"[DEBUG] Total withdraws in last {days} days: {total_withdraws_number}")
             else:
@@ -447,51 +466,51 @@ class Businesses(Clients):
 
         except Exception as e:
             print(f"Error fetching business activity: {e}")
-            # Return the initialized dictionary even on error
             return business_activity
             
 
     def monthly_business_trend(self):
-        """returns a dataframe of monthly businesses registered per month"""
+        """Returns a dataframe of monthly businesses registered per month (excluding admin)"""
         try:
             response = self.supabase_client.table('businesses').select('*').execute()
             all_businesses = response.data
 
-            # convert to a pandas data frame
+            # Filter out admin businesses
+            all_businesses = [b for b in all_businesses if b.get('id') not in self.admin_business_ids]
+
+            # Convert to a pandas data frame
             df = pd.DataFrame(all_businesses)
 
             if df.empty or 'created_at' not in df.columns:
-                # Return empty DataFrame if no data
                 return pd.DataFrame(columns=['month', 'business_count'])
                         
-            #  Ensure created_at is datetime
+            # Ensure created_at is datetime
             df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
             df = df.dropna(subset=['created_at'])
 
-            #  Filter last 12 months
+            # Filter last 12 months
             one_year_ago = pd.Timestamp.now() - pd.DateOffset(months=12)
             df_last_12 = df[df['created_at'] >= one_year_ago]
 
-            #  Extract month and group
+            # Extract month and group
             df_last_12['month'] = df_last_12['created_at'].dt.to_period('M')
             monthly_counts = df_last_12.groupby('month').size().reset_index(name='business_count')
 
-            #  Sort by month
+            # Sort by month
             monthly_counts = monthly_counts.sort_values('month').reset_index(drop=True)
 
             return monthly_counts
 
         except Exception as e:
             print(f"Exception: {e}")
-            # Return empty DataFrame instead of None
             return pd.DataFrame(columns=['month', 'business_count'])
 
 
          
     def get_top_performing_industries(self):
-        """Returns the top 4 performing industries and bundles the rest under 'Others'."""
+        """Returns the top 4 performing industries and bundles the rest under 'Others' (excluding admin)."""
 
-        # Step 1: Get all completed orders
+        # Step 1: Get all completed orders (exclude admin businesses)
         orders_response = (
             self.supabase_client
             .table('orders')
@@ -499,7 +518,10 @@ class Businesses(Clients):
             .eq('order_payment_status', 'completed')
             .execute()
         )
-        orders = orders_response.data or []
+        orders = [
+            o for o in (orders_response.data or [])
+            if o.get('business_id') not in self.admin_business_ids
+        ]
 
         # Step 2: Get all businesses with their industries
         businesses_response = (
@@ -508,7 +530,11 @@ class Businesses(Clients):
             .select('id, industry')
             .execute()
         )
-        businesses = {b['id']: b['industry'] for b in businesses_response.data or []}
+        businesses = {
+            b['id']: b['industry'] 
+            for b in (businesses_response.data or [])
+            if b['id'] not in self.admin_business_ids
+        }
 
         # Step 3: Aggregate totals per industry
         industry_totals = {}
@@ -528,12 +554,6 @@ class Businesses(Clients):
         # Ensure we never return an empty list
         return top_4 if top_4 else [("N/A", 0)]
 
-    
 
 #test = Businesses()
-#rint(test.get_top_performing_industries())
-
-
-        
-
-
+#print(test.get_top_performing_industries())

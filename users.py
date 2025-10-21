@@ -30,11 +30,13 @@ class Users(Clients):
         super().__init__()
 
     def total_users(self):
-        """Returns the total number of users on the platform"""
+        """Returns the total number of users on the platform (excluding admin user)"""
         try:
             response = self.supabase_client.table("users").select("*").execute()
             if response.data:
-                return len(response.data or []) 
+                # Filter out admin user
+                users = [u for u in response.data if u.get('id') != self.admin_user_id]
+                return len(users) 
             return 0
         except Exception as e:
             print(f"Error fetching users: {e}")
@@ -43,11 +45,14 @@ class Users(Clients):
     
 
     def total_user_growth_rate(self):
-        """Returns the total user growth rate comparing current total vs 30 days ago."""
+        """Returns the total user growth rate comparing current total vs 30 days ago (excluding admin user)"""
         try:
             # Fetch all users once
             response = self.supabase_client.table("users").select("*").execute()
-            users = response.data or []
+            all_users = response.data or []
+            
+            # Filter out admin user
+            users = [u for u in all_users if u.get('id') != self.admin_user_id]
 
             # Current total
             current_total = len(users)
@@ -81,7 +86,7 @@ class Users(Clients):
 
 
     def total_new_registrations(self):
-        """Returns the total number of new registrations in the last 30 days"""
+        """Returns the total number of new registrations in the last 30 days (excluding admin user)"""
         try:
             now = datetime.now()
             thirty_days_ago = now - timedelta(days=30)
@@ -91,6 +96,10 @@ class Users(Clients):
             recent_users = 0  # Last 30 days
             
             for user in response.data:
+                # Skip admin user
+                if user.get('id') == self.admin_user_id:
+                    continue
+                    
                 created_at = user.get('created_at')
                 if created_at:
                     try:
@@ -109,7 +118,7 @@ class Users(Clients):
 
         
     def new_registrations_rate(self):
-        """Returns new registrations in last 30 days vs previous 30 days"""
+        """Returns new registrations in last 30 days vs previous 30 days (excluding admin user)"""
         try:
             now = datetime.now()
             thirty_days_ago = now - timedelta(days=30)
@@ -121,6 +130,10 @@ class Users(Clients):
             previous_users = 0  # 30-60 days ago
             
             for user in response.data:
+                # Skip admin user
+                if user.get('id') == self.admin_user_id:
+                    continue
+                    
                 created_at = user.get('created_at')
                 if created_at:
                     try:
@@ -145,7 +158,7 @@ class Users(Clients):
 
 
     def total_active_users(self):
-        """Counts users who own businesses with withdrawals in the last 7 days"""
+        """Counts users who own businesses with subscriptions (excluding admin user)"""
         try:
             response = (
                 self.supabase_client.table("users")
@@ -156,7 +169,12 @@ class Users(Clients):
 
             if not response.data:
                 return 0
-            user_ids = [user['id'] for user in response.data if user.get('id')]
+            
+            # Filter out admin user
+            user_ids = [
+                user['id'] for user in response.data 
+                if user.get('id') and user.get('id') != self.admin_user_id
+            ]
             return len(user_ids)
 
         except Exception as e:
@@ -164,7 +182,7 @@ class Users(Clients):
             return 0
         
     def active_users_growh_rate(self):
-        """Calculates growth rate of active users compared to previous 7-day period"""
+        """Calculates growth rate of active users compared to previous 7-day period (excluding admin user and admin businesses)"""
         try:
             now = datetime.now()
             seven_days_ago = now - timedelta(days=7)
@@ -181,7 +199,11 @@ class Users(Clients):
             if not current_response.data:
                 return 0.0
 
-            current_business_ids = {w['business_id'] for w in current_response.data if w.get('business_id')}
+            # Filter out admin businesses
+            current_business_ids = {
+                w['business_id'] for w in current_response.data 
+                if w.get('business_id') and w.get('business_id') not in self.admin_business_ids
+            }
             if not current_business_ids:
                 return 0.0
 
@@ -195,7 +217,11 @@ class Users(Clients):
             if not current_user_response.data:
                 return 0.0
 
-            current_active_user_ids = {b['user_id'] for b in current_user_response.data if b.get('user_id')}
+            # Filter out admin user
+            current_active_user_ids = {
+                b['user_id'] for b in current_user_response.data 
+                if b.get('user_id') and b.get('user_id') != self.admin_user_id
+            }
             current_active_count = len(current_active_user_ids)
 
             # Step 2: Get previous active users (7-14 days ago)
@@ -210,7 +236,11 @@ class Users(Clients):
             if not previous_response.data:
                 return 0.0
 
-            previous_business_ids = {w['business_id'] for w in previous_response.data if w.get('business_id')}
+            # Filter out admin businesses
+            previous_business_ids = {
+                w['business_id'] for w in previous_response.data 
+                if w.get('business_id') and w.get('business_id') not in self.admin_business_ids
+            }
             if not previous_business_ids:
                 return 0.0
 
@@ -224,7 +254,11 @@ class Users(Clients):
             if not previous_user_response.data:
                 return 0.0
 
-            previous_active_user_ids = {b['user_id'] for b in previous_user_response.data if b.get('user_id')}
+            # Filter out admin user
+            previous_active_user_ids = {
+                b['user_id'] for b in previous_user_response.data 
+                if b.get('user_id') and b.get('user_id') != self.admin_user_id
+            }
             previous_active_count = len(previous_active_user_ids)
 
             if previous_active_count == 0:
@@ -239,7 +273,7 @@ class Users(Clients):
 
 
     def retrieve_users_information(self, query):
-        """Most compatible version"""
+        """Most compatible version (excluding admin user from search results)"""
         try:
             all_results = []
             seen_ids = set()
@@ -249,7 +283,9 @@ class Users(Clients):
                 try:
                     response = self.supabase_client.table("users").select("*").eq("id", query).execute()
                     if response.data:
-                        return response.data
+                        # Filter out admin user
+                        filtered = [u for u in response.data if u.get('id') != self.admin_user_id]
+                        return filtered
                 except:
                     pass
             
@@ -265,11 +301,13 @@ class Users(Clients):
                     
                     if response.data:
                         for user in response.data:
-                            if user.get('id') not in seen_ids:
+                            user_id = user.get('id')
+                            # Skip admin user and duplicates
+                            if user_id not in seen_ids and user_id != self.admin_user_id:
                                 all_results.append(user)
-                                seen_ids.add(user.get('id'))
+                                seen_ids.add(user_id)
                                 # add the businesses info
-                                user['businesses'] = self.users_businesses(user.get('id'))
+                                user['businesses'] = self.users_businesses(user_id)
                 except:
                     continue
             
@@ -281,7 +319,7 @@ class Users(Clients):
             return []
         
     def users_businesses(self, user_id):
-        """retirves information about the users businesses as a dictioanry"""
+        """retrieves information about the user's businesses as a dictionary (excluding admin businesses)"""
         try:
             # Step 1: Get business IDs owned by the user
             response = (
@@ -294,7 +332,11 @@ class Users(Clients):
             if not response.data:
                 return []
 
-            business_ids = [b['business_id'] for b in response.data if b.get('business_id')]
+            # Filter out admin businesses
+            business_ids = [
+                b['business_id'] for b in response.data 
+                if b.get('business_id') and b.get('business_id') not in self.admin_business_ids
+            ]
             if not business_ids:
                 return []
 
@@ -315,15 +357,17 @@ class Users(Clients):
             return []
         
     def users_per_location(self):
-        """Returns a breakdown of users by location, with count and width % for chart bars"""
+        """Returns a breakdown of users by location, with count and width % for chart bars (excluding admin user)"""
         try:
-            response = self.supabase_client.table("users").select("location").execute()
+            response = self.supabase_client.table("users").select("location, id").execute()
             if not response.data:
                 return []
 
-            # Count users per location
+            # Filter out admin user and count users per location
             location_counts = {}
             for user in response.data:
+                if user.get('id') == self.admin_user_id:
+                    continue
                 location = user.get('location', 'Unknown')
                 location_counts[location] = location_counts.get(location, 0) + 1
 
@@ -350,15 +394,18 @@ class Users(Clients):
     def monthly_user_trend(self):
         """
         Returns a DataFrame showing the number of users registered in each
-        of the last 12 months. Columns: 'month', 'user_count'.
+        of the last 12 months (excluding admin user). Columns: 'month', 'user_count'.
         """
         try:
             # get all users
             response = self.supabase_client.table("users").select("*").execute()
             all_users = response.data
 
+            # Filter out admin user
+            filtered_users = [u for u in all_users if u.get('id') != self.admin_user_id]
+
             #  Convert to DataFrame
-            df = pd.DataFrame(all_users)
+            df = pd.DataFrame(filtered_users)
 
             if df.empty or 'created_at' not in df.columns:
                 # Return empty DataFrame if no data
@@ -389,7 +436,7 @@ class Users(Clients):
     def monthly_activity_trend(self):
         """
         Returns a DataFrame showing the number of active users (with withdrawals)
-        in each of the last 12 months. Columns: 'month', 'active_user_count'.
+        in each of the last 12 months (excluding admin businesses). Columns: 'month', 'active_user_count'.
         """
         try:
             # Get all withdrawals
@@ -399,8 +446,14 @@ class Users(Clients):
             if not all_withdrawals:
                 return pd.DataFrame(columns=['month', 'active_user_count'])
 
+            # Filter out admin businesses
+            filtered_withdrawals = [
+                w for w in all_withdrawals 
+                if w.get('business_id') not in self.admin_business_ids
+            ]
+
             # Convert to DataFrame
-            df = pd.DataFrame(all_withdrawals)
+            df = pd.DataFrame(filtered_withdrawals)
 
             if df.empty or 'requested_at' not in df.columns:
                 return pd.DataFrame(columns=['month', 'active_user_count'])
@@ -432,6 +485,3 @@ class Users(Clients):
         except Exception as e:
             print("Error generating monthly activity trend:", e)
             return pd.DataFrame(columns=['month', 'active_user_count'])
-
-    
-    
