@@ -60,6 +60,7 @@ class Products(Clients):
         Helper method for efficient full-text search on ai_name.
         Uses PostgreSQL full-text search via RPC function.
         Falls back to OR pattern with ILIKE if no results found.
+        Filters out admin businesses.
         """
         try:
             # First attempt: Full-text search (fastest and handles stemming)
@@ -69,8 +70,11 @@ class Products(Clients):
             ).execute()
             
             if response.data:
-                print(f"[SEARCH] Full-text search found {len(response.data)} products")
-                return response.data
+                # Filter out admin businesses
+                filtered_data = [p for p in response.data 
+                               if p.get('business_id') not in self.admin_business_ids]
+                print(f"[SEARCH] Full-text search found {len(filtered_data)} products (excluding admin)")
+                return filtered_data
             
             # Second attempt: OR pattern with variations
             print(f"[SEARCH] Full-text search returned no results, trying OR pattern...")
@@ -87,11 +91,15 @@ class Products(Clients):
             )
             
             if response.data:
-                print(f"[SEARCH] OR pattern found {len(response.data)} products")
+                # Filter out admin businesses
+                filtered_data = [p for p in response.data 
+                               if p.get('business_id') not in self.admin_business_ids]
+                print(f"[SEARCH] OR pattern found {len(filtered_data)} products (excluding admin)")
+                return filtered_data
             else:
                 print(f"[SEARCH] No products found for query: {product_query}")
             
-            return response.data or []
+            return []
             
         except Exception as e:
             print(f"[SEARCH] Full-text search failed, falling back to simple ILIKE: {e}")
@@ -103,25 +111,31 @@ class Products(Clients):
                     .ilike('ai_name', f'%{product_query}%')
                     .execute()
                 )
-                return response.data or []
+                # Filter out admin businesses
+                filtered_data = [p for p in (response.data or []) 
+                               if p.get('business_id') not in self.admin_business_ids]
+                return filtered_data
             except Exception as fallback_error:
                 print(f"[SEARCH] All search methods failed: {fallback_error}")
                 return []
 
     def total_products(self):
-        """Returns the total number of products from businesses that are active"""
+        """Returns the total number of products from businesses that are active (excluding admin businesses)"""
         try:
             response = (
                 self.supabase_client.table("products")
-                .select("id, business:business_id (is_active)")  # join on business_id
+                .select("id, business_id, business:business_id (is_active)")  # join on business_id
                 .execute()
             )
 
             if not response.data:
                 return 0
 
-            # Filter only products where business.is_active == True
-            active_products = [p for p in response.data if p["business"]["is_active"]]
+            # Filter only products where business.is_active == True AND not admin business
+            active_products = [
+                p for p in response.data 
+                if p["business"]["is_active"] and p["business_id"] not in self.admin_business_ids
+            ]
 
             return len(active_products)
 
@@ -132,7 +146,7 @@ class Products(Clients):
 
 
     def total_products_growth(self):
-        """Returns the growth rate of how products have grown in the last 30 days"""
+        """Returns the growth rate of how products have grown in the last 30 days (excluding admin businesses)"""
 
         month_ago_date = datetime.utcnow() - timedelta(days=30)
 
@@ -140,20 +154,24 @@ class Products(Clients):
             # Products created in the last 30 days
             new_response = (
                 self.supabase_client.table('products')
-                .select('*')
+                .select('business_id, created_at')
                 .gte('created_at', month_ago_date.isoformat())
                 .execute()
             )
-            new_products = new_response.data
+            # Filter out admin businesses
+            new_products = [p for p in (new_response.data or []) 
+                          if p['business_id'] not in self.admin_business_ids]
 
             # Products created before 30 days ago
             old_response = (
                 self.supabase_client.table('products')
-                .select('*')
+                .select('business_id, created_at')
                 .lte('created_at', month_ago_date.isoformat())
                 .execute()
             )
-            old_products = old_response.data
+            # Filter out admin businesses
+            old_products = [p for p in (old_response.data or []) 
+                          if p['business_id'] not in self.admin_business_ids]
 
             if len(old_products) == 0:  # Avoid division by zero
                 return None  
@@ -166,35 +184,53 @@ class Products(Clients):
             return None
         
     def low_stock_count(self):
-        """returns the total number of products with a low stock"""
+        """returns the total number of products with a low stock (excluding admin businesses)"""
         try:
             response = (
                 self.supabase_client.table('stock_table')
-                .select('*')
+                .select('quantity, product_id, products(business_id)')
                 .lt('quantity', settings_manager.low_stock_count)
                 .execute()
             )
 
-            return len(response.data)
+            # Filter out admin businesses
+            low_stock = [
+                item for item in (response.data or [])
+                if item.get('products', {}).get('business_id') not in self.admin_business_ids
+            ]
+
+            return len(low_stock)
         except Exception as e:
             print(f"Exception: {e}")
             return None
         
     def low_stock_percent(self):
-        """Gives a percentage of low stock products out of all products"""
+        """Gives a percentage of low stock products out of all products (excluding admin businesses)"""
         try:
-            response = self.supabase_client.table('stock_table').select('quantity').execute()
+            response = (
+                self.supabase_client.table('stock_table')
+                .select('quantity, product_id, products(business_id)')
+                .execute()
+            )
 
             if not response.data:
                 return 0
 
+            # Filter out admin businesses
+            all_stock = [
+                item for item in response.data
+                if item.get('products', {}).get('business_id') not in self.admin_business_ids
+            ]
+
+            if not all_stock:
+                return 0
+
             low_stock = [
-                stock.get('quantity', 0)
-                for stock in response.data
+                stock for stock in all_stock
                 if stock.get('quantity', 0) < settings_manager.low_stock_count
             ]
 
-            low_percent_stock = (len(low_stock) / len(response.data)) * 100
+            low_percent_stock = (len(low_stock) / len(all_stock)) * 100
             return round(low_percent_stock, 2)
 
         except Exception as e:
@@ -203,17 +239,23 @@ class Products(Clients):
         
     
     def total_revenue(self):
-        """returns the total revenue for sales with complete orders"""
+        """returns the total revenue for sales with complete orders (excluding admin businesses)"""
         try:
             response = (
                 self.supabase_client.table('orders')
-                .select('total_amount')
+                .select('total_amount, business_id')
                 .eq('order_status', 'completed')
                 .eq('order_payment_status', 'completed')
                 .execute()
-                )
+            )
 
-            total_amount = round(float(sum([amount['total_amount'] for amount in response.data])),2)
+            # Filter out admin businesses
+            filtered_orders = [
+                order for order in (response.data or [])
+                if order.get('business_id') not in self.admin_business_ids
+            ]
+
+            total_amount = round(float(sum([amount['total_amount'] for amount in filtered_orders])), 2)
 
             return total_amount
 
@@ -224,7 +266,7 @@ class Products(Clients):
     
 
     def total_revenue_growth(self):
-        """Returns the growth rate of total revenue from last month"""
+        """Returns the growth rate of total revenue from last month (excluding admin businesses)"""
 
         month_ago_date = datetime.utcnow() - timedelta(days=30)
 
@@ -232,24 +274,28 @@ class Products(Clients):
             # Orders in the last 30 days
             new_response = (
                 self.supabase_client.table('orders')
-                .select('total_amount')
+                .select('total_amount, business_id')
                 .eq('order_status', 'completed')
                 .eq('order_payment_status', 'completed')
                 .gte('created_at', month_ago_date.isoformat())
                 .execute()
             )
-            new_orders = new_response.data or []
+            # Filter out admin businesses
+            new_orders = [o for o in (new_response.data or []) 
+                         if o.get('business_id') not in self.admin_business_ids]
 
             # Orders before 30 days ago
             old_response = (
                 self.supabase_client.table('orders')
-                .select('total_amount')
+                .select('total_amount, business_id')
                 .eq('order_status', 'completed')
                 .eq('order_payment_status', 'completed')
                 .lte('created_at', month_ago_date.isoformat())
                 .execute()
             )
-            old_orders = old_response.data or []
+            # Filter out admin businesses
+            old_orders = [o for o in (old_response.data or []) 
+                         if o.get('business_id') not in self.admin_business_ids]
 
             old_revenue_total = sum([float(order['total_amount']) for order in old_orders])
             new_revenue_total = sum([float(order['total_amount']) for order in new_orders])
@@ -269,16 +315,21 @@ class Products(Clients):
         """
         Returns a dictionary of product performance ranked by the specified method in settings.
         method can be either 'volume' (total quantity sold) or 'revenue' (total sales amount).
+        Excludes admin businesses.
         """
         order_response = (
             self.supabase_client.table('orders')
-            .select('product_id, quantity, total_amount, products(name, category)')
+            .select('product_id, quantity, total_amount, business_id, products(name, category)')
             .eq('order_payment_status', 'completed')
             .eq('order_status', 'completed')
             .execute()
         )
 
-        data = order_response.data
+        # Filter out admin businesses
+        data = [
+            order for order in (order_response.data or [])
+            if order.get('business_id') not in self.admin_business_ids
+        ]
 
         performance = {}
 
@@ -369,14 +420,14 @@ class Products(Clients):
 
 
     def normalize_new_products(self):
-        """Normalizes new products and updates Supabase with AI-generated searchable product types"""
+        """Normalizes new products and updates Supabase with AI-generated searchable product types (excluding admin businesses)"""
         try:
             from datetime import timezone
             
             # Fetch products that haven't been processed yet
             response = (
                 self.supabase_client.table("products")
-                .select("id, name, description, category, ai_name, ai_name_updated_at")
+                .select("id, name, description, category, business_id, ai_name, ai_name_updated_at")
                 .execute()
             )
 
@@ -384,17 +435,17 @@ class Products(Clients):
                 print("No products found in table.")
                 return
 
-            # Filter for products where ai_name is None or empty
+            # Filter for products where ai_name is None or empty AND not admin businesses
             products_to_normalize = [
                 row for row in response.data 
-                if not row.get("ai_name")
+                if not row.get("ai_name") and row.get("business_id") not in self.admin_business_ids
             ]
 
             if not products_to_normalize:
                 print("No new products to normalize.")
                 return
 
-            print(f"Found {len(products_to_normalize)} products to normalize\n")
+            print(f"Found {len(products_to_normalize)} products to normalize (excluding admin)\n")
             print("=" * 60)
 
             success_count = 0
@@ -445,14 +496,14 @@ class Products(Clients):
             traceback.print_exc()
 
     def product_by_business(self, product_query):
-        """Returns the number of businesses selling that product"""
+        """Returns the number of businesses selling that product (excluding admin businesses)"""
         try:
             products = self._search_products(product_query)
             
             if not products:
                 return 0
 
-            # Count unique business_ids
+            # Count unique business_ids (already filtered by _search_products)
             businesses = {row['business_id'] for row in products}
             return len(businesses)
 
@@ -462,14 +513,14 @@ class Products(Clients):
         
 
     def average_product_price(self, product_query):
-        """Returns the average price for the product queried using Supabase aggregation."""
+        """Returns the average price for the product queried (excluding admin businesses)"""
         try:
             products = self._search_products(product_query)
             
             if not products:
                 return 0
 
-            # Filter out None prices
+            # Filter out None prices (already filtered admin businesses in _search_products)
             prices = [row['price'] for row in products if row['price'] is not None]
             if not prices:
                 return 0
@@ -483,14 +534,14 @@ class Products(Clients):
 
 
     def product_sales_volume(self, product_query, period=30):
-        """Returns the total volume of units sold for that product in the last specified period (days)."""
+        """Returns the total volume of units sold for that product in the last specified period (days) (excluding admin businesses)"""
         today = datetime.now()
         period_start = today - timedelta(days=period)
         print(f"[DEBUG] Checking sales volume for product: '{product_query}'")
         print(f"[DEBUG] Period start: {period_start}, Today: {today}")
 
         try:
-            # Get matching product IDs using full-text search
+            # Get matching product IDs using full-text search (already filters admin)
             products = self._search_products(product_query)
             
             if not products:
@@ -503,7 +554,7 @@ class Products(Clients):
             # Now query orders for these product IDs
             response = (
                 self.supabase_client.table('orders')
-                .select('product_id, quantity, order_status, order_payment_status, created_at')
+                .select('product_id, quantity, business_id, order_status, order_payment_status, created_at')
                 .in_('product_id', product_ids)
                 .eq('order_status', 'completed')
                 .eq('order_payment_status', 'completed')
@@ -517,7 +568,13 @@ class Products(Clients):
                 print("[DEBUG] No completed orders found for matching products.")
                 return 0
 
-            total = sum(order.get('quantity', 0) or 0 for order in response.data)
+            # Filter out admin businesses
+            filtered_orders = [
+                order for order in response.data
+                if order.get('business_id') not in self.admin_business_ids
+            ]
+
+            total = sum(order.get('quantity', 0) or 0 for order in filtered_orders)
             print(f"[DEBUG] Total sales volume: {total}")
             return total
 
@@ -527,12 +584,12 @@ class Products(Clients):
 
         
     def total_product_revenue(self, product_query, period=30):
-        """returns te total revenue generated by that product in the specifed period"""
+        """returns the total revenue generated by that product in the specified period (excluding admin businesses)"""
         today = datetime.now()
         period_start = today - timedelta(days=period)
 
         try:
-            # Get matching product IDs using full-text search
+            # Get matching product IDs using full-text search (already filters admin)
             products = self._search_products(product_query)
             
             if not products:
@@ -543,7 +600,7 @@ class Products(Clients):
             # Query orders for these product IDs
             response = (
                 self.supabase_client.table('orders')
-                .select('product_id, total_amount, order_status, order_payment_status, created_at')
+                .select('product_id, total_amount, business_id, order_status, order_payment_status, created_at')
                 .in_('product_id', product_ids)
                 .eq('order_status', 'completed')
                 .eq('order_payment_status', 'completed')
@@ -554,7 +611,13 @@ class Products(Clients):
             if not response.data:
                 return 0
 
-            total = sum(order.get('total_amount', 0) or 0 for order in response.data)
+            # Filter out admin businesses
+            filtered_orders = [
+                order for order in response.data
+                if order.get('business_id') not in self.admin_business_ids
+            ]
+
+            total = sum(order.get('total_amount', 0) or 0 for order in filtered_orders)
             return total
 
         except Exception as e:
@@ -566,12 +629,12 @@ class Products(Clients):
     def top_location(self, product_query):
         """
         Returns the location with the highest sales (by quantity ordered)
-        for the given product (matching products.ai_name).
+        for the given product (matching products.ai_name) (excluding admin businesses).
         """
         try:
             print(f"[DEBUG] Querying top location for product: {product_query}")
 
-            # Get matching product IDs using full-text search
+            # Get matching product IDs using full-text search (already filters admin)
             products = self._search_products(product_query)
             
             if not products:
@@ -584,7 +647,7 @@ class Products(Clients):
             # Query orders with customer location
             response = (
                 self.supabase_client.table('orders')
-                .select('quantity, order_status, order_payment_status, customers(location)')
+                .select('quantity, business_id, order_status, order_payment_status, customers(location)')
                 .in_('product_id', product_ids)
                 .eq('order_status', 'completed')
                 .eq('order_payment_status', 'completed')
@@ -597,9 +660,15 @@ class Products(Clients):
                 print("[DEBUG] No matching orders found.")
                 return None
 
+            # Filter out admin businesses
+            filtered_orders = [
+                order for order in response.data
+                if order.get('business_id') not in self.admin_business_ids
+            ]
+
             location_totals: Dict[str, int] = {}
 
-            for i, order in enumerate(response.data, start=1):
+            for i, order in enumerate(filtered_orders, start=1):
                 print(f"[DEBUG] Processing order {i}: {order}")
 
                 customer = order.get('customers')
@@ -635,7 +704,7 @@ class Products(Clients):
 
 
     def product_sales_growth(self, product_query):
-        """Returns the sales growth (%) for a product comparing this month vs last month."""
+        """Returns the sales growth (%) for a product comparing this month vs last month (excluding admin businesses)"""
 
         try:
             # Current 30 days
@@ -646,7 +715,7 @@ class Products(Clients):
             sixty_days_ago = today - timedelta(days=60)
             thirty_days_ago = today - timedelta(days=30)
 
-            # Get matching product IDs using full-text search
+            # Get matching product IDs using full-text search (already filters admin)
             products = self._search_products(product_query)
             
             if not products:
@@ -657,7 +726,7 @@ class Products(Clients):
             # Query orders for previous period
             response = (
                 self.supabase_client.table('orders')
-                .select('total_amount, order_status, order_payment_status, created_at')
+                .select('total_amount, business_id, order_status, order_payment_status, created_at')
                 .in_('product_id', product_ids)
                 .eq('order_status', 'completed')
                 .eq('order_payment_status', 'completed')
@@ -669,7 +738,12 @@ class Products(Clients):
             if not response.data:
                 previous_revenue = 0
             else:
-                previous_revenue = sum(order.get('total_amount', 0) or 0 for order in response.data)
+                # Filter out admin businesses
+                filtered_orders = [
+                    order for order in response.data
+                    if order.get('business_id') not in self.admin_business_ids
+                ]
+                previous_revenue = sum(order.get('total_amount', 0) or 0 for order in filtered_orders)
 
             if previous_revenue == 0:
                 return None  # avoid division by zero
@@ -682,10 +756,10 @@ class Products(Clients):
             return None
 
     def product_market_share(self, product_query):
-        """Returns the market share (%) of a product in InXource."""
+        """Returns the market share (%) of a product in InXource (excluding admin businesses)"""
 
         try:
-            # Get matching product IDs using full-text search
+            # Get matching product IDs using full-text search (already filters admin)
             products = self._search_products(product_query)
             
             if not products:
@@ -696,7 +770,7 @@ class Products(Clients):
             # Query orders for these products
             response = (
                 self.supabase_client.table('orders')
-                .select('total_amount, order_status, order_payment_status')
+                .select('total_amount, business_id, order_status, order_payment_status')
                 .in_('product_id', product_ids)
                 .eq('order_status', 'completed')
                 .eq('order_payment_status', 'completed')
@@ -706,7 +780,12 @@ class Products(Clients):
             if not response.data:
                 product_total = 0
             else:
-                product_total = sum(order.get('total_amount', 0) or 0 for order in response.data)
+                # Filter out admin businesses
+                filtered_orders = [
+                    order for order in response.data
+                    if order.get('business_id') not in self.admin_business_ids
+                ]
+                product_total = sum(order.get('total_amount', 0) or 0 for order in filtered_orders)
 
             grand_total = self.total_revenue()
 
@@ -721,7 +800,7 @@ class Products(Clients):
             return 0
 
     def product_information_summary(self, product_query):
-        """returns a dictionary of th product summary of the queried product"""
+        """returns a dictionary of the product summary of the queried product (excluding admin businesses)"""
 
         product_summary = {}
 
@@ -734,5 +813,3 @@ class Products(Clients):
         product_summary['product_market_share'] = self.product_market_share(product_query)
 
         return product_summary
- 
-

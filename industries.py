@@ -45,14 +45,19 @@ class Industry(Clients):
         try:
             response = (
                 self.supabase_client.table('businesses')
-                .select('industry')
+                .select('industry, id')
                 .execute()
             )
 
             if not response.data:  # covers None and empty
                 return []
 
-            industries = list(set(industry['industry'] for industry in response.data if industry.get('industry')))
+            # Filter out admin businesses and get unique industries
+            industries = list(set(
+                business['industry'] 
+                for business in response.data 
+                if business.get('industry') and business.get('id') not in self.admin_business_ids
+            ))
             return industries
 
         except Exception:
@@ -62,7 +67,7 @@ class Industry(Clients):
     def list_industry_totals(self):
         """Returns a dictionary of totals for all industries."""
 
-        # Step 1: Get all completed orders
+        # Step 1: Get all completed orders (excluding admin businesses)
         orders_response = (
             self.supabase_client
             .table('orders')
@@ -70,16 +75,23 @@ class Industry(Clients):
             .eq('order_payment_status', 'completed')
             .execute()
         )
-        orders = orders_response.data or []
+        orders = [
+            o for o in (orders_response.data or [])
+            if o.get('business_id') not in self.admin_business_ids
+        ]
 
-        # Step 2: Get all businesses with their industries
+        # Step 2: Get all businesses with their industries (excluding admin)
         businesses_response = (
             self.supabase_client
             .table('businesses')
             .select('id, industry')
             .execute()
         )
-        businesses = {b['id']: b['industry'] for b in businesses_response.data or []}
+        businesses = {
+            b['id']: b['industry'] 
+            for b in (businesses_response.data or [])
+            if b['id'] not in self.admin_business_ids
+        }
 
         # Step 3: Aggregate totals per industry
         industry_totals = {}
@@ -119,23 +131,29 @@ class Industry(Clients):
             if industries is None:
                 current_response = (
                     self.supabase_client.table("orders")
-                    .select("total_amount, created_at")
+                    .select("total_amount, created_at, business_id")
                     .eq("order_payment_status", "completed")
                     .gte("created_at", start_current)
                     .execute()
                 )
-                current_orders = current_response.data or []
+                current_orders = [
+                    o for o in (current_response.data or [])
+                    if o.get('business_id') not in self.admin_business_ids
+                ]
                 current_total = sum(o["total_amount"] for o in current_orders if o.get("total_amount"))
 
                 previous_response = (
                     self.supabase_client.table("orders")
-                    .select("total_amount, created_at")
+                    .select("total_amount, created_at, business_id")
                     .eq("order_payment_status", "completed")
                     .gte("created_at", start_previous)
                     .lt("created_at", start_current)
                     .execute()
                 )
-                previous_orders = previous_response.data or []
+                previous_orders = [
+                    o for o in (previous_response.data or [])
+                    if o.get('business_id') not in self.admin_business_ids
+                ]
                 previous_total = sum(o["total_amount"] for o in previous_orders if o.get("total_amount"))
 
                 return float(compute_growth(current_total, previous_total))
@@ -146,19 +164,22 @@ class Industry(Clients):
                 # Current period
                 current_response = (
                     self.supabase_client.table("orders")
-                    .select("total_amount, created_at, businesses(industry)")
+                    .select("total_amount, created_at, business_id, businesses(industry)")
                     .eq("order_payment_status", "completed")
                     .eq("businesses.industry", industry)   # filter by joined column
                     .gte("created_at", start_current)
                     .execute()
                 )
-                current_orders = current_response.data or []
+                current_orders = [
+                    o for o in (current_response.data or [])
+                    if o.get('business_id') not in self.admin_business_ids
+                ]
                 current_total = sum(o["total_amount"] for o in current_orders if o.get("total_amount"))
 
                 # Previous period
                 previous_response = (
                     self.supabase_client.table("orders")
-                    .select("total_amount, created_at, businesses(industry)")
+                    .select("total_amount, created_at, business_id, businesses(industry)")
                     .eq("order_payment_status", "completed")
                     .eq("businesses.industry", industry)   # filter by joined column
                     .gte("created_at", start_previous)
@@ -166,7 +187,10 @@ class Industry(Clients):
                     .execute()
                 )
 
-                previous_orders = previous_response.data or []
+                previous_orders = [
+                    o for o in (previous_response.data or [])
+                    if o.get('business_id') not in self.admin_business_ids
+                ]
                 previous_total = sum(o["total_amount"] for o in previous_orders if o.get("total_amount"))
 
                 results[industry] = float(compute_growth(current_total, previous_total))
@@ -239,14 +263,17 @@ class Industry(Clients):
         Columns: month, amount
         """
         industry = industry.lower()
-        # Step 1: Get business IDs for the industry
+        # Step 1: Get business IDs for the industry (excluding admin)
         businesses_response = (
             self.supabase_client.table('businesses')
             .select('id')
             .eq('industry', industry)
             .execute()
         )
-        business_ids = [b['id'] for b in (businesses_response.data or [])]
+        business_ids = [
+            b['id'] for b in (businesses_response.data or [])
+            if b['id'] not in self.admin_business_ids
+        ]
 
         # Step 2: Collect all orders for these businesses
         all_orders = []
@@ -293,14 +320,17 @@ class Industry(Clients):
 
         industry = industry.lower()
 
-        # Step 1: Get business IDs for the industry
+        # Step 1: Get business IDs for the industry (excluding admin)
         businesses_response = (
             self.supabase_client.table('businesses')
             .select('id')
             .eq('industry', industry)
             .execute()
         )
-        business_ids = [b['id'] for b in (businesses_response.data or [])]
+        business_ids = [
+            b['id'] for b in (businesses_response.data or [])
+            if b['id'] not in self.admin_business_ids
+        ]
 
         # Step 2: Collect all customers for these businesses
         all_customers = []
@@ -343,14 +373,17 @@ class Industry(Clients):
 
         industry = industry.lower()
 
-        # Get business IDs for the industry
+        # Get business IDs for the industry (excluding admin)
         businesses_response = (
             self.supabase_client.table('businesses')
             .select('id')
             .eq('industry', industry)
             .execute()
         )
-        business_ids = [b['id'] for b in (businesses_response.data or [])]
+        business_ids = [
+            b['id'] for b in (businesses_response.data or [])
+            if b['id'] not in self.admin_business_ids
+        ]
 
         # Collect all orders for these businesses
         all_orders = []
@@ -407,14 +440,17 @@ class Industry(Clients):
             "Festive Holidays": [4, 12, 1],
         }
 
-        # Get business IDs for the industry
+        # Get business IDs for the industry (excluding admin)
         businesses_response = (
             self.supabase_client.table('businesses')
             .select('id')
             .eq('industry', industry)
             .execute()
         )
-        business_ids = [b['id'] for b in (businesses_response.data or [])]
+        business_ids = [
+            b['id'] for b in (businesses_response.data or [])
+            if b['id'] not in self.admin_business_ids
+        ]
 
         # Collect all completed orders for these businesses
         all_orders = []
@@ -459,18 +495,21 @@ class Industry(Clients):
 
 
     def industry_customer_retention_rate(self, industry):
-        """returns the customer retention rate for that indsutry"""
+        """returns the customer retention rate for that industry"""
 
-        # get the busienss ids for that industry
+        # get the business ids for that industry (excluding admin)
         businesses_response = (
             self.supabase_client.table('businesses')
             .select('id')
             .eq('industry', industry)
             .execute()
         )
-        business_ids = [b['id'] for b in (businesses_response.data or [])]
+        business_ids = [
+            b['id'] for b in (businesses_response.data or [])
+            if b['id'] not in self.admin_business_ids
+        ]
 
-        # get the the numbers from th customers table for thise busienss ids
+        # get the numbers from the customers table for these business ids
         customer_numbers = []
         for biz_id in business_ids:
             customers_response = (
@@ -482,10 +521,13 @@ class Industry(Clients):
 
             customer_numbers.extend(customers_response.data)
 
-        indsutry_numbers = [num['phone'] for num in customer_numbers]
+        industry_numbers = [num['phone'] for num in customer_numbers]
+        
+        if not industry_numbers:
+            return 0.0
         
         # Count how many times each customer appears
-        customer_counts = Counter(indsutry_numbers)
+        customer_counts = Counter(industry_numbers)
 
         total_customers = len(customer_counts)
 
@@ -495,23 +537,26 @@ class Industry(Clients):
         # Retention rate
         retention_rate = (retained_customers / total_customers) * 100
 
-        return round(retention_rate,2)
+        return round(retention_rate, 2)
     
     def industry_average_order_value(self, industry):
         """returns an average order value for that industry"""
 
-        # get business ids that belong to that indsutry
+        # get business ids that belong to that industry (excluding admin)
         businesses_response = (
             self.supabase_client.table('businesses')
             .select('id')
             .eq('industry', industry)
             .execute()
         )
-        business_ids = [b['id'] for b in (businesses_response.data or [])]
+        business_ids = [
+            b['id'] for b in (businesses_response.data or [])
+            if b['id'] not in self.admin_business_ids
+        ]
 
         orders = []
 
-        # get a list of orsers fo those busienss ids
+        # get a list of orders for those business ids
         for biz_id in business_ids:
             order_response = (
                 self.supabase_client.table('orders')
@@ -524,15 +569,12 @@ class Industry(Clients):
 
             orders.extend(order_response.data or [])
 
+        if not orders:
+            return 0.0
+
         industry_orders = [amount['total_amount'] for amount in orders]
         order_average = round(float(sum(industry_orders)/len(industry_orders)), 2)
         return order_average
     
 
 #test = Industry()
-
-
-
-
-
- 
