@@ -33,8 +33,8 @@ class Businesses(Clients):
         self.supabase_url = os.getenv('SUPABASE_URL')
         super().__init__()
 
-    def get_business_deatils(self, business_id):
-        """Returns the business details using the business ID"""
+    def get_business_details(self, business_id):
+        """Returns the business details using the business ID (excluding businesses owned by the admin user)."""
         business_details = {}
 
         try:
@@ -49,14 +49,7 @@ class Businesses(Clients):
             if not business_response.data:
                 return {}
 
-            business = business_response.data[0]  # first matching business
-            business_details['business_id'] = business.get('id')
-            business_details['business_name'] = business.get('business_name')
-            business_details['indsutry'] = business.get('industry')
-            business_details['wallet_balance'] = business.get('wallet_balance')
-            business_details['phone'] = business.get('phone')
-            business_details['is_active'] = business.get('is_active')
-            business_details['is_deleted'] = business.get('is_deleted')
+            business = business_response.data[0]
 
             # Fetch business owner
             owner_response = (
@@ -68,9 +61,14 @@ class Businesses(Clients):
 
             if not owner_response.data:
                 print("No owner found for this business.")
-                return business_details  # no owner found
+                return {}
 
             owner = owner_response.data[0]
+
+            # Exclude businesses owned by the admin user
+            if owner.get('user_id') == self.admin_user_id:
+                print("[INFO] Skipped business owned by admin user.")
+                return {}
 
             # Fetch user details
             user_response = (
@@ -79,6 +77,15 @@ class Businesses(Clients):
                 .eq('id', owner['user_id'])
                 .execute()
             )
+
+            # Build business details
+            business_details['business_id'] = business.get('id')
+            business_details['business_name'] = business.get('business_name')
+            business_details['industry'] = business.get('industry')  # fixed typo
+            business_details['wallet_balance'] = business.get('wallet_balance')
+            business_details['phone'] = business.get('phone')
+            business_details['is_active'] = business.get('is_active')
+            business_details['is_deleted'] = business.get('is_deleted')
 
             if user_response.data:
                 user = user_response.data[0]
@@ -91,6 +98,7 @@ class Businesses(Clients):
         except Exception as e:
             print(f"Error fetching business details: {e}")
             return {}
+
    
 
     def total_businesses(self):
@@ -555,5 +563,3 @@ class Businesses(Clients):
         return top_4 if top_4 else [("N/A", 0)]
 
 
-#test = Businesses()
-#print(test.get_top_performing_industries())

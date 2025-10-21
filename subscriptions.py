@@ -43,22 +43,22 @@ class Subscriptions(Clients):
     
 
     def total_revenue(self):
-        """Returns a dictionary of total revenue for all time, this year, and this month (excluding admin)."""
-        # Get all subscription records
+        """Returns total revenue for all time, this year, and this month (excluding admin user)."""
+        # Fetch subscription history
         response = (
             self.supabase_client
             .table('sunhistory')
-            .select("amount, created_at, business_id")
+            .select("amount, created_at, userid")
             .execute()
         )
 
         if not response.data:
             return {"all_time": 0, "this_year": 0, "this_month": 0}
 
-        # Filter out admin business subscriptions
+        # Exclude the admin user's data
         filtered_data = [
             record for record in response.data
-            if record.get("business_id") not in self.admin_business_ids
+            if record.get("userid") != self.admin_user_id
         ]
 
         total_all_time = 0
@@ -73,7 +73,6 @@ class Subscriptions(Clients):
             price = record.get("amount", 0)
             created_at = record.get("created_at")
 
-            # Safely handle timestamps
             if not created_at:
                 continue
 
@@ -95,20 +94,20 @@ class Subscriptions(Clients):
         }
 
 
-    def revenue_period_data(self):
-        """Returns four pandas DataFrames for revenue in the past 7 days, month, quarter, and year (excluding admin)."""
 
-        # Fetch all data
+    def revenue_period_data(self):
+        """Returns four pandas DataFrames for revenue in the past 7 days, month, quarter, and year (excluding admin user)."""
+
+        # Fetch all data from sunhistory
         response = (
             self.supabase_client
             .table("sunhistory")
-            .select("amount, created_at, business_id")
+            .select("amount, created_at, userid")
             .execute()
         )
 
         if not response.data:
-            # Return empty DataFrames if no data
-            empty_df = pd.DataFrame(columns=["amount", "created_at", "business_id"])
+            empty_df = pd.DataFrame(columns=["amount", "created_at", "userid"])
             return {
                 "past_7_days": empty_df,
                 "past_month": empty_df,
@@ -116,32 +115,37 @@ class Subscriptions(Clients):
                 "past_year": empty_df,
             }
 
-        # Filter out admin business subscriptions
+        # Filter out admin user's subscriptions
         filtered_data = [
             record for record in response.data
-            if record.get("business_id") not in self.admin_business_ids
+            if record.get("userid") != self.admin_user_id
         ]
 
         # Convert to DataFrame
         df = pd.DataFrame(filtered_data)
 
-        # Convert created_at to datetime and remove timezone info
-        df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce").dt.tz_localize(None)
+        # Ensure 'created_at' exists as a Series, even if all values are missing
+        if 'created_at' not in df.columns:
+            df = df.assign(created_at=pd.Series([pd.NaT] * len(df)))
 
-        # Define time thresholds using timezone-naive datetime
+        # Convert created_at to datetime; nulls become NaT
+        df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
+        df['created_at'] = df['created_at'].dt.tz_localize(None, ambiguous='NaT', nonexistent='NaT')
+
+        # Define time thresholds
         now = datetime.now()
         seven_days_ago = now - timedelta(days=7)
         one_month_ago = now - timedelta(days=30)
         one_quarter_ago = now - timedelta(days=90)
         one_year_ago = now - timedelta(days=365)
 
-        # Filter DataFrames by period
-        df_7_days = df[df["created_at"] >= seven_days_ago]
-        df_month = df[df["created_at"] >= one_month_ago]
-        df_quarter = df[df["created_at"] >= one_quarter_ago]
-        df_year = df[df["created_at"] >= one_year_ago]
+        # Filter DataFrames by period, ignoring rows with NaT
+        df_7_days = df[df['created_at'].notna() & (df['created_at'] >= seven_days_ago)]
+        df_month = df[df['created_at'].notna() & (df['created_at'] >= one_month_ago)]
+        df_quarter = df[df['created_at'].notna() & (df['created_at'] >= one_quarter_ago)]
+        df_year = df[df['created_at'].notna() & (df['created_at'] >= one_year_ago)]
 
-        # Return all as a dictionary
+        # Return the results
         return {
             "past_7_days": df_7_days.reset_index(drop=True),
             "past_month": df_month.reset_index(drop=True),

@@ -116,5 +116,5 @@ class Activites(Clients):
         return recent_activities
 
 
-# test = Activites()
-# print(test.get_recent_activities())
+test = Activites()
+print(test.get_recent_activities())
