@@ -1,3 +1,4 @@
+
 {% extends 'base.html' %}
 
 {% block content %}
@@ -233,13 +234,31 @@
             box-shadow: 0 6px 15px rgba(239, 68, 68, 0.3);
         }
 
-        .staff-table {
+        .btn-generate {
+            background: linear-gradient(135deg, #000, #333);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .staff-table, .referral-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 1rem;
         }
 
-        .staff-table th {
+        .staff-table th, .referral-table th {
             background: rgba(0, 0, 0, 0.03);
             padding: 0.8rem;
             text-align: left;
@@ -249,14 +268,14 @@
             border-bottom: 2px solid rgba(0, 0, 0, 0.1);
         }
 
-        .staff-table td {
+        .staff-table td, .referral-table td {
             padding: 0.8rem;
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             font-size: 0.85rem;
             color: #555;
         }
 
-        .staff-table tr:hover {
+        .staff-table tr:hover, .referral-table tr:hover {
             background: rgba(0, 0, 0, 0.02);
         }
 
@@ -490,6 +509,135 @@
             color: #999;
         }
 
+        .search-section {
+            margin-top: 1rem;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        .search-box .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .search-results {
+            margin-top: 1.5rem;
+        }
+
+        .user-result-card {
+            background: rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #000, #333);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .modal-user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .user-details h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111;
+            margin-bottom: 0.2rem;
+        }
+
+        .user-details p {
+            font-size: 0.85rem;
+            color: #666;
+            margin: 0;
+        }
+
+        .percentage-input-group {
+            position: relative;
+        }
+
+        .percentage-label {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            font-weight: 600;
+        }
+
+        .percentage-input-group input {
+            padding-right: 2.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 0.3rem;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .code-display {
+            margin-top: 0.5rem;
+            padding: 0.8rem;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 1rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -526,17 +674,27 @@
                 grid-template-columns: 1fr;
             }
 
-            .staff-table {
+            .staff-table, .referral-table {
                 font-size: 0.75rem;
             }
 
-            .staff-table th,
-            .staff-table td {
+            .staff-table th, .referral-table th,
+            .staff-table td, .referral-table td {
                 padding: 0.5rem;
             }
 
             .settings-tabs {
                 overflow-x: scroll;
+            }
+
+            .search-box {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box .btn-primary {
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
@@ -557,11 +715,11 @@
             <button class="tab-btn" data-tab="staff">
                 <i class="fas fa-users-cog"></i> Staff Management
             </button>
+            <button class="tab-btn" data-tab="referrals">
+                <i class="fas fa-user-friends"></i> Referrals
+            </button>
             <button class="tab-btn" data-tab="platform">
                 <i class="fas fa-cog"></i> Platform Settings
-            </button>
-            <button class="tab-btn" data-tab="notifications">
-                <i class="fas fa-bell"></i> Notifications
             </button>
             <button class="tab-btn" data-tab="security">
                 <i class="fas fa-shield-alt"></i> Security
@@ -586,197 +744,6 @@
                         <div class="form-group">
                             <label class="form-label">Email</label>
                             <input type="email" name="email" class="form-input" value="{{ email }}">
-                        </div>
-                        <button type="submit" class="btn-primary">
-                            <i class="fas fa-save"></i>
-                            Save Changes
-                        </button>
-                    </form>
-                </div>
-
-                <div class="settings-card">
-                    <div class="card-header">
-                        <div class="card-icon">
-                            <i class="fas fa-lock"></i>
-                        </div>
-                        <h3 class="card-title">Change Password</h3>
-                    </div>
-                    <form method="POST" action="{{ url_for('update_password') }}">
-                        <div class="form-group">
-                            <label class="form-label">Current Password</label>
-                            <input type="password" name="current_password" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">New Password</label>
-                            <input type="password" name="new_password" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Confirm New Password</label>
-                            <input type="password" name="confirm_password" class="form-input" required>
-                        </div>
-                        <button type="submit" class="btn-primary">
-                            <i class="fas fa-key"></i>
-                            Update Password
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Staff Management Tab -->
-        <div class="tab-content" id="staff">
-            <div class="settings-card">
-                <div class="card-header">
-                    <div class="card-icon">
-                        <i class="fas fa-user-plus"></i>
-                    </div>
-                    <h3 class="card-title">Add Staff Member</h3>
-                </div>
-                <form method="POST" action="{{url_for('add_staff')}}">
-                    <div class="settings-grid">
-                        <div>
-                            <div class="form-group">
-                                <label class="form-label">Username</label>
-                                <input type="text" name="username" class="form-input" placeholder="Enter username" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Email</label>
-                                <input type="email" name="email" class="form-input" placeholder="Enter email address" required>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="form-group">
-                                <label class="form-label">NRC</label>
-                                <input type="text" name="nrc" class="form-input" placeholder="Enter nrc or passport id" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Default Password</label>
-                                <input type="password" name="password" class="form-input" placeholder="Set default password" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Role</label>
-                        <select name="role" class="form-input" required>
-                            <option value="finance">finance</option>
-                            <option value="admin">admin</option>
-                            <option value="dev">dev</option>
-                            <option value="marketing">marketing</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn-primary">
-                        <i class="fas fa-user-plus"></i>
-                        Add Staff Member
-                    </button>
-                </form>
-            </div>
-
-            <div class="settings-card" style="margin-top: 1.5rem;">
-    <div class="card-header">
-        <div class="card-icon">
-            <i class="fas fa-users"></i>
-        </div>
-        <h3 class="card-title">Current Staff Members</h3>
-    </div>
-    <table class="staff-table">
-        <thead>
-            <tr>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>NRC Number</th>
-                <th>Created</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for user in staff %}
-            <tr data-user-id="{{ user.id }}">
-                <td><strong>{{ user.user_name }}</strong></td>
-                <td>{{ user.email }}</td>
-                <td>
-                    <span class="badge badge-{{ user.role }}">{{ user.role|upper }}</span>
-                </td>
-                <td>{{ user.nrc_number or 'N/A' }}</td>
-                <td>{{ user.created_at }}</td>
-                <td>
-                    <div class="action-btns">
-                        <button class="btn-icon" onclick="editStaff('{{ user.id }}')" title="Edit" type="button">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn-icon danger" onclick="deleteStaff('{{ user.id }}')" title="Delete" type="button">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-        <!-- Platform Settings Tab -->
-        <div class="tab-content" id="platform">
-            <div class="settings-grid">
-                <div class="settings-card">
-                    <div class="card-header">
-                        <div class="card-icon">
-                            <i class="fas fa-percentage"></i>
-                        </div>
-                        <h3 class="card-title">Commission Settings</h3>
-                    </div>
-                    <form method="POST" action="/settings/update-commission">
-                        <div class="form-group">
-                            <label class="form-label">Platform Commission (%)</label>
-                            <input type="number" name="commission_rate" class="form-input" value="15.00" step="0.01" min="0" max="100" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Minimum Withdrawal Amount ($)</label>
-                            <input type="number" name="min_withdrawal" class="form-input" value="50.00" step="0.01" min="0" required>
-                        </div>
-                        <button type="submit" class="btn-primary">
-                            <i class="fas fa-save"></i>
-                            Save Settings
-                        </button>
-                    </form>
-                </div>
-
-                <div class="settings-card">
-                    <div class="card-header">
-                        <div class="card-icon">
-                            <i class="fas fa-toggle-on"></i>
-                        </div>
-                        <h3 class="card-title">Platform Features</h3>
-                    </div>
-                    <form method="POST" action="/settings/update-features">
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <h4>New Vendor Registration</h4>
-                                <p>Allow new vendors to register on the platform</p>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" name="vendor_registration" value="1" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <h4>Product Approval Required</h4>
-                                <p>Require admin approval for new products</p>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" name="product_approval" value="1" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <h4>Maintenance Mode</h4>
-                                <p>Put the platform in maintenance mode</p>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" name="maintenance_mode" value="1">
-                                <span class="toggle-slider"></span>
-                            </label>
                         </div>
                         <button type="submit" class="btn-primary" style="margin-top: 1rem;">
                             <i class="fas fa-save"></i>
@@ -824,65 +791,389 @@
             </div>
         </div>
 
-        <!-- Notifications Tab -->
-        <div class="tab-content" id="notifications">
+        <!-- Referrals Tab -->
+        <div class="tab-content" id="referrals">
+            <!-- Search Section -->
             <div class="settings-card">
                 <div class="card-header">
                     <div class="card-icon">
-                        <i class="fas fa-bell"></i>
+                        <i class="fas fa-search"></i>
                     </div>
-                    <h3 class="card-title">Email Notifications</h3>
+                    <h3 class="card-title">Find User for Referral Assignment</h3>
                 </div>
-                <form method="POST" action="/settings/update-notifications">
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <h4>Withdrawal Requests</h4>
-                            <p>Get notified about new withdrawal requests</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" name="notify_withdrawal" value="1" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <h4>New Business Registration</h4>
-                            <p>Email alerts for new business signups</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" name="notify_new_business" value="1" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <h4>Product Submissions</h4>
-                            <p>Notifications for new product listings</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" name="notify_product" value="1">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <h4>Daily Summary Report</h4>
-                            <p>Receive daily platform activity summary</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" name="notify_daily_summary" value="1" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <button type="submit" class="btn-primary" style="margin-top: 1rem;">
-                        <i class="fas fa-save"></i>
-                        Save Notification Settings
-                    </button>
-                </form>
-            </div>
-        </div>
 
-        <!-- Security Tab -->
+                <div class="search-section">
+                    <form method="POST" action="{{ url_for('search_user') }}">
+                        <div class="search-box">
+                            <div class="form-group">
+                                <label class="form-label">User Email Address</label>
+                                <input 
+                                    type="email" 
+                                    class="form-input" 
+                                    name="query"
+                                    value="{{ search_query if search_query else '' }}"
+                                    placeholder="Enter user email to search..."
+                                    required
+                                >
+                            </div>
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-search"></i>
+                                Search User
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Search Results -->
+                    <div class="search-results" id="searchResults">
+                        {% if search_error %}
+                            <div class="alert alert-warning" style="margin-top: 1rem;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>{{ search_error }}</span>
+                            </div>
+                        {% elif search_message %}
+                            <div class="alert alert-warning" style="margin-top: 1rem;">
+                                <i class="fas fa-info-circle"></i>
+                                <span>{{ search_message }}</span>
+                            </div>
+                        {% elif search_results %}
+                            {% for user in search_results %}
+                                <div class="user-result-card">
+                                    <div class="user-info">
+                                        <div class="user-avatar">
+                                            {% set name_parts = user.name.split() %}
+                                            {% if name_parts|length >= 2 %}
+                                                {{ name_parts[0][0] }}{{ name_parts[1][0] }}
+                                            {% else %}
+                                                {{ user.name[0:2] }}
+                                            {% endif %}
+                                        </div>
+                                        <div class="user-details">
+                                            <h4>{{ user.name }}</h4>
+                                            <p>{{ user.email }}</p>
+                                            {% if user.ref_code %}
+                                                <p style="font-size: 0.75rem; color: #666; margin-top: 0.2rem;">
+                                                    <i class="fas fa-tag"></i> Already has code: <strong>{{ user.ref_code }}</strong>
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <button 
+                                        class="btn-primary" 
+                                        onclick="openAssignModal('{{ user.id }}', '{{ user.email }}', '{{ user.name }}')"
+                                        {% if user.ref_code %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}
+                                        type="button"
+                                    >
+                                        <i class="fas fa-{% if user.ref_code %}check{% else %}plus{% endif %}"></i>
+                                        {% if user.ref_code %}Code Assigned{% else %}Assign Code{% endif %}
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+            <!-- Active Referrals Section -->
+                <div class="settings-card" style="margin-top: 1.5rem;">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h3 class="card-title">Active Referral Partners</h3>
+                    </div>
+                    
+                    <div id="referralTableContainer">
+                        {% if current_referrals %}
+                        <table class="referral-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Referral Code</th>
+                                    <th>Commission %</th>
+                                    <th>Total Earnings</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="referralTableBody">
+                                {% for user in current_referrals %}
+                                <tr>
+                                    <td><strong>{{ user.name }}</strong></td>
+                                    <td>{{ user.email }}</td>
+                                    <td>
+                                        <code style="background: rgba(0,0,0,0.05); padding: 0.2rem 0.5rem; border-radius: 4px;">
+                                            {% if user.referral_codes %}
+                                                {{ user.referral_codes.ref_code }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </code>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-active">
+                                            {% if user.referral_codes %}
+                                                {{ user.referral_codes.percentage_cut|round(1) }}%
+                                            {% else %}
+                                                0%
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong>K {{ "%.2f"|format(user.total_earned or 0) }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-active">Active</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-btns">
+                                            <button class="btn-icon" onclick="editReferral('{{ user.id }}')" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn-icon danger" onclick="deleteReferral('{{ user.id }}')" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <div style="padding: 2rem; text-align: center; color: #666;">
+                            <i class="fas fa-users" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                            <p>No active referral partners found.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+
+        
+
+    <!-- Assign Referral Modal -->
+    <div class="modal" id="assignReferralModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Assign Referral Code</h3>
+                <button class="btn-close" onclick="closeAssignModal()" type="button">&times;</button>
+            </div>
+
+            <div class="modal-user-info">
+                <div class="user-avatar" id="modalUserAvatar">JD</div>
+                <div class="user-details">
+                    <h4 id="modalUserName">John Doe</h4>
+                    <p id="modalUserEmail">john.doe@example.com</p>
+                </div>
+            </div>
+
+            <form id="assignReferralForm" method="POST" action="{{ url_for('assign_referral') }}">
+                <!-- Hidden field for user_id -->
+                <input type="hidden" name="user_id" id="assignUserId">
+                
+                <div class="form-group">
+                    <label class="form-label">Referral Code</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input 
+                            type="text" 
+                            class="form-input" 
+                            id="referralCode"
+                            name="ref_code"
+                            placeholder="Enter custom code or generate"
+                            style="flex: 1;"
+                            required
+                        >
+                        <button type="button" class="btn-generate" onclick="generateCode()">
+                            <i class="fas fa-random"></i>
+                            Generate
+                        </button>
+                    </div>
+                    <div class="code-display" id="codePreview" style="display: none;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Commission Percentage</label>
+                    <div class="percentage-input-group">
+                        <input 
+                            type="number" 
+                            class="form-input" 
+                            id="commissionPercentage"
+                            name="percentage"
+                            placeholder="Enter percentage (e.g., 10)"
+                            min="1"
+                            max="100"
+                            step="0.01"
+                            oninput="updateEarningPreview()"
+                            required
+                        >
+                        <span class="percentage-label">%</span>
+                    </div>
+                    <p style="font-size: 0.75rem; color: #666; margin-top: 0.5rem;">
+                        <i class="fas fa-info-circle"></i> 
+                        Example: 10% on K100 purchase = K10 earning
+                    </p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-value" id="examplePurchase">K 100</div>
+                        <div class="stat-label">Example Purchase</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="exampleEarning">K 0</div>
+                        <div class="stat-label">User Earning</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.8rem; margin-top: 1.5rem;">
+                    <button type="submit" class="btn-primary" style="flex: 1;">
+                        <i class="fas fa-check"></i>
+                        Assign Referral Code
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="closeAssignModal()">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Referral Modal -->
+    <div class="modal" id="editReferralModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Referral Settings</h3>
+                <button class="btn-close" onclick="closeEditReferralModal()">&times;</button>
+            </div>
+
+            <div class="modal-user-info">
+                <div class="user-avatar">JM</div>
+                <div class="user-details">
+                    <h4>John Mwanza</h4>
+                    <p>john@example.com</p>
+                </div>
+            </div>
+
+            <form id="editReferralForm">
+                <div class="form-group">
+                    <label class="form-label">Referral Code</label>
+                    <input 
+                        type="text" 
+                        class="form-input" 
+                        value="REF-JM2024"
+                        readonly
+                        style="background: rgba(0,0,0,0.05);"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Commission Percentage</label>
+                    <div class="percentage-input-group">
+                        <input 
+                            type="number" 
+                            class="form-input" 
+                            value="15"
+                            min="1"
+                            max="100"
+                            step="0.01"
+                        >
+                        <span class="percentage-label">%</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select class="form-input">
+                        <option value="active" selected>Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 0.8rem; margin-top: 1.5rem;">
+                    <button type="submit" class="btn-primary" style="flex: 1;">
+                        <i class="fas fa-save"></i>
+                        Save Changes
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="closeEditReferralModal()">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Staff Modal -->
+    <div class="modal" id="editStaffModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Staff Member</h3>
+                <button class="btn-close" onclick="closeModal('editStaffModal')" type="button">&times;</button>
+            </div>
+            <form method="POST" action="/settings/edit-staff">
+                <input type="hidden" name="staff_id" id="edit_staff_id">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" id="edit_username" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" id="edit_email" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <select name="role" id="edit_role" class="form-input" required>
+                        <option value="admin">admin</option>
+                        <option value="finance">finance</option>
+                        <option value="dev">dev</option>
+                        <option value="marketing">marketing</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">NRC</label>
+                    <input type="text" name="nrc" id="edit_nrc" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select name="is_active" id="edit_is_active" class="form-input" required>
+                        <option value="True">Active</option>
+                        <option value="False">Inactive</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 0.8rem; margin-top: 1.5rem;">
+                    <button type="submit" class="btn-primary" style="flex: 1;">
+                        <i class="fas fa-save"></i>
+                        Save Changes
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="closeModal('editStaffModal')">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="deleteStaffModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Confirm Deletion</h3>
+                <button class="btn-close" onclick="closeModal('deleteStaffModal')" type="button">&times;</button>
+            </div>
+            <p style="color: #666; margin-bottom: 1.5rem;">Are you sure you want to delete this staff member? This action cannot be undone.</p>
+            <form method="POST" action="/settings/delete-staff">
+                <input type="hidden" name="staff_id" id="delete_staff_id">
+                <div style="display: flex; gap: 0.8rem;">
+                    <button type="submit" class="btn-danger" style="flex: 1;">
+                        <i class="fas fa-trash"></i>
+                        Delete Staff Member
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="closeModal('deleteStaffModal')">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Security Tab -->
         <div class="tab-content" id="security">
             <div class="settings-grid">
                 <div class="settings-card">
@@ -1022,221 +1313,184 @@
         </div>
     </div>
 
-    <!-- Edit Staff Modal -->
-    <div class="modal" id="editStaffModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Edit Staff Member</h3>
-                <button class="btn-close" onclick="closeModal('editStaffModal')" type="button">&times;</button>
-            </div>
-            <form method="POST" action="/settings/edit-staff">
-                <input type="hidden" name="staff_id" id="edit_staff_id">
-                <div class="form-group">
-                    <label class="form-label">Username</label>
-                    <input type="text" name="username" id="edit_username" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" name="email" id="edit_email" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Role</label>
-                    <select name="role" id="edit_role" class="form-input" required>
-                        <option value="admin">admin</option>
-                        <option value="finance">finance</option>
-                        <option value="dev">dev</option>
-                        <option value="marketing">marketing</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">NRC</label>
-                    <input type="" name="nrc" id="edit_nrc" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Status</label>
-                    <select name="is_active" id="edit_is_active" class="form-input" required>
-                        <option value="True">Active</option>
-                        <option value="False">Inactive</option>
-                    </select>
-                </div>
-                <div style="display: flex; gap: 0.8rem; margin-top: 1.5rem;">
-                    <button type="submit" class="btn-primary" style="flex: 1;">
-                        <i class="fas fa-save"></i>
-                        Save Changes
-                    </button>
-                    <button type="button" class="btn-secondary" onclick="closeModal('editStaffModal')">
-                        Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div class="modal" id="deleteStaffModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Confirm Deletion</h3>
-                <button class="btn-close" onclick="closeModal('deleteStaffModal')" type="button">&times;</button>
-            </div>
-            <p style="color: #666; margin-bottom: 1.5rem;">Are you sure you want to delete this staff member? This action cannot be undone.</p>
-            <form method="POST" action="/settings/delete-staff">
-                <input type="hidden" name="staff_id" id="delete_staff_id">
-                <div style="display: flex; gap: 0.8rem;">
-                    <button type="submit" class="btn-danger" style="flex: 1;">
-                        <i class="fas fa-trash"></i>
-                        Delete Staff Member
-                    </button>
-                    <button type="button" class="btn-secondary" onclick="closeModal('deleteStaffModal')">
-                        Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script>
-        // Tab switching
-        document.addEventListener('DOMContentLoaded', function() {
-            const tabBtns = document.querySelectorAll('.tab-btn');
-            const tabContents = document.querySelectorAll('.tab-content');
+    // Tab switching
+    document.addEventListener('DOMContentLoaded', function() {
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
 
-            tabBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const tabId = this.getAttribute('data-tab');
+        // Function to activate a specific tab
+        function activateTab(tabId) {
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            const targetBtn = document.querySelector(`[data-tab="${tabId}"]`);
+            const targetContent = document.getElementById(tabId);
+            
+            if (targetBtn && targetContent) {
+                targetBtn.classList.add('active');
+                targetContent.classList.add('active');
+            }
+        }
 
-                    // Remove active class from all tabs and contents
-                    tabBtns.forEach(b => b.classList.remove('active'));
-                    tabContents.forEach(c => c.classList.remove('active'));
+        // Check for hash in URL and activate that tab
+        const hash = window.location.hash.substring(1);
+        if (hash) {
+            activateTab(hash);
+        }
 
-                    // Add active class to clicked tab and corresponding content
-                    this.classList.add('active');
-                    document.getElementById(tabId).classList.add('active');
-                });
-            });
-
-            // Toggle switches - visual feedback only
-            const toggleSwitches = document.querySelectorAll('.toggle-switch input');
-            toggleSwitches.forEach(toggle => {
-                toggle.addEventListener('change', function() {
-                    const settingItem = this.closest('.setting-item');
-                    if (this.checked) {
-                        settingItem.style.backgroundColor = 'rgba(16, 185, 129, 0.05)';
-                        setTimeout(() => {
-                            settingItem.style.backgroundColor = '';
-                        }, 300);
-                    }
-                });
+        // Tab click handlers
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                activateTab(tabId);
+                window.location.hash = tabId;
             });
         });
 
-        // Modal functions - only for UI control
-        function editStaff(staffId) {
-            document.getElementById('editStaffModal').classList.add('active');
-            document.getElementById('edit_staff_id').value = staffId;
-            
-            // Example: Pre-fill form with data (in real app, this would come from server)
-            document.getElementById('edit_username').value = 'staff_user';
-            document.getElementById('edit_email').value = 'staff@inxource.com';
-            document.getElementById('edit_role').value = 'staff';
-            document.getElementById('edit_is_active').value = '1';
-        }
-
-        function deleteStaff(staffId) {
-            document.getElementById('deleteStaffModal').classList.add('active');
-            document.getElementById('delete_staff_id').value = staffId;
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
-        }
-
-        // Close modal when clicking outside
-        window.addEventListener('click', function(e) {
-            if (e.target.classList.contains('modal')) {
-                e.target.classList.remove('active');
+        // Handle browser back/forward buttons
+        window.addEventListener('hashchange', function() {
+            const hash = window.location.hash.substring(1);
+            if (hash) {
+                activateTab(hash);
             }
         });
 
-        // Add animation to cards on hover
-        const settingsCards = document.querySelectorAll('.settings-card');
-        settingsCards.forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-3px)';
-            });
-            
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = '';
-            });
-        });
-
-        // Auto-hide success alerts after 5 seconds
-        setTimeout(() => {
-            const alerts = document.querySelectorAll('.alert-success');
-            alerts.forEach(alert => {
-                alert.style.transition = 'opacity 0.5s ease';
-                alert.style.opacity = '0';
-                setTimeout(() => alert.remove(), 500);
-            });
-        }, 5000);
-
-        // Check if current user is super and show/hide action buttons
-        function initializeStaffPermissions(currentUserIdsSuper) {
-            const actionButtons = document.querySelectorAll('.action-btns');
-            
-            // If user is not super, hide all action buttons
-            if (!currentUserIdsSuper) {
-                actionButtons.forEach(button => {
-                    button.style.display = 'none';
-                });
-                return;
-            }
-            
-            // If user is super, check each row and hide buttons for super role accounts
-            const staffRows = document.querySelectorAll('tbody tr');
-            staffRows.forEach((row, index) => {
-                const roleCell = row.querySelector('td:nth-child(3)'); // Role is in 3rd column
-                const actionCell = row.querySelector('.action-btns');
-                
-                if (roleCell && actionCell) {
-                    const roleText = roleCell.textContent.trim().toUpperCase();
-                    
-                    // Hide buttons if the staff member's role is "SUPER"
-                    if (roleText === 'SUPER') {
-                        actionCell.style.display = 'none';
-                    }
+        // Toggle switches - visual feedback only
+        const toggleSwitches = document.querySelectorAll('.toggle-switch input');
+        toggleSwitches.forEach(toggle => {
+            toggle.addEventListener('change', function() {
+                const settingItem = this.closest('.setting-item');
+                if (this.checked) {
+                    settingItem.style.backgroundColor = 'rgba(16, 185, 129, 0.05)';
+                    setTimeout(() => {
+                        settingItem.style.backgroundColor = '';
+                    }, 300);
                 }
             });
-        }
-
-        // Call this function when the page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // This will be passed from your Flask template
-            initializeStaffPermissions(currentUserIdsSuper);
         });
+    });
 
-        function deleteStaff(userId) {
-            if (confirm('Are you sure you want to delete this staff member?')) {
-                fetch(`/delete_staff/${userId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => {
-                    if (response.redirected) {
-                        // Flask redirected us (success or error)
-                        window.location.href = response.url;
-                    }
-                    return response.json();
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while deleting the staff member.');
-                });
-            }
+    // Modal functions - UI only, NO form submission handling
+    function openAssignModal(userId, email, name) {
+        document.getElementById('assignReferralModal').classList.add('active');
+        document.getElementById('modalUserEmail').textContent = email;
+        document.getElementById('modalUserName').textContent = name;
+        
+        // Set the user_id in the hidden field
+        document.getElementById('assignUserId').value = userId;
+        
+        // Set initials in avatar
+        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase();
+        document.getElementById('modalUserAvatar').textContent = initials;
+        
+        console.log('Modal opened for user_id:', userId);
+    }
+
+    function closeAssignModal() {
+        document.getElementById('assignReferralModal').classList.remove('active');
+        document.getElementById('assignReferralForm').reset();
+        document.getElementById('codePreview').style.display = 'none';
+        document.getElementById('exampleEarning').textContent = 'K 0';
+    }
+
+    function generateCode() {
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = 'REF-';
+        for (let i = 0; i < 8; i++) {
+            code += characters.charAt(Math.floor(Math.random() * characters.length));
         }
-    </script>
+        
+        document.getElementById('referralCode').value = code;
+        const codePreview = document.getElementById('codePreview');
+        codePreview.textContent = code;
+        codePreview.style.display = 'block';
+    }
+
+    function updateEarningPreview() {
+        const percentage = document.getElementById('commissionPercentage').value;
+        if (percentage) {
+            const earning = (100 * percentage / 100).toFixed(2);
+            document.getElementById('exampleEarning').textContent = `K ${earning}`;
+        } else {
+            document.getElementById('exampleEarning').textContent = 'K 0';
+        }
+    }
+
+    function editReferral(referralId) {
+        document.getElementById('editReferralModal').classList.add('active');
+    }
+
+    function closeEditReferralModal() {
+        document.getElementById('editReferralModal').classList.remove('active');
+    }
+
+    function deleteReferral(referralId) {
+        if (confirm('Are you sure you want to delete this referral? This action cannot be undone.')) {
+            console.log('Deleting referral:', referralId);
+            // Add your deletion logic here via a form submission to Flask
+        }
+    }
+
+    function editStaff(staffId) {
+        document.getElementById('editStaffModal').classList.add('active');
+        document.getElementById('edit_staff_id').value = staffId;
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+    }
+
+    function deleteStaff(userId) {
+        if (confirm('Are you sure you want to delete this staff member?')) {
+            fetch(`/delete_staff/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                }
+                return response.json();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the staff member.');
+            });
+        }
+    }
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal')) {
+            e.target.classList.remove('active');
+        }
+    });
+
+    // Add animation to cards on hover
+    const settingsCards = document.querySelectorAll('.settings-card');
+    settingsCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-3px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+        });
+    });
+
+    // Auto-hide success alerts after 5 seconds
+    setTimeout(() => {
+        const alerts = document.querySelectorAll('.alert-success');
+        alerts.forEach(alert => {
+            alert.style.transition = 'opacity 0.5s ease';
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 500);
+        });
+    }, 5000);
+</script>
 </body>
 </html>
-{% endblock %}
+{% endblock %} 

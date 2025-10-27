@@ -18,6 +18,7 @@ from settings import SettingsManager
 from subscriptions import Subscriptions
 from auth import Auth
 from activites import Activites
+from referrals import Referrals
 
 from clients import Clients
 
@@ -43,6 +44,7 @@ settings_manager = SettingsManager()
 Subscription_manager = Subscriptions()
 auth_manager = Auth()
 activity_manager = Activites()
+referrals_manager = Referrals()
 
 # Configure logger with environment-based control
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
@@ -1395,12 +1397,15 @@ def settings():
     
     staff = auth_manager.load_staff()
 
+    exisitng_referrals = referrals_manager.load_active_referrals() 
+
     return render_template(
         "settings.html",
         username=username,
         email=email,
         staff=staff,
-        is_user_super=is_user_super  # Pass this to template
+        is_user_super=is_user_super, 
+        current_referrals=exisitng_referrals 
     )
 
 @app.route('/update_profile', methods=["POST","GET"])
@@ -1611,6 +1616,87 @@ def edit_staff(staff_id):
         flash("An error occurred while updating staff member.", "error")
 
     return redirect(url_for('settings'))
+
+
+@app.route('/referrals')
+def referrals():
+    # load exisiting referalls
+    exisitng_referrals = referrals_manager.load_active_referrals()
+
+    return render_template('settings.html', 
+                    active_tab='referrals',  
+                    username=session.get('username'),
+                    current_referrals = exisitng_referrals,
+                    email=session.get('email')
+                )
+
+
+@app.route('/referrals/search_user', methods=['GET', 'POST'])
+def search_user():
+    exisitng_referrals = referrals_manager.load_active_referrals()
+    if request.method == 'POST':
+        query = request.form.get('query')
+        try:
+            user_details = referrals_manager.search_user(query)
+            if user_details:
+                return render_template('settings.html', 
+                    search_results=user_details,
+                    search_query=query,
+                    active_tab='referrals',  
+                    username=session.get('username'),
+                    current_referrals = exisitng_referrals,
+                    email=session.get('email')
+                )
+            else:
+                return render_template('settings.html',
+                    search_message='No user found matching the query',
+                    search_query=query,
+                    active_tab='referrals',  
+                    username=session.get('username'),
+                    current_referrals = exisitng_referrals,
+                    email=session.get('email')
+                )
+        except Exception as e:
+            logger.error(f"Error searching for user '{query}': {str(e)}", exc_info=True)
+            return render_template('settings.html',
+                search_error=f'An error occurred: {str(e)}',
+                search_query=query,
+                active_tab='referrals',  
+                username=session.get('username'),
+                current_referrals = exisitng_referrals,
+                email=session.get('email')
+            )
+    
+    return redirect(url_for('settings'))
+
+
+@app.route('/referrals/assign_referral', methods=['POST', 'GET'])
+def assign_referral():
+    if request.method == 'POST':
+        user_id = request.form.get('user_id')
+        ref_code = request.form.get('ref_code')
+        percentage = request.form.get('percentage')
+        
+        logger.info(f"Attempting to assign referral - user_id: {user_id}, ref_code: {ref_code}, percentage: {percentage}")
+        
+        if not user_id or not ref_code or not percentage:
+            flash("Missing required fields. Please fill in all information.", "error")
+            return redirect(url_for('settings') + '#referrals')
+        
+        try:
+            result = referrals_manager.assign_referral(user_id, ref_code, percentage)
+            if result:
+                flash(f"Referral code '{ref_code}' assigned successfully!", "success")
+            else:
+                flash("Failed to assign referral code. It might already exist.", "error")
+        except Exception as e:
+            logger.error(f"Error assigning referral code '{ref_code}' to user '{user_id}': {str(e)}", exc_info=True)
+            flash(f"An error occurred: {str(e)}", "error")
+                
+        return redirect(url_for('settings') + '#referrals')
+         
+    return redirect(url_for('settings'))
+
 
 
 # other routes and methods in between
