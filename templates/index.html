@@ -488,12 +488,13 @@
             <div class="stat-card info">
                 <div class="stat-header">
                     <div class="stat-icon info">
-                        <i class="fas fa-dollar-sign"></i>
+                        <span style="font-weight: bold; font-size: 20px;">K</span>
                     </div>
                 </div>
-                <div class="stat-value">{{revenues["all_time"]}}</div>
+                <div class="stat-value">K{{ revenues["all_time"] }}</div>
                 <div class="stat-label">Total Revenue</div>
             </div>
+
 
             <div class="stat-card primary">
                 <div class="stat-header">
@@ -731,7 +732,7 @@
                             },
                             callbacks: {
                                 label: function(context) {
-                                    return 'Revenue: $' + context.parsed.y.toFixed(2);
+                                    return 'Revenue: K' + context.parsed.y.toFixed(2);
                                 }
                             }
                         }
@@ -741,7 +742,7 @@
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value) {
-                                    return '$' + value.toFixed(0);
+                                    return 'K' + value.toFixed(0);
                                 },
                                 font: {
                                     size: 11
