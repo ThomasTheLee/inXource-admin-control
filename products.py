@@ -309,14 +309,31 @@ class Products(Clients):
         except Exception as e:
             print(f"Exception: {e}")
             return None
-        
-    
+
     def product_ranking(self, method=settings_manager.product_performance_by):
         """
-        Returns a dictionary of product performance ranked by the specified method in settings.
-        method can be either 'volume' (total quantity sold) or 'revenue' (total sales amount).
-        Excludes admin businesses.
+        Returns product performance ranked by 'volume' (qty sold) or 'revenue'.
+        EXCLUDES ALL businesses belonging to admin users.
+        NULL-safe for quantity and total_amount.
         """
+
+        admin_user_id = self.admin_user_id
+
+        # ------------------------------------------------------------
+        # 1. Get owners → business_id mapping
+        # ------------------------------------------------------------
+        owners_resp = (
+            self.supabase_client
+            .table("business_owners")
+            .select("business_id, user_id")
+            .execute()
+        )
+
+        owners_map = {o["business_id"]: o["user_id"] for o in (owners_resp.data or [])}
+
+        # ------------------------------------------------------------
+        # 2. Fetch all completed orders with product info
+        # ------------------------------------------------------------
         order_response = (
             self.supabase_client.table('orders')
             .select('product_id, quantity, total_amount, business_id, products(name, category)')
@@ -325,18 +342,36 @@ class Products(Clients):
             .execute()
         )
 
-        # Filter out admin businesses
-        data = [
-            order for order in (order_response.data or [])
-            if order.get('business_id') not in self.admin_business_ids
-        ]
+        raw_orders = order_response.data or []
 
+        # ------------------------------------------------------------
+        # 3. Exclude orders belonging to admin-owned businesses
+        # ------------------------------------------------------------
+        orders = []
+        for order in raw_orders:
+            owner_id = owners_map.get(order.get("business_id"))
+            if owner_id == admin_user_id:
+                continue
+            orders.append(order)
+
+        # ------------------------------------------------------------
+        # 4. Build performance dictionary
+        # ------------------------------------------------------------
         performance = {}
 
-        for order in data:
-            product_id = order["product_id"]
-            product_name = order["products"]["name"] if "products" in order else None
-            product_category = order["products"]["category"] if "products" in order else "unknown"
+        for order in orders:
+            product_id = order.get("product_id")
+            if not product_id:
+                continue
+
+            # safer nested product info
+            product_data = order.get("products") or {}
+            product_name = product_data.get("name", "Unknown Product")
+            product_category = product_data.get("category", "unknown")
+
+            # sanitize quantity and amount (protect against None)
+            qty = order.get("quantity") or 0
+            revenue = order.get("total_amount") or 0.0
 
             if product_id not in performance:
                 performance[product_id] = {
@@ -346,22 +381,23 @@ class Products(Clients):
                     "category": product_category,
                 }
 
-            performance[product_id]["quantity"] += order.get("quantity", 0)
-            performance[product_id]["revenue"] += order.get("total_amount", 0.0)
+            # SAFE — no more TypeError
+            performance[product_id]["quantity"] += qty
+            performance[product_id]["revenue"] += revenue
 
-        # Choose sorting method
+        # ------------------------------------------------------------
+        # 5. Rank results
+        # ------------------------------------------------------------
         if method == "volume":
             ranked = dict(
                 sorted(performance.items(), key=lambda x: x[1]["quantity"], reverse=True)
             )
-        else:  # default to revenue
+        else:  # revenue
             ranked = dict(
                 sorted(performance.items(), key=lambda x: x[1]["revenue"], reverse=True)
             )
 
         return ranked
-    
-
 
     def ai_product_naming(self, name, description, category):
         """Returns a generic, searchable product type for classification using AI"""
@@ -623,66 +659,96 @@ class Products(Clients):
         except Exception as e:
             print(f"Exception: {e}")
             return 0
-        
-    
 
     def top_location(self, product_query):
         """
         Returns the location with the highest sales (by quantity ordered)
-        for the given product (matching products.ai_name) (excluding admin businesses).
+        for the given product (matching products.ai_name).
+        EXCLUDES ALL businesses owned by admin users.
         """
         try:
             print(f"[DEBUG] Querying top location for product: {product_query}")
 
-            # Get matching product IDs using full-text search (already filters admin)
+            # ----------------------------------------------------
+            # 1. Get admin user_id
+            # ----------------------------------------------------
+            admin_user_id = self.admin_user_id
+
+            # ----------------------------------------------------
+            # 2. Get product IDs using full-text search
+            # ----------------------------------------------------
             products = self._search_products(product_query)
-            
+
             if not products:
                 print("[DEBUG] No matching products found.")
                 return None
 
             product_ids = [p['id'] for p in products]
-            print(f"[DEBUG] Found {len(product_ids)} matching products")
+            print(f"[DEBUG] Found {len(product_ids)} matching product IDs")
 
-            # Query orders with customer location
+            # ----------------------------------------------------
+            # 3. Fetch business → owner mapping
+            # ----------------------------------------------------
+            owners_resp = (
+                self.supabase_client
+                .table("business_owners")
+                .select("business_id, user_id")
+                .execute()
+            )
+
+            owners_map = {o["business_id"]: o["user_id"] for o in (owners_resp.data or [])}
+
+            # ----------------------------------------------------
+            # 4. Fetch orders with customer location
+            # ----------------------------------------------------
             response = (
                 self.supabase_client.table('orders')
-                .select('quantity, business_id, order_status, order_payment_status, customers(location)')
+                .select('quantity, business_id, product_id, order_status, order_payment_status, customers(location)')
                 .in_('product_id', product_ids)
                 .eq('order_status', 'completed')
                 .eq('order_payment_status', 'completed')
                 .execute()
             )
 
-            print(f"[DEBUG] Raw response: {response}")
+            print(f"[DEBUG] Raw orders response: {response}")
 
             if not response.data:
                 print("[DEBUG] No matching orders found.")
                 return None
 
-            # Filter out admin businesses
-            filtered_orders = [
-                order for order in response.data
-                if order.get('business_id') not in self.admin_business_ids
-            ]
+            # ----------------------------------------------------
+            # 5. Filter out admin-owned businesses
+            # ----------------------------------------------------
+            filtered_orders = []
+            for order in response.data:
+                business_id = order.get("business_id")
+                owner_id = owners_map.get(business_id)
 
+                if owner_id == admin_user_id:
+                    print(f"[DEBUG] Skipping ADMIN business order: business_id={business_id}")
+                    continue
+
+                filtered_orders.append(order)
+
+            # ----------------------------------------------------
+            # 6. Aggregate quantity per location
+            # ----------------------------------------------------
             location_totals: Dict[str, int] = {}
 
             for i, order in enumerate(filtered_orders, start=1):
                 print(f"[DEBUG] Processing order {i}: {order}")
 
-                customer = order.get('customers')
-
-                if not customer:
-                    print(f"[DEBUG] Skipping order {i}: No customer data.")
-                    continue
-
+                # safely extract customer
+                customer = order.get('customers') or {}
                 location = customer.get('location')
+
                 if not location:
-                    print(f"[DEBUG] Skipping order {i}: No location info.")
+                    print(f"[DEBUG] Skipping order {i}: Missing customer location")
                     continue
 
-                qty = order.get('quantity', 0) or 0
+                # safely extract quantity
+                qty = order.get("quantity") or 0
+
                 print(f"[DEBUG] Order {i}: location={location}, qty={qty}")
 
                 location_totals[location] = location_totals.get(location, 0) + qty
@@ -690,18 +756,21 @@ class Products(Clients):
             print(f"[DEBUG] Aggregated location totals: {location_totals}")
 
             if not location_totals:
-                print("[DEBUG] No quantities aggregated.")
+                print("[DEBUG] No valid locations aggregated.")
                 return None
 
+            # ----------------------------------------------------
+            # 7. Determine top location
+            # ----------------------------------------------------
             top_location = max(location_totals, key=lambda loc: location_totals[loc])
-            print(f"[DEBUG] Top location: {top_location}, Qty={location_totals[top_location]}")
+
+            print(f"[DEBUG] Top location = {top_location}, Qty = {location_totals[top_location]}")
 
             return top_location, location_totals[top_location]
 
         except Exception as e:
             print(f"[DEBUG] Exception: {e}")
             return None
-
 
     def product_sales_growth(self, product_query):
         """Returns the sales growth (%) for a product comparing this month vs last month (excluding admin businesses)"""
@@ -813,3 +882,7 @@ class Products(Clients):
         product_summary['product_market_share'] = self.product_market_share(product_query)
 
         return product_summary
+
+
+test = Products()
+print(test)

@@ -318,6 +318,27 @@ class Users(Clients):
             print(f"Error retrieving users information: {e}")
             return []
         
+    def get_user_by_id(self, user_id):
+        """Fetches a single user's details by their ID (excluding admin user)"""
+        try:
+            response = (
+                self.supabase_client.table("users")
+                .select("*")
+                .eq("id", user_id)
+                .execute()
+            )
+            if response.data:
+                user = response.data[0]
+                if user.get('id') == self.admin_user_id:
+                    return None
+                # add the businesses info
+                user['businesses'] = self.users_businesses(user_id)
+                return user
+            return None
+        except Exception as e:
+            print(f"Error fetching user by ID: {e}")
+            return None
+        
     def users_businesses(self, user_id):
         """retrieves information about the user's businesses as a dictionary (excluding admin businesses)"""
         try:
@@ -485,3 +506,5 @@ class Users(Clients):
         except Exception as e:
             print("Error generating monthly activity trend:", e)
             return pd.DataFrame(columns=['month', 'active_user_count'])
+        
+    

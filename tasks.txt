@@ -1,0 +1,2 @@
+the staff management contnent on the settings page is not showing
+its not updating a referall successfully
