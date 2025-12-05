@@ -513,53 +513,93 @@ class Businesses(Clients):
             print(f"Exception: {e}")
             return pd.DataFrame(columns=['month', 'business_count'])
 
-
-         
     def get_top_performing_industries(self):
-        """Returns the top 4 performing industries and bundles the rest under 'Others' (excluding admin)."""
+        """Returns the top 4 performing industries and groups the rest as 'Others',
+        excluding ALL businesses owned by admin users.
+        """
 
-        # Step 1: Get all completed orders (exclude admin businesses)
-        orders_response = (
+        # ---------------------------------------------
+        # 1. Get all admin users (if you only have one, comment this out)
+        # ---------------------------------------------
+        admin_user_ids = [self.admin_user_id]  # Supports multiple admins if added later
+
+        # ---------------------------------------------
+        # 2. Fetch all business owners to map business → user
+        # ---------------------------------------------
+        owners_resp = (
             self.supabase_client
-            .table('orders')
-            .select('business_id, total_amount')
-            .eq('order_payment_status', 'completed')
+            .table("business_owners")
+            .select("business_id, user_id")
             .execute()
         )
-        orders = [
-            o for o in (orders_response.data or [])
-            if o.get('business_id') not in self.admin_business_ids
-        ]
 
-        # Step 2: Get all businesses with their industries
-        businesses_response = (
+        owners_map = {}  # business_id → user_id
+        for o in (owners_resp.data or []):
+            owners_map[o["business_id"]] = o["user_id"]
+
+        # ---------------------------------------------
+        # 3. Get all completed orders EXCLUDING admin-owned businesses
+        # ---------------------------------------------
+        orders_resp = (
             self.supabase_client
-            .table('businesses')
-            .select('id, industry')
+            .table("orders")
+            .select("business_id, total_amount")
+            .eq("order_payment_status", "completed")
             .execute()
         )
-        businesses = {
-            b['id']: b['industry'] 
-            for b in (businesses_response.data or [])
-            if b['id'] not in self.admin_business_ids
-        }
 
-        # Step 3: Aggregate totals per industry
+        filtered_orders = []
+        for order in (orders_resp.data or []):
+            bid = order.get("business_id")
+            owner_id = owners_map.get(bid)
+
+            # Exclude admin-owned business
+            if owner_id in admin_user_ids:
+                continue
+
+            filtered_orders.append(order)
+
+        # ---------------------------------------------
+        # 4. Get all businesses + industries (exclude admin-owned)
+        # ---------------------------------------------
+        businesses_resp = (
+            self.supabase_client
+            .table("businesses")
+            .select("id, industry")
+            .execute()
+        )
+
+        businesses = {}
+        for b in (businesses_resp.data or []):
+            owner_id = owners_map.get(b["id"])
+            if owner_id in admin_user_ids:
+                continue  # Exclude admin-owned business
+            businesses[b["id"]] = b["industry"]
+
+        # ---------------------------------------------
+        # 5. Aggregate totals per industry
+        # ---------------------------------------------
         industry_totals = {}
-        for order in orders:
-            industry = businesses.get(order['business_id'], "Unknown")
-            industry_totals[industry] = industry_totals.get(industry, 0) + order['total_amount']
+        for order in filtered_orders:
+            industry = businesses.get(order["business_id"], "Unknown")
+            industry_totals[industry] = industry_totals.get(industry, 0) + order["total_amount"]
 
-        # Step 4: Sort industries by total amount
+        # ---------------------------------------------
+        # 6. Sort industries by revenue
+        # ---------------------------------------------
         sorted_industries = sorted(industry_totals.items(), key=lambda x: x[1], reverse=True)
 
-        # Step 5: Top 4 + bundle rest as "Others"
+        # ---------------------------------------------
+        # 7. Top 4 + Others
+        # ---------------------------------------------
         top_4 = sorted_industries[:4]
         others = sum([x[1] for x in sorted_industries[4:]])
+
         if others > 0:
             top_4.append(("Others", others))
 
-        # Ensure we never return an empty list
         return top_4 if top_4 else [("N/A", 0)]
+
+
 
 

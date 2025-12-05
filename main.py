@@ -30,6 +30,7 @@ load_dotenv()
 app = Flask(__name__)
 
 
+
 app.secret_key = os.getenv('APP_SECRET_KEY') 
 test_key = os.getenv('OPEN_AI_TEST_KEY')
 
@@ -1696,6 +1697,80 @@ def assign_referral():
         return redirect(url_for('settings') + '#referrals')
          
     return redirect(url_for('settings'))
+
+@app.route('/referrals/edit_referral/<user_id>', methods=['GET'])
+def get_referral_details(user_id):
+    """API endpoint to get referral details for editing"""
+    try:
+        # Get the referral information
+        ref_details = referrals_manager.current_referral_details(user_id)
+        
+        if ref_details:
+            # Get the user's name and email using your users_manager
+            user = users_manager.get_user_by_id(user_id)
+            
+            # If user doesn't exist, handle it
+            if not user:
+                return jsonify({'success': False, 'message': 'User not found'}), 404
+            
+            return jsonify({
+                'success': True,
+                'referral': ref_details,
+                'user': {
+                    'name': user['name'],      # Get name from user data
+                    'email': user['email']     # Get email from user data
+                }
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Referral not found'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/referrals/update_referral/<user_id>', methods=['POST'])
+def update_referral(user_id):
+    """Update referral details"""
+    try:
+        # Get form data with validation
+        ref_code = request.form.get('ref_code')
+        percentage_str = request.form.get('percentage')
+        is_active_str = request.form.get('is_active')
+        
+        # Validate required fields
+        if not ref_code or not percentage_str or not is_active_str:
+            flash('All fields are required.', 'error')
+            return redirect(url_for('settings') + '#referrals')
+        
+        # Convert percentage to float
+        percentage = float(percentage_str)
+        
+        # Validate percentage range
+        if percentage < 0 or percentage > 100:
+            flash('Percentage must be between 0 and 100.', 'error')
+            return redirect(url_for('settings') + '#referrals')
+        
+        # Convert 'active'/'inactive' string to True/False boolean
+        is_active = is_active_str == 'active'
+        
+        # Call the referrals_manager edit method
+        result = referrals_manager.edit_referral(
+            user_id=user_id,
+            ref_code=ref_code,
+            percentage=percentage,
+            is_active=is_active
+        )
+        
+        if result:
+            flash('Referral updated successfully!', 'success')
+        else:
+            flash('Failed to update referral.', 'error')
+            
+        return redirect(url_for('settings') + '#referrals')
+    except ValueError as e:
+        flash('Invalid percentage value. Please enter a valid number.', 'error')
+        return redirect(url_for('settings') + '#referrals')
+    except Exception as e:
+        flash(f'Error updating referral: {str(e)}', 'error')
+        return redirect(url_for('settings') + '#referrals')
 
 
 

@@ -122,7 +122,8 @@ class Referrals(Clients):
             "user_id": user_id,
             "percentage_cut": percentage,
             "updated_at" : datetime.utcnow().isoformat(),
-            "ref_code" : ref_code
+            "ref_code" : ref_code,
+            "is_active": True
         }
 
         try:
@@ -144,13 +145,25 @@ class Referrals(Clients):
             print(f"Error assigning referral code: {e}")
             return None
         
-    def edit_referral(self, user_id, ref_code, percentage):
+    def current_referral_details(self, user_id):
+        """Gets the current referral details for a user"""
+        try:
+            response = self.supabase_client.table("referral_codes").select("*").eq("user_id", user_id).execute()
+            if response.data and len(response.data) > 0:
+                return response.data[0]
+            return None
+        except Exception as e:
+            print(f"Error getting current referral details: {e}")
+            return None
+        
+    def edit_referral(self, user_id, ref_code, percentage, is_active):
         """Edits a referral code assigned to a user"""
         data = {
             "user_id": user_id,
             "percentage_cut": percentage,
-            "updated_at" : datetime.utcnow().isoformat(),
-            "ref_code" : ref_code
+            "updated_at": datetime.utcnow().isoformat(),
+            "ref_code": ref_code,
+            "is_active": is_active  # This will be True or False
         }
 
         try:
@@ -160,11 +173,11 @@ class Referrals(Clients):
         except Exception as e:
             print(f"Error editing referral code: {e}")
             return None
-        
 
 
-test = Referrals()
-print(test.load_active_referrals())
+
+
+
 
 
         

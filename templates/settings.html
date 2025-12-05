@@ -5,698 +5,972 @@
 <head>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 25%, #2d2d2d 75%, #3a3a3a 100%);
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #ffffff;
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        .settings-container {
-            padding: 1.5rem;
-            max-width: 1400px;
-            margin: 0 auto;
-            animation: fadeInUp 0.6s ease forwards;
-        }
-
-        .page-header {
-            margin-bottom: 1.5rem;
-        }
-
-        .page-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #0f0f0f;
-            margin-bottom: 0.3rem;
-        }
-
-        .page-subtitle {
-            color: #0f0f0f;
-            font-size: 0.9rem;
-        }
-
-        .settings-tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
-            overflow-x: auto;
-        }
-
-        .tab-btn {
-            padding: 0.8rem 1.5rem;
-            background: none;
-            border: none;
-            color: #666;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-        }
-
-        .tab-btn:hover {
-            color: #000;
-        }
-
-        .tab-btn.active {
-            color: #000;
-        }
-
-        .tab-btn.active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, #000, #333);
-        }
-
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.4s ease;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .settings-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .settings-card {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(20px);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 
-                0 6px 20px rgba(0, 0, 0, 0.06),
-                0 0 0 1px rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-        }
-
-        .settings-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            margin-bottom: 1.2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .card-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #000, #333);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1rem;
-        }
-
-        .card-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #111;
-        }
-
-        .form-group {
-            margin-bottom: 1.2rem;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #333;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 0.8rem;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.5);
-            box-sizing: border-box;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #000;
-            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
-        }
-
-        .form-input:disabled {
-            background: rgba(0, 0, 0, 0.02);
-            cursor: not-allowed;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #000, #333);
-            color: white;
-            border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-secondary {
-            background: rgba(0, 0, 0, 0.05);
-            color: #333;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            padding: 0.8rem 1.5rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: white;
-            border: none;
-            padding: 0.6rem 1.2rem;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(239, 68, 68, 0.3);
-        }
-
-        .btn-generate {
-            background: linear-gradient(135deg, #000, #333);
-            color: white;
-            border: none;
-            padding: 0.8rem 1.2rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-        }
-
-        .btn-generate:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .staff-table, .referral-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-        }
-
-        .staff-table th, .referral-table th {
-            background: rgba(0, 0, 0, 0.03);
-            padding: 0.8rem;
-            text-align: left;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #333;
-            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .staff-table td, .referral-table td {
-            padding: 0.8rem;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            font-size: 0.85rem;
-            color: #555;
-        }
-
-        .staff-table tr:hover, .referral-table tr:hover {
-            background: rgba(0, 0, 0, 0.02);
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .badge-admin {
-            background: rgba(0, 0, 0, 0.1);
-            color: #000;
-        }
-
-        .badge-staff {
-            background: rgba(59, 130, 246, 0.1);
-            color: #3b82f6;
-        }
-
-        .badge-active {
-            background: rgba(16, 185, 129, 0.1);
-            color: #10b981;
-        }
-
-        .badge-inactive {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-        }
-
-        .action-btns {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .btn-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            border: none;
-            background: rgba(0, 0, 0, 0.05);
-            color: #666;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-icon:hover {
-            background: rgba(0, 0, 0, 0.1);
-            color: #000;
-        }
-
-        .btn-icon.danger:hover {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-        }
-
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 26px;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: 0.4s;
-            border-radius: 26px;
-        }
-
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: 0.4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .toggle-slider {
-            background: linear-gradient(135deg, #000, #333);
-        }
-
-        input:checked + .toggle-slider:before {
-            transform: translateX(24px);
-        }
-
-        .setting-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 0;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .setting-item:last-child {
-            border-bottom: none;
-        }
-
-        .setting-info h4 {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #111;
-            margin-bottom: 0.3rem;
-        }
-
-        .setting-info p {
-            font-size: 0.8rem;
-            color: #666;
-            margin: 0;
-        }
-
-        .alert {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-        }
-
-        .alert-success {
-            background: rgba(16, 185, 129, 0.1);
-            color: #059669;
-            border: 1px solid rgba(16, 185, 129, 0.2);
-        }
-
-        .alert-warning {
-            background: rgba(245, 158, 11, 0.1);
-            color: #d97706;
-            border: 1px solid rgba(245, 158, 11, 0.2);
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            animation: fadeIn 0.3s ease;
-        }
-
-        .modal.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            max-width: 500px;
-            width: 90%;
-            animation: slideUp 0.3s ease;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .modal-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #111;
-        }
-
-        .btn-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #666;
-            transition: all 0.2s ease;
-        }
-
-        .btn-close:hover {
-            color: #000;
-        }
-
-        .activity-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.8rem 0;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .activity-item:last-child {
-            border-bottom: none;
-        }
-
-        .activity-title {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #111;
-            margin-bottom: 0.2rem;
-        }
-
-        .activity-desc {
-            font-size: 0.8rem;
-            color: #666;
-        }
-
-        .activity-time {
-            font-size: 0.8rem;
-            color: #999;
-        }
-
-        .search-section {
-            margin-top: 1rem;
-        }
-
-        .search-box {
-            display: flex;
-            gap: 1rem;
-            align-items: flex-end;
-        }
-
-        .search-box .form-group {
-            flex: 1;
-            margin-bottom: 0;
-        }
-
-        .search-results {
-            margin-top: 1.5rem;
-        }
-
-        .user-result-card {
-            background: rgba(0, 0, 0, 0.02);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .user-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #000, #333);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 1.2rem;
-        }
-
-        .modal-user-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem;
-            background: rgba(0, 0, 0, 0.02);
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-        }
-
-        .user-details h4 {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #111;
-            margin-bottom: 0.2rem;
-        }
-
-        .user-details p {
-            font-size: 0.85rem;
-            color: #666;
-            margin: 0;
-        }
-
-        .percentage-input-group {
-            position: relative;
-        }
-
-        .percentage-label {
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #666;
-            font-weight: 600;
-        }
-
-        .percentage-input-group input {
-            padding-right: 2.5rem;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .stat-box {
-            background: rgba(0, 0, 0, 0.02);
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #111;
-            margin-bottom: 0.3rem;
-        }
-
-        .stat-label {
-            font-size: 0.75rem;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .code-display {
-            margin-top: 0.5rem;
-            padding: 0.8rem;
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 1rem;
-            text-align: center;
-            letter-spacing: 2px;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .settings-container {
-                padding: 0.8rem;
-            }
-
-            .settings-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .staff-table, .referral-table {
-                font-size: 0.75rem;
-            }
-
-            .staff-table th, .referral-table th,
-            .staff-table td, .referral-table td {
-                padding: 0.5rem;
-            }
-
-            .settings-tabs {
-                overflow-x: scroll;
-            }
-
-            .search-box {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .search-box .btn-primary {
-                width: 100%;
-                justify-content: center;
-            }
-        }
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 25%, #2d2d2d 75%, #3a3a3a 100%);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    overflow-x: hidden;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #ffffff;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.settings-container {
+    padding: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+.page-header {
+    margin-bottom: 1.5rem;
+}
+
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #0f0f0f;
+    margin-bottom: 0.3rem;
+}
+
+.page-subtitle {
+    color: #0f0f0f;
+    font-size: 0.9rem;
+}
+
+.settings-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    -webkit-overflow-scrolling: touch;
+}
+
+.settings-tabs::-webkit-scrollbar {
+    height: 4px;
+}
+
+.settings-tabs::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.settings-tabs::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+}
+
+.tab-btn {
+    padding: 0.8rem 1.5rem;
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.tab-btn:hover {
+    color: #000;
+}
+
+.tab-btn.active {
+    color: #000;
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, #000, #333);
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.4s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.settings-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.06),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.settings-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #000, #333);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111;
+}
+
+.form-group {
+    margin-bottom: 1.2rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.5);
+    box-sizing: border-box;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #000;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+.form-input:disabled {
+    background: rgba(0, 0, 0, 0.02);
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #000, #333);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-secondary {
+    background: rgba(0, 0, 0, 0.05);
+    color: #333;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(239, 68, 68, 0.3);
+}
+
+.btn-generate {
+    background: linear-gradient(135deg, #000, #333);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.btn-generate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.staff-table, .referral-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    overflow-x: auto;
+    display: block;
+}
+
+.staff-table thead, .referral-table thead {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.staff-table tbody, .referral-table tbody {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.staff-table th, .referral-table th {
+    background: rgba(0, 0, 0, 0.03);
+    padding: 0.8rem;
+    text-align: left;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.staff-table td, .referral-table td {
+    padding: 0.8rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 0.85rem;
+    color: #555;
+    word-wrap: break-word;
+}
+
+.staff-table tr:hover, .referral-table tr:hover {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.badge-admin {
+    background: rgba(0, 0, 0, 0.1);
+    color: #000;
+}
+
+.badge-staff {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.badge-active {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.badge-inactive {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.action-btns {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: none;
+    background: rgba(0, 0, 0, 0.05);
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.btn-icon:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #000;
+}
+
+.btn-icon.danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 26px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background: linear-gradient(135deg, #000, #333);
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    gap: 1rem;
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+}
+
+.setting-info h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 0.3rem;
+}
+
+.setting-info p {
+    font-size: 0.8rem;
+    color: #666;
+    margin: 0;
+}
+
+.alert {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.alert-success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.alert-warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s ease;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 100%;
+    animation: slideUp 0.3s ease;
+    margin: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+}
+
+.modal-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #111;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.btn-close:hover {
+    color: #000;
+}
+
+.activity-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    gap: 1rem;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 0.2rem;
+}
+
+.activity-desc {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.activity-time {
+    font-size: 0.8rem;
+    color: #999;
+    white-space: nowrap;
+}
+
+.search-section {
+    margin-top: 1rem;
+}
+
+.search-box {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.search-box .form-group {
+    flex: 1;
+    margin-bottom: 0;
+    min-width: 200px;
+}
+
+.search-results {
+    margin-top: 1.5rem;
+}
+
+.user-result-card {
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 200px;
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #000, #333);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.modal-user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.user-details h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 0.2rem;
+    word-wrap: break-word;
+}
+
+.user-details p {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+    word-wrap: break-word;
+}
+
+.percentage-input-group {
+    position: relative;
+}
+
+.percentage-label {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+    font-weight: 600;
+}
+
+.percentage-input-group input {
+    padding-right: 2.5rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.stat-box {
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 0.3rem;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.code-display {
+    margin-top: 0.5rem;
+    padding: 0.8rem;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 1rem;
+    text-align: center;
+    letter-spacing: 2px;
+    word-wrap: break-word;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Tablet Responsiveness */
+@media (max-width: 1024px) {
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .staff-table th, .referral-table th,
+    .staff-table td, .referral-table td {
+        padding: 0.6rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .settings-container {
+        padding: 1rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+    }
+
+    .page-subtitle {
+        font-size: 0.85rem;
+    }
+
+    .settings-tabs {
+        gap: 0.3rem;
+        margin-bottom: 1rem;
+    }
+
+    .tab-btn {
+        padding: 0.7rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    .settings-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .settings-card {
+        padding: 1.2rem;
+    }
+
+    .card-header {
+        gap: 0.6rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.8rem;
+    }
+
+    .card-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
+    }
+
+    .card-title {
+        font-size: 1rem;
+    }
+
+    .form-input {
+        padding: 0.7rem;
+        font-size: 0.85rem;
+    }
+
+    .btn-primary, .btn-secondary {
+        padding: 0.7rem 1.2rem;
+        font-size: 0.85rem;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .btn-generate {
+        padding: 0.7rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    .staff-table, .referral-table {
+        font-size: 0.7rem;
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .staff-table th, .referral-table th,
+    .staff-table td, .referral-table td {
+        padding: 0.5rem 0.4rem;
+        font-size: 0.7rem;
+    }
+
+    .badge {
+        padding: 0.25rem 0.6rem;
+        font-size: 0.7rem;
+    }
+
+    .action-btns {
+        gap: 0.3rem;
+    }
+
+    .btn-icon {
+        width: 28px;
+        height: 28px;
+    }
+
+    .search-box {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.8rem;
+    }
+
+    .search-box .form-group {
+        min-width: 100%;
+    }
+
+    .user-result-card {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .user-info {
+        min-width: 100%;
+    }
+
+    .modal {
+        padding: 0.5rem;
+    }
+
+    .modal-content {
+        padding: 1.5rem;
+        max-width: 100%;
+    }
+
+    .modal-title {
+        font-size: 1.1rem;
+    }
+
+    .setting-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.8rem;
+    }
+
+    .activity-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .activity-time {
+        align-self: flex-end;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Small Mobile Devices */
+@media (max-width: 480px) {
+    .settings-container {
+        padding: 0.8rem;
+    }
+
+    .page-title {
+        font-size: 1.3rem;
+    }
+
+    .page-subtitle {
+        font-size: 0.8rem;
+    }
+
+    .tab-btn {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.8rem;
+    }
+
+    .settings-card {
+        padding: 1rem;
+        border-radius: 10px;
+    }
+
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .card-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 0.85rem;
+    }
+
+    .card-title {
+        font-size: 0.95rem;
+    }
+
+    .form-label {
+        font-size: 0.8rem;
+    }
+
+    .form-input {
+        padding: 0.6rem;
+        font-size: 0.8rem;
+    }
+
+    .btn-primary, .btn-secondary, .btn-danger {
+        padding: 0.6rem 1rem;
+        font-size: 0.8rem;
+    }
+
+    .modal-content {
+        padding: 1.2rem;
+    }
+
+    .modal-title {
+        font-size: 1rem;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+
+    .user-details h4 {
+        font-size: 0.9rem;
+    }
+
+    .user-details p {
+        font-size: 0.75rem;
+    }
+
+    .stat-value {
+        font-size: 1.2rem;
+    }
+
+    .stat-label {
+        font-size: 0.7rem;
+    }
+
+    .code-display {
+        font-size: 0.9rem;
+        padding: 0.6rem;
+    }
+}
     </style>
 </head>
 <body>
@@ -790,6 +1064,154 @@
                 </form>
             </div>
         </div>
+
+        <!-- Staff Management Tab -->
+<div class="tab-content" id="staff">
+    <!-- Add New Staff Section -->
+    <div class="settings-card">
+        <div class="card-header">
+            <div class="card-icon">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <h3 class="card-title">Add New Staff Member</h3>
+        </div>
+        <form method="POST" action="{{ url_for('add_staff') }}">
+            <div class="settings-grid">
+                <div>
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" name="username" class="form-input" placeholder="Enter username" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" class="form-input" placeholder="staff@inxource.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">NRC Number</label>
+                        <input type="text" name="nrc" class="form-input" placeholder="123456/78/9" required>
+                    </div>
+                </div>
+                <div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" name="password" class="form-input" placeholder="Enter secure password" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <select name="role" class="form-input" required>
+                            <option value="">Select role...</option>
+                            <option value="admin">Admin</option>
+                            <option value="finance">Finance</option>
+                            <option value="dev">Developer</option>
+                            <option value="marketing">Marketing</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn-primary" style="margin-top: 1rem;">
+                <i class="fas fa-user-plus"></i>
+                Add Staff Member
+            </button>
+        </form>
+    </div>
+
+    <!-- Current Staff Members Section -->
+    <div class="settings-card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+            <div class="card-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <h3 class="card-title">Current Staff Members</h3>
+        </div>
+
+        {% if staff %}
+        <table class="staff-table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>NRC</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in staff %}
+                <tr>
+                    <td><strong>{{ member.user_name }}</strong></td>
+                    <td>{{ member.email }}</td>
+                    <td>{{ member.nrc }}</td>
+                    <td>
+                        <span class="badge {% if member.role == 'super' %}badge-admin{% else %}badge-staff{% endif %}">
+                            {{ member.role|upper }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {% if member.is_active %}badge-active{% else %}badge-inactive{% endif %}">
+                            {% if member.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="action-btns">
+                            {% if is_user_super %}
+                                <button class="btn-icon" onclick="openEditStaffModal('{{ member.id }}', '{{ member.user_name }}', '{{ member.email }}', '{{ member.nrc }}', '{{ member.role }}', {{ member.is_active|tojson }})" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% if member.role != 'super' %}
+                                <button class="btn-icon danger" onclick="openDeleteStaffModal('{{ member.id }}', '{{ member.user_name }}')" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            {% else %}
+                                <button class="btn-icon" disabled style="opacity: 0.3; cursor: not-allowed;" title="Super admin only">
+                                    <i class="fas fa-lock"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="padding: 2rem; text-align: center; color: #666;">
+            <i class="fas fa-users" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+            <p>No staff members found.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Change Password Section -->
+    <div class="settings-card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+            <div class="card-icon">
+                <i class="fas fa-key"></i>
+            </div>
+            <h3 class="card-title">Change Password</h3>
+        </div>
+        <form method="POST" action="{{ url_for('update_password') }}">
+            <div class="form-group">
+                <label class="form-label">Current Password</label>
+                <input type="password" name="current_password" class="form-input" placeholder="Enter current password" required>
+            </div>
+            <div class="settings-grid">
+                <div class="form-group">
+                    <label class="form-label">New Password</label>
+                    <input type="password" name="new_password" class="form-input" placeholder="Enter new password" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirm New Password</label>
+                    <input type="password" name="confirm_password" class="form-input" placeholder="Confirm new password" required>
+                </div>
+            </div>
+            <button type="submit" class="btn-primary" style="margin-top: 1rem;">
+                <i class="fas fa-lock"></i>
+                Update Password
+            </button>
+        </form>
+    </div>
+</div>
 
         <!-- Referrals Tab -->
         <div class="tab-content" id="referrals">
@@ -1040,24 +1462,26 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Edit Referral Settings</h3>
-                <button class="btn-close" onclick="closeEditReferralModal()">&times;</button>
+                <button class="btn-close" onclick="closeEditReferralModal()" type="button">&times;</button>
             </div>
 
             <div class="modal-user-info">
-                <div class="user-avatar">JM</div>
+                <div class="user-avatar" id="editModalUserAvatar">JM</div>
                 <div class="user-details">
-                    <h4>John Mwanza</h4>
-                    <p>john@example.com</p>
+                    <h4 id="editModalUserName">Loading...</h4>
+                    <p id="editModalUserEmail">Loading...</p>
                 </div>
             </div>
 
-            <form id="editReferralForm">
+            <form id="editReferralForm" method="POST">
+                <input type="hidden" name="user_id" id="editUserId">
+                
                 <div class="form-group">
                     <label class="form-label">Referral Code</label>
                     <input 
                         type="text" 
                         class="form-input" 
-                        value="REF-JM2024"
+                        id="editReferralCode"
                         readonly
                         style="background: rgba(0,0,0,0.05);"
                     >
@@ -1069,10 +1493,12 @@
                         <input 
                             type="number" 
                             class="form-input" 
-                            value="15"
+                            id="editCommissionPercentage"
+                            name="percentage"
                             min="1"
                             max="100"
                             step="0.01"
+                            required
                         >
                         <span class="percentage-label">%</span>
                     </div>
@@ -1080,8 +1506,8 @@
 
                 <div class="form-group">
                     <label class="form-label">Status</label>
-                    <select class="form-input">
-                        <option value="active" selected>Active</option>
+                    <select class="form-input" id="editStatus" name="is_active" required>
+                        <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                     </select>
                 </div>
@@ -1417,12 +1843,61 @@
         }
     }
 
-    function editReferral(referralId) {
-        document.getElementById('editReferralModal').classList.add('active');
+    // UPDATED FUNCTION - This fetches and populates the edit modal
+    function editReferral(userId) {
+        console.log('Fetching referral details for user:', userId);
+        
+        // Fetch referral details from the server
+        fetch(`/referrals/edit_referral/${userId}`)
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Received data:', data);
+                
+                if (data.success) {
+                    const referral = data.referral;
+                    const user = data.user;
+                    
+                    console.log('Referral:', referral);
+                    console.log('User:', user);
+                    
+                    // Populate user info
+                    document.getElementById('editModalUserName').textContent = user.name;
+                    document.getElementById('editModalUserEmail').textContent = user.email;
+                    
+                    // Set initials in avatar
+                    const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                    document.getElementById('editModalUserAvatar').textContent = initials;
+                    
+                    // Populate form fields
+                    document.getElementById('editUserId').value = userId;
+                    document.getElementById('editReferralCode').value = referral.ref_code;
+                    document.getElementById('editCommissionPercentage').value = referral.percentage_cut;
+                    document.getElementById('editStatus').value = referral.is_active ? 'active' : 'inactive';
+                    
+                    console.log('Form populated with values');
+                    
+                    // Update form action
+                    document.getElementById('editReferralForm').action = `/referrals/update_referral/${userId}`;
+                    
+                    // Show modal
+                    document.getElementById('editReferralModal').classList.add('active');
+                } else {
+                    console.error('Failed to load:', data.message);
+                    alert('Failed to load referral details: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching referral:', error);
+                alert('An error occurred while loading referral details: ' + error.message);
+            });
     }
 
     function closeEditReferralModal() {
         document.getElementById('editReferralModal').classList.remove('active');
+        document.getElementById('editReferralForm').reset();
     }
 
     function deleteReferral(referralId) {
@@ -1490,6 +1965,32 @@
             setTimeout(() => alert.remove(), 500);
         });
     }, 5000);
+
+    // Staff Management Functions
+function openEditStaffModal(staffId, username, email, nrc, role, isActive) {
+    document.getElementById('editStaffModal').classList.add('active');
+    document.getElementById('edit_staff_id').value = staffId;
+    document.getElementById('edit_username').value = username;
+    document.getElementById('edit_email').value = email;
+    document.getElementById('edit_nrc').value = nrc;
+    document.getElementById('edit_role').value = role;
+    document.getElementById('edit_is_active').value = isActive ? 'True' : 'False';
+
+    // Update form action
+    document.getElementById('editStaffModal').querySelector('form').action = `/edit_staff/${staffId}`;
+}
+
+function openDeleteStaffModal(staffId, username) {
+    document.getElementById('deleteStaffModal').classList.add('active');
+    document.getElementById('delete_staff_id').value = staffId;
+
+    // Update the confirmation message with the staff member's name
+    const modalContent = document.querySelector('#deleteStaffModal p');
+    modalContent.textContent = `Are you sure you want to delete ${username}? This action cannot be undone.`;
+
+    // Update form action
+    document.getElementById('deleteStaffModal').querySelector('form').action = `/delete_staff/${staffId}`;
+}
 </script>
 </body>
 </html>

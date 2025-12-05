@@ -8,521 +8,269 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 <style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #ffffff;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+/* PAGE LOADER STYLES */
+#pageLoader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: white;             /* or black if you want */
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Spinner */
+.loader-spinner {
+    width: 55px;
+    height: 55px;
+    border: 6px solid #e0e0e0;
+    border-top-color: black;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+
+/* ========================= */
+/* ======= NAV BAR ========= */
+/* ========================= */
+
+.navbar {
+    width: 100%;
+    background: rgba(255,255,255,0.98);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-container {
+    max-width: 1400px;
+    margin: auto;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    justify-content: space-between;
+}
+
+/* FLEX SPACER pushes avatar to far right */
+.flex-spacer {
+    flex-grow: 1;
+}
+
+/* LOGO (hidden on mobile) */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.5rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.logo-icon {
+    width: 40px;
+    height: 40px;
+    background: black;
+    color: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* NAV MENU (desktop) */
+.nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    list-style: none;
+}
+
+.nav-item {}
+.nav-link {
+    text-decoration: none;
+    padding: 10px 18px;
+    color: #444;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.nav-link.active {
+    background: black;
+    color: white;
+}
+
+/* ========================= */
+/* ======= AVATAR ========== */
+/* ========================= */
+
+.user-section {
+    display: flex;
+    align-items: center;
+}
+
+.user-profile {
+    position: relative;
+    cursor: pointer;
+}
+
+.user-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: black;
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* DROPDOWN */
+.user-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 55px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 140px;
+    z-index: 5000;
+}
+
+.user-dropdown.active {
+    display: block;
+}
+
+.user-dropdown a {
+    display: block;
+    padding: 10px 12px;
+    color: #333;
+    text-decoration: none;
+}
+
+.user-dropdown a:hover {
+    background: #f5f5f5;
+}
+
+/* ========================= */
+/* ===== MOBILE BUTTON ===== */
+/* ========================= */
+
+.mobile-menu-btn {
+    display: none;
+    font-size: 1.8rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+}
+
+/* ========================= */
+/* ====== MOBILE VIEW ====== */
+/* ========================= */
+
+@media (max-width: 1024px) {
+
+    /* HIDE LOGO ON MOBILE */
+    .logo {
+        display: none !important;
     }
 
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: color(white);
-        min-height: 100vh;
-        position: relative;
-        overflow-x: hidden;
+    /* SHOW HAMBURGER BUTTON */
+    .mobile-menu-btn {
+        display: block;
     }
 
-    body::before {
-        content: '';
+    /* NAV MENU becomes slide-in drawer */
+    .nav-menu {
         position: fixed;
         top: 0;
+        left: -260px;
+        width: 260px;
+        height: 100vh;
+        padding: 2rem 1rem;
+        background: #fff;
+        flex-direction: column;
+        gap: 12px;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+        transition: 0.3s ease;
+        z-index: 3000;
+        overflow-y: auto;
+    }
+
+    .nav-menu.active {
         left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: #ffffff;
-        pointer-events: none;
-        z-index: -1;
-    }
-
-    .navbar {
-        background: rgba(255, 255, 255, 0.98);
-        backdrop-filter: blur(25px);
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-        padding: 0;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        box-shadow: 
-            0 8px 32px rgba(0, 0, 0, 0.15),
-            0 0 0 1px rgba(255, 255, 255, 0.1);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .nav-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 2rem;
-        height: 70px;
-    }
-
-    .logo {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        font-size: 1.6rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #000, #333, #111);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-
-    .logo:hover {
-        transform: scale(1.05);
-    }
-
-    .logo-icon {
-        width: 45px;
-        height: 45px;
-        background: linear-gradient(135deg, #000, #333);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: bold;
-        font-size: 1.1rem;
-        box-shadow: 
-            0 8px 25px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .logo-icon::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-        transform: rotate(45deg);
-        transition: all 0.6s ease;
-        opacity: 0;
-    }
-
-    .logo:hover .logo-icon::before {
-        opacity: 1;
-        animation: shine 0.6s ease-in-out;
-    }
-
-    @keyframes shine {
-        0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-        100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-    }
-
-    .nav-menu {
-        display: flex;
-        list-style: none;
-        gap: 8px;
-        align-items: center;
-    }
-
-    .nav-item {
-        position: relative;
     }
 
     .nav-link {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 12px 20px;
-        text-decoration: none;
-        color: #444;
-        border-radius: 12px;
-        font-weight: 500;
-        font-size: 0.95rem;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .nav-link::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
         width: 100%;
-        height: 100%;
-        background: linear-gradient(135deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1));
-        border-radius: 12px;
-        opacity: 0;
-        transition: all 0.3s ease;
-        z-index: -1;
+        padding: 14px;
+        font-size: 1rem;
+        border-radius: 10px;
     }
 
-    .nav-link:hover {
-        color: #000;
-        transform: translateY(-2px);
+    /* MOBILE LAYOUT */
+    .nav-container {
+        padding: 0 1rem;
+        width: 100%;
     }
 
-    .nav-link:hover::before {
-        opacity: 1;
+    .flex-spacer {
+        flex-grow: 1 !important;
     }
+}
 
-    .nav-link.active {
-        background: linear-gradient(135deg, #000, #333);
-        color: white;
-        box-shadow: 
-            0 8px 25px rgba(0, 0, 0, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        transform: translateY(-1px);
-    }
+/* ========================= */
+/* ===== SMALL PHONES ===== */
+/* ========================= */
 
-    .nav-link.active::before {
-        opacity: 0;
-    }
-
-    .nav-icon {
-        font-size: 1.1rem;
-        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
-    }
-
-    .user-section {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-
-    .notification-btn {
-        position: relative;
-        background: none;
-        border: none;
-        padding: 12px;
-        border-radius: 12px;
-        cursor: pointer;
-        color: #444;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .notification-btn:hover {
-        background: rgba(0, 0, 0, 0.1);
-        color: #000;
-        transform: translateY(-2px);
-    }
-
-    .notification-badge {
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        background: linear-gradient(135deg, #000, #333);
-        color: white;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        font-size: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        animation: pulse 2s infinite;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-    }
-
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-    }
-
-    .user-profile {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 8px 16px;
-        background: rgba(0, 0, 0, 0.03);
-        border-radius: 16px;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    .user-profile:hover {
-        background: rgba(0, 0, 0, 0.08);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+@media (max-width: 480px) {
+    .nav-container {
+        padding: 0 0.75rem;
     }
 
     .user-avatar {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, #000, #333);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 700;
-        font-size: 1rem;
-        box-shadow: 
-            0 4px 15px rgba(0, 0, 0, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    }
-
-    .user-info {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-
-    .user-name {
-        color: #111;
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
-
-    .user-role {
-        color: #666;
-        font-size: 0.8rem;
+        width: 38px;
+        height: 38px;
     }
 
     .mobile-menu-btn {
-        display: none;
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        color: #444;
-        cursor: pointer;
-        padding: 8px;
-        border-radius: 8px;
-        transition: all 0.3s ease;
+        font-size: 1.6rem;
     }
+}
 
-    .mobile-menu-btn:hover {
-        background: rgba(0, 0, 0, 0.1);
-        color: #000;
-    }
-
-    .content-area {
-        padding: 3rem 2rem;
-        max-width: 1400px;
-        margin: 0 auto;
-    }
-
-    .welcome-card {
-        background: rgba(255, 255, 255, 0.98);
-        backdrop-filter: blur(20px);
-        border-radius: 20px;
-        padding: 3rem;
-        box-shadow: 
-            0 20px 40px rgba(0, 0, 0, 0.1),
-            0 0 0 1px rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        position: relative;
-        overflow: hidden;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .welcome-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 4px;
-        background: linear-gradient(90deg, #000, #333, #111);
-    }
-
-    .welcome-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 
-            0 30px 60px rgba(0, 0, 0, 0.15),
-            0 0 0 1px rgba(255, 255, 255, 0.1);
-    }
-
-    .welcome-card h1 {
-        color: #111;
-        font-size: 2.5rem;
-        font-weight: 800;
-        margin-bottom: 1rem;
-        background: linear-gradient(135deg, #111, #333);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        line-height: 1.2;
-    }
-
-    .welcome-card p {
-        color: #666;
-        font-size: 1.1rem;
-        line-height: 1.6;
-        max-width: 600px;
-    }
-
-    .page-content {
-        background: white;
-        border-radius: 16px;
-        padding: 2rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        margin-bottom: 2rem;
-    }
-
-    .page-title {
-        font-size: 2rem;
-        color: #111;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #000;
-        display: inline-block;
-    }
-
-    .user-dropdown {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background: #fff;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        min-width: 120px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        z-index: 100;
-        opacity: 0;
-        visibility: hidden;
-        transform: translateY(-5px);
-        transition: all 0.2s ease;
-    }
-
-    .user-dropdown.active {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
-    }
-
-    .user-dropdown a {
-        display: block;
-        padding: 10px 15px;
-        text-decoration: none;
-        color: #333;
-        transition: background 0.2s;
-    }
-
-    .user-dropdown a:hover {
-        background: #f5f5f5;
-    }
-
-    /* Mobile responsiveness */
-    @media (max-width: 768px) {
-        .nav-container {
-            padding: 0 1rem;
-            height: 60px;
-        }
-
-        .nav-menu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(25px);
-            flex-direction: column;
-            padding: 1rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .nav-menu.active {
-            display: flex;
-        }
-
-        .nav-link {
-            width: 100%;
-            justify-content: flex-start;
-            padding: 15px 20px;
-        }
-
-        .mobile-menu-btn {
-            display: block;
-        }
-
-        .user-info {
-            display: none;
-        }
-
-        .logo {
-            font-size: 1.3rem;
-        }
-
-        .logo-icon {
-            width: 35px;
-            height: 35px;
-            font-size: 0.9rem;
-        }
-
-        .welcome-card {
-            padding: 2rem;
-            margin: 1rem;
-        }
-
-        .welcome-card h1 {
-            font-size: 2rem;
-        }
-
-        .content-area {
-            padding: 2rem 0;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .nav-container {
-            padding: 0 0.5rem;
-        }
-
-        .user-section {
-            gap: 8px;
-        }
-
-        .welcome-card {
-            padding: 1.5rem;
-            margin: 0.5rem;
-        }
-
-        .welcome-card h1 {
-            font-size: 1.8rem;
-        }
-
-        .welcome-card p {
-            font-size: 1rem;
-        }
-    }
-
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .nav-item {
-        animation: fadeInUp 0.6s ease forwards;
-        opacity: 0;
-    }
-
-    .nav-item:nth-child(1) { animation-delay: 0.1s; }
-    .nav-item:nth-child(2) { animation-delay: 0.2s; }
-    .nav-item:nth-child(3) { animation-delay: 0.3s; }
-    .nav-item:nth-child(4) { animation-delay: 0.4s; }
-    .nav-item:nth-child(5) { animation-delay: 0.5s; }
-    .nav-item:nth-child(6) { animation-delay: 0.6s; }
-    .nav-item:nth-child(7) { animation-delay: 0.7s; }
-
-    .welcome-card {
-        animation: fadeInUp 0.8s ease 0.3s forwards;
-        opacity: 0;
-    }
 </style>
 
 </head>
@@ -537,82 +285,54 @@
         {% endfor %}
       {% endif %}
     {% endwith %}
+
+    <!-- GLOBAL PAGE LOADER -->
+    <div id="pageLoader">
+        <div class="loader-spinner"></div>
+    </div>
+
+
     <nav class="navbar">
-        <div class="nav-container">
-            <ul class="nav-menu" id="navMenu">
-                <li class="nav-item">
-                    <a href="{{ url_for('index') }}" class="nav-link active" data-page="dashboard">
-                        <i class="fas fa-chart-line nav-icon"></i>
-                        Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ url_for('wallet') }}" class="nav-link" data-page="withdrawals">
-                        <i class="fas fa-credit-card nav-icon"></i>
-                        Withdrawals
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ url_for('users') }}" class="nav-link" data-page="users">
-                        <i class="fas fa-users nav-icon"></i>
-                        Users
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ url_for('businesses') }}" class="nav-link" data-page="businesses">
-                        <i class="fas fa-building nav-icon"></i>
-                        Businesses
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ url_for('products') }}" class="nav-link" data-page="products">
-                        <i class="fas fa-box nav-icon"></i>
-                        Products
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{url_for('industry_analysis')}}" class="nav-link" data-page="industries">
-                        <i class="fas fa-industry nav-icon"></i>
-                        Industries
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{url_for('analysis')}}" class="nav-link" data-page="settings">
-                        <i class="fas fa-chart-bar nav-icon"></i>
-                        Analysis
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{url_for('settings')}}" class="nav-link" data-page="settings">
-                        <i class="fas fa-cog nav-icon"></i>
-                        Settings
-                    </a>
-                </li>
-            </ul>
+    <div class="nav-container">
 
-            <div class="user-section"> 
-                <div class="user-profile" id="userProfileBtn" style="position: relative; cursor: pointer;">
-                    {% if session.user_name %}
-                        <div class="user-avatar">
-                            {{ session.user_name[0]|upper }}
-                        </div>
-                    {% else %}
-                        <div class="user-avatar">Error</div>
-                    {% endif %}
+        <!-- LEFT: Mobile Menu Button -->
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <i class="fas fa-bars"></i>
+        </button>
 
-                    <!-- Dropdown menu -->
-                    <div id="userDropdown" class="user-dropdown" >
-                        <a href="{{ url_for('logout') }}" style="display: block; padding: 10px; text-decoration: none; color: #333;">Logout</a>
-                    </div>
+        <!-- DESKTOP: Nav Menu -->
+        <ul class="nav-menu" id="navMenu">
+            <li class="nav-item"><a href="{{ url_for('index') }}" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li class="nav-item"><a href="{{ url_for('wallet') }}" class="nav-link"><i class="fas fa-credit-card"></i> Withdrawals</a></li>
+            <li class="nav-item"><a href="{{ url_for('users') }}" class="nav-link"><i class="fas fa-users"></i> Users</a></li>
+            <li class="nav-item"><a href="{{ url_for('businesses') }}" class="nav-link"><i class="fas fa-building"></i> Businesses</a></li>
+            <li class="nav-item"><a href="{{ url_for('products') }}" class="nav-link"><i class="fas fa-box"></i> Products</a></li>
+            <li class="nav-item"><a href="{{ url_for('industry_analysis') }}" class="nav-link"><i class="fas fa-industry"></i> Industries</a></li>
+            <li class="nav-item"><a href="{{ url_for('analysis') }}" class="nav-link"><i class="fas fa-chart-bar"></i> Analysis</a></li>
+            <li class="nav-item"><a href="{{ url_for('settings') }}" class="nav-link"><i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+
+        <!-- SPACER (forces avatar to right) -->
+        <div class="flex-spacer"></div>
+
+        <!-- RIGHT: Avatar -->
+        <div class="user-section">
+            <div class="user-profile" id="userProfileBtn">
+                <div class="user-avatar">
+                    {{ session.user_name[0]|upper }}
                 </div>
 
-                <button class="mobile-menu-btn" id="mobileMenuBtn">
-                    <i class="fas fa-bars"></i>
-                </button>
+                <div id="userDropdown" class="user-dropdown">
+                    <a href="{{ url_for('logout') }}">Logout</a>
+                </div>
             </div>
-
         </div>
-    </nav>
+
+    </div>
+
+</nav>
+
+
 
     <div class="content-area">
         <div id="pageContent">
@@ -625,164 +345,134 @@
     </div>
 
     <script>
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const navMenu = document.getElementById('navMenu');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const navMenu = document.getElementById('navMenu');
 
-        if (mobileMenuBtn && navMenu) {
-            mobileMenuBtn.addEventListener('click', function() {
-                navMenu.classList.toggle('active');
-                
-                const icon = mobileMenuBtn.querySelector('i');
-                if (navMenu.classList.contains('active')) {
-                    icon.className = 'fas fa-times';
-                    mobileMenuBtn.style.transform = 'rotate(90deg)';
-                } else {
-                    icon.className = 'fas fa-bars';
-                    mobileMenuBtn.style.transform = 'rotate(0deg)';
-                }
-            });
-        }
+    /* MOBILE MENU TOGGLE */
+    if (mobileMenuBtn && navMenu) {
+        mobileMenuBtn.addEventListener('click', function() {
+            navMenu.classList.toggle('active');
 
-        const navLinks = document.querySelectorAll('.nav-link');
-        
-        function setActiveTab(clickedLink) {
-            navLinks.forEach(link => {
-                link.classList.remove('active');
-            });
-            clickedLink.classList.add('active');
-        }
+            const icon = mobileMenuBtn.querySelector('i');
+            if (navMenu.classList.contains('active')) {
+                icon.className = 'fas fa-times';
+                mobileMenuBtn.style.transform = 'rotate(90deg)';
+            } else {
+                icon.className = 'fas fa-bars';
+                mobileMenuBtn.style.transform = 'rotate(0deg)';
+            }
+        });
+    }
+
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    function setActiveTab(clickedLink) {
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+        });
+        clickedLink.classList.add('active');
+    }
+
+    /* UPDATED CLICK HANDLER */
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+
+            const href = this.getAttribute('href');
+
+            // If it's a # link — activate instantly
+            if (href.startsWith('#')) {
+                e.preventDefault();
+                setActiveTab(this);
+            }
+            // If it's a Flask route
+            else {
+                // Show loader BEFORE navigating
+                document.getElementById("pageLoader").style.display = "flex";
+
+                // Do NOT set active here — wait for Flask page load
+            }
+
+            // Close mobile menu if open
+            if (navMenu && navMenu.classList.contains('active')) {
+                navMenu.classList.remove('active');
+                const mobileIcon = mobileMenuBtn.querySelector('i');
+                mobileIcon.className = 'fas fa-bars';
+                mobileMenuBtn.style.transform = 'rotate(0deg)';
+            }
+        });
+    });
+
+    /* BASED ON URL — SET ACTIVE TAB AFTER PAGE LOAD */
+    function setActiveTabFromURL() {
+        const currentPath = window.location.pathname;
+        const currentHash = window.location.hash;
 
         navLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                if (this.getAttribute('href').startsWith('#')) {
-                    e.preventDefault();
-                }
-                
-                setActiveTab(this);
-                
-                if (navMenu && navMenu.classList.contains('active')) {
-                    navMenu.classList.remove('active');
-                    const mobileIcon = mobileMenuBtn.querySelector('i');
-                    mobileIcon.className = 'fas fa-bars';
-                    mobileMenuBtn.style.transform = 'rotate(0deg)';
-                }
-                
-                this.style.transform = 'scale(0.96) translateY(-2px)';
-                setTimeout(() => {
-                    this.style.transform = '';
-                }, 200);
-            });
+            const href = link.getAttribute('href');
+
+            if ((href.startsWith('/') && currentPath.includes(href.split('?')[0])) ||
+                (href.startsWith('#') && currentHash === href)) {
+                setActiveTab(link);
+            }
         });
+    }
 
-        function setActiveTabFromURL() {
-            const currentPath = window.location.pathname;
-            const currentHash = window.location.hash;
-            
-            navLinks.forEach(link => {
-                const href = link.getAttribute('href');
-                
-                if ((href.startsWith('/') && currentPath.includes(href.split('?')[0])) ||
-                    (href.startsWith('#') && currentHash === href)) {
-                    setActiveTab(link);
-                }
-            });
-        }
+    document.addEventListener('DOMContentLoaded', setActiveTabFromURL);
 
-        document.addEventListener('DOMContentLoaded', setActiveTabFromURL);
+    /* USER PROFILE DROPDOWN */
+    const userProfileBtn = document.getElementById('userProfileBtn');
+    const userDropdown = document.getElementById('userDropdown');
 
-        const notificationBtn = document.querySelector('.notification-btn');
-        if (notificationBtn) {
-            notificationBtn.addEventListener('click', function() {
-                const badge = this.querySelector('.notification-badge');
-                if (badge) {
-                    badge.style.animation = 'none';
-                    setTimeout(() => {
-                        badge.style.animation = 'pulse 2s infinite';
-                    }, 10);
-                }
-                
-                this.style.transform = 'scale(0.95) translateY(-2px)';
-                setTimeout(() => {
-                    this.style.transform = '';
-                }, 150);
-            });
-        }
+    if (userProfileBtn && userDropdown) {
+        userProfileBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userDropdown.classList.toggle('active');
 
-        window.addEventListener('scroll', function() {
-            const navbar = document.querySelector('.navbar');
-            const scrolled = window.pageYOffset;
-            
-            if (scrolled > 20) {
-                navbar.style.boxShadow = '0 10px 40px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1)';
-                navbar.style.background = 'rgba(255, 255, 255, 0.95)';
-            } else {
-                navbar.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1)';
-                navbar.style.background = 'rgba(255, 255, 255, 0.98)';
+            if (window.innerWidth <= 768) {
+                const rect = userProfileBtn.getBoundingClientRect();
+                userDropdown.style.position = 'fixed';
+                userDropdown.style.top = (rect.bottom + 8) + 'px';
+                userDropdown.style.right = (window.innerWidth - rect.right) + 'px';
+                userDropdown.style.left = 'auto';
             }
         });
 
-        navLinks.forEach(link => {
-            link.addEventListener('mouseenter', function() {
-                if (!this.classList.contains('active')) {
-                    this.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
-                }
-            });
-            
-            link.addEventListener('mouseleave', function() {
-                if (!this.classList.contains('active')) {
-                    this.style.boxShadow = 'none';
-                }
-            });
+        document.addEventListener('click', function(e) {
+            if (!userProfileBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+                userDropdown.classList.remove('active');
+            }
         });
+    }
 
-        const userProfile = document.querySelector('.user-profile');
-        if (userProfile) {
-            userProfile.addEventListener('click', function() {
-                this.style.transform = 'scale(0.98) translateY(-1px)';
-                setTimeout(() => {
-                    this.style.transform = '';
-                }, 150);
-            });
+    /* NAVBAR SHADOW ON SCROLL */
+    window.addEventListener('scroll', function() {
+        const navbar = document.querySelector('.navbar');
+        const scrolled = window.pageYOffset;
+
+        if (scrolled > 20) {
+            navbar.style.boxShadow = '0 10px 40px rgba(0, 0, 0, 0.2)';
+            navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+        } else {
+            navbar.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.15)';
+            navbar.style.background = 'rgba(255, 255, 255, 0.98)';
         }
+    });
 
-        const logo = document.querySelector('.logo');
-        if (logo) {
-            logo.addEventListener('click', function() {
-                this.style.transform = 'scale(0.98)';
-                setTimeout(() => {
-                    this.style.transform = '';
-                }, 200);
-            });
-        }
+    /* PAGE LOADER — HIDE AFTER PAGE LOAD */
+    window.addEventListener("load", function () {
+        const loader = document.getElementById("pageLoader");
 
+        setTimeout(() => {
+            loader.style.opacity = "0";
+            loader.style.transition = "0.4s ease";
 
-        // User profile dropdown toggle
-        const userProfileBtn = document.getElementById('userProfileBtn');
-        const userDropdown = document.getElementById('userDropdown');
+            setTimeout(() => {
+                loader.style.display = "none";
+            }, 400);
+        }, 150);
+    });
+</script>
 
-        if (userProfileBtn && userDropdown) {
-            userProfileBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                userDropdown.classList.toggle('active');
-                
-                // Position dropdown properly on mobile
-                if (window.innerWidth <= 768) {
-                    const rect = userProfileBtn.getBoundingClientRect();
-                    userDropdown.style.position = 'fixed';
-                    userDropdown.style.top = (rect.bottom + 8) + 'px';
-                    userDropdown.style.right = (window.innerWidth - rect.right) + 'px';
-                    userDropdown.style.left = 'auto';
-                }
-            });
-
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!userProfileBtn.contains(e.target) && !userDropdown.contains(e.target)) {
-                    userDropdown.classList.remove('active');
-                }
-            });
-        }
-    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
